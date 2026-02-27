@@ -173,7 +173,9 @@
 }
 
 .bottom-nav-item {
-  flex: 1;
+  flex: 1 1 0;
+  width: auto;
+  flex-shrink: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -187,6 +189,8 @@
   cursor: pointer;
   font-family: var(--sans);
   color: var(--text-dim);
+  white-space: normal;
+  text-align: center;
   transition: color 0.15s, border-color 0.15s;
 }
 
