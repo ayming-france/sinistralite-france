@@ -30,7 +30,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. L'utilisateur voit un skeleton ou spinner pendant le chargement des données, pas un écran vide
   4. Si une donnée échoue à se charger, l'utilisateur voit un message d'erreur clair avec un bouton pour réessayer
   5. La police des graphiques Chart.js est Lato, la clé localStorage du thème est cohérente, et aucune classe CSS morte ne subsiste
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 01-01-PLAN.md — Branding: accents, favicon SVG, nav logo, Lato font, localStorage key
 - [ ] 01-02-PLAN.md — Robustesse: skeleton loaders, error handling, dead CSS cleanup + visual checkpoint
@@ -84,7 +84,7 @@ Phases exécutent dans l'ordre numérique : 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Branding et robustesse | 1/2 | In progress | - |
+| 1. Branding et robustesse | 1/2 | Complete    | 2026-02-27 |
 | 2. Navigation mobile | 0/TBD | Not started | - |
 | 3. Accessibilité | 0/TBD | Not started | - |
 | 4. Export CSV | 0/TBD | Not started | - |
