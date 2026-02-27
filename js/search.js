@@ -43,8 +43,9 @@ export function setupSearch(viewId, renderFn) {
         viewEl(viewId, 'emptyState').style.display = '';
         window.location.hash = viewId;
         searchInput.blur();
-      } else if (vs.acIndex >= 0 && items[vs.acIndex]) {
-        items[vs.acIndex].click();
+      } else if (items.length > 0) {
+        var idx = vs.acIndex >= 0 ? vs.acIndex : 0;
+        items[idx].click();
       }
     } else if (e.key === 'Escape') {
       closeAc();
