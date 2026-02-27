@@ -55,7 +55,9 @@ Plans:
   1. Chaque bouton, input et lien interactif a un aria-label descriptif lisible par un screen reader
   2. L'ouverture et la fermeture des drawers (Insights, Share) est annoncée par aria-live ou aria-expanded
   3. Un lien "Aller au contenu" est le premier élément focusable sur la page et fonctionne au clavier
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 03-01-PLAN.md — ARIA labels, skip link, drawer focus management, :focus-visible CSS
 
 ### Phase 4: Export CSV
 **Goal**: Un utilisateur peut télécharger les données KPI du secteur affiché sous forme de fichier CSV
