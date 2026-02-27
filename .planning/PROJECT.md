@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A public dashboard that makes French workplace accident statistics (sinistralité) easy to understand, sector by sector. Built for both Ayming consultants analyzing client risk profiles and anyone interested in occupational safety data in France. Currently serves BPO data (AT, MP, Trajet) from static JSON files, migrating to live queries via the datagouv MCP server.
+A public dashboard that makes French workplace accident statistics (sinistralité) easy to understand, sector by sector. Built for both Ayming consultants analyzing client risk profiles and anyone interested in occupational safety data in France. Serves BPO data (AT, MP, Trajet) from pre-processed JSON files. Modular vanilla JS + ES modules architecture, upgraded from the original BPO single-file dashboard.
 
 ## Core Value
 
@@ -31,29 +31,31 @@ A user can search any NAF sector code and instantly see its accident profile com
 
 ### Active
 
-- [ ] Replace static JSON files with live datagouv MCP queries
 - [ ] Fix missing French accents in labels (12 occurrences)
 - [ ] Update branding to "Sinistralité France"
 - [ ] Add favicon
 - [ ] Add error handling on data fetch (loading state, error messages)
 - [ ] Fix dead CSS classes and font reference bugs (DM Sans → Lato)
 - [ ] Fix localStorage key mismatch between dashboard and landing page
-- [ ] Add loading states for data fetching
-- [ ] Cloudflare Worker (or equivalent) as MCP proxy for browser queries
+- [ ] Mobile nav (nav rail disappears at 768px with no replacement)
+- [ ] Basic ARIA attributes on interactive elements
+- [ ] CSV export of current sector data
 
 ### Out of Scope
 
-- Ameli health data integration — deferred to v2, separate milestone
-- SIRENE company lookup — deferred, may become separate app
-- Landing page redesign — defer until backend/OAuth exists
-- User authentication — not needed for v1 public dashboard
-- Real-time data streaming — BPO data is published annually
+- Live datagouv MCP queries — sinistralité data is on ameli.fr, not data.gouv.fr. Static JSON from BPO pipeline is the right approach.
+- Cloudflare Worker proxy — not needed since data is static, updated annually via BPO refresh_data.py
+- Ameli health data integration — separate app/milestone if needed
+- SIRENE company lookup — separate app
+- Landing page redesign — defer until needed
+- User authentication — not needed for public dashboard
+- IF by company size — data exists in PDFs only (not Excel), fragile to parse
 - Mobile native app — responsive web is sufficient
 
 ## Context
 
-- **Data source**: CNAM publishes BPO statistics yearly. The datagouv MCP server (`mcp.data.gouv.fr/mcp`) provides query access to these datasets. Need to research exact dataset IDs, update frequency, and query capabilities.
-- **Current state**: Working dashboard with 9.2 MB of static JSON across 3 files (at-data.json, mp-data.json, trajet-data.json). Pre-processed from Excel files in the original BPO project (`~/.claude/bpo/`).
+- **Data source**: CNAM publishes BPO statistics yearly on ameli.fr (not data.gouv.fr). Excel files are downloaded and processed by `refresh_data.py` in the BPO project (`~/.claude/bpo/`). CNAM has 46 datasets on data.gouv.fr but none cover sinistralité.
+- **Current state**: Working dashboard with 9.2 MB of static JSON across 3 files (at-data.json, mp-data.json, trajet-data.json). Pre-processed from the ameli.fr Excel files.
 - **Quality debt**: No tests, no error handling on fetch, dead CSS from removed features, Chart.js font references DM Sans (not loaded, falls back to sans-serif), ES5/ES6 style split between dashboard and landing page.
 - **Deployment**: GitHub Pages via `ayming-france/sinistralite-france` (public, deploy remote). Backup on `xXencarvXx/datagouv` (private, origin remote).
 - **Landing page**: 1,869-line self-contained HTML page, deferred from this milestone.
@@ -61,7 +63,7 @@ A user can search any NAF sector code and instantly see its accident profile com
 ## Constraints
 
 - **No build step**: Vanilla JS + ES modules, no bundler. Must stay zero-dependency on Node.js tooling.
-- **Static hosting**: GitHub Pages for now. Cloudflare Worker needed only as thin MCP proxy.
+- **Static hosting**: GitHub Pages. No backend needed.
 - **CDN dependencies**: Chart.js 4.4.7, chartjs-plugin-datalabels 2.2.0, Lucide (unpinned @latest). No npm packages.
 - **French UI**: All visible text in proper French with accents. Code identifiers stay ASCII.
 - **Two GitHub accounts**: `xXencarvXx` (origin/backup), `ayming-france` (deploy/Pages).
@@ -71,10 +73,10 @@ A user can search any NAF sector code and instantly see its accident profile com
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Vanilla JS, no framework | Zero build step, simple deployment, full control | ✓ Good |
-| Static JSON for initial data | Fast migration from BPO project, works on GitHub Pages | ⚠️ Revisit (replacing with live queries) |
-| Cloudflare Workers for MCP proxy | Free tier, edge-deployed, pairs with static hosting | — Pending |
-| Dashboard-first, landing page later | Core value is the dashboard; landing page needs backend for OAuth | — Pending |
-| Polish before features | Fix quality debt while codebase is small and manageable | — Pending |
+| Static JSON from BPO pipeline | Sinistralité data is on ameli.fr, not datagouv. Annual refresh is sufficient. | ✓ Good |
+| No backend/proxy needed | Data is static, updated yearly. No live queries required. | ✓ Good |
+| Dashboard-first, landing page later | Core value is the dashboard; landing page deferred | ✓ Good |
+| v1 = polish only | Fix quality debt while codebase is small and manageable | — Pending |
 
 ---
-*Last updated: 2026-02-27 after initialization*
+*Last updated: 2026-02-27 after research (datagouv has no sinistralité data, scope reduced to polish)*
