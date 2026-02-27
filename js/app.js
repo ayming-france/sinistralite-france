@@ -176,6 +176,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     renderNationalState(viewId, getData, getStore, VIEW_CONFIG[viewId], setLevel, selectCode, render);
   });
 
+  // Click outside closes drawers
+  document.addEventListener('click', function(e) {
+    var insDrawer = el('insightsDrawer');
+    var shareDrawer = el('shareDrawer');
+    if (insDrawer.classList.contains('open') && !insDrawer.contains(e.target) && !e.target.closest('.action-btn')) {
+      toggleInsights();
+    }
+    if (shareDrawer.classList.contains('open') && !shareDrawer.contains(e.target) && !e.target.closest('.action-btn')) {
+      toggleShare();
+    }
+  });
+
   // Keyboard shortcuts
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
