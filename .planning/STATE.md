@@ -5,33 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-02-27)
 
 **Core value:** Un utilisateur peut chercher un code NAF et voir instantanément le profil accidentel du secteur comparé aux moyennes nationales
-**Current focus:** Phase 1 - Branding et qualité du code
+**Current focus:** Phase 2 - Navigation mobile
 
 ## Current Position
 
-Phase: 1 of 5 (Branding et qualité du code)
-Plan: 2 of 3 in current phase
+Phase: 2 of 5 (Navigation mobile)
+Plan: 1 of 1 in current phase
 Status: In progress
-Last activity: 2026-02-27 — Plan 01-02 complété (skeletons, error handling, CSS cleanup)
+Last activity: 2026-02-27 — Plan 02-01 complété (bottom tab bar mobile, carry-over secteur, overflow fix)
 
-Progress: [██░░░░░░░░] 13%
+Progress: [███░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 53 min
-- Total execution time: 1.75 hours
+- Total plans completed: 3
+- Average duration: 45 min
+- Total execution time: 2.25 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-branding-et-robustesse | 2 | 105 min | 53 min |
+| 02-navigation-mobile | 1 | 30 min | 30 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (15 min), 01-02 (90 min)
-- Trend: checkpoint plan takes longer
+- Last 5 plans: 01-01 (15 min), 01-02 (90 min), 02-01 (30 min)
+- Trend: mobile CSS work faster than checkpoint-heavy plans
 
 *Updated after each plan completion*
 
@@ -51,6 +52,9 @@ Recent decisions affecting current work:
 - [01-02]: Skeleton à l'intérieur du .container (hérite du margin-left nav-rail, pas de layout shift).
 - [01-02]: Retry via window.location.reload() (pas de réinitialisation d'état partiel nécessaire).
 - [01-02]: Favicon SVG itéré 4x pendant le checkpoint pour atteindre tricolore bleu/blanc/rouge sans fond.
+- [02-01]: bottom-nav-label class distincte de nav-label (les labels du rail sont masqués par défaut, ceux du bottom bar toujours visibles).
+- [02-01]: Shared .nav-item[data-view] selector: boutons bottom bar réutilisent le selecteur initNav() sans modification JS.
+- [02-01]: overflow-x: hidden sur .container mobile + flex-shrink sur .level-tabs pour eviter le scroll horizontal.
 
 ### Pending Todos
 
@@ -63,5 +67,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 01-02-PLAN.md (skeletons, error handling, CSS cleanup, favicon tricolore)
+Stopped at: Completed 02-01-PLAN.md (bottom tab bar mobile, carry-over secteur, overflow fix)
 Resume file: None

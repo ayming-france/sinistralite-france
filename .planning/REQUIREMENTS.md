@@ -23,8 +23,8 @@ Requirements for polish release. Each maps to roadmap phases.
 
 ### Mobile
 
-- [ ] **MOBILE-01**: User can switch between AT/MP/Trajet views on screens under 768px
-- [ ] **MOBILE-02**: Nav rail transforms to a usable mobile navigation pattern (bottom bar or hamburger)
+- [x] **MOBILE-01**: User can switch between AT/MP/Trajet views on screens under 768px
+- [x] **MOBILE-02**: Nav rail transforms to a usable mobile navigation pattern (bottom bar or hamburger)
 
 ### Accessibility
 
@@ -88,8 +88,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | ROBUST-03 | Phase 1 | Complete (01-01) |
 | ROBUST-04 | Phase 1 | Complete |
 | ROBUST-05 | Phase 1 | Complete (01-01) |
-| MOBILE-01 | Phase 2 | Pending |
-| MOBILE-02 | Phase 2 | Pending |
+| MOBILE-01 | Phase 2 | Complete |
+| MOBILE-02 | Phase 2 | Complete |
 | A11Y-01 | Phase 3 | Pending |
 | A11Y-02 | Phase 3 | Pending |
 | A11Y-03 | Phase 3 | Pending |

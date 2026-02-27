@@ -40,6 +40,7 @@ A user can search any NAF sector code and instantly see its accident profile com
 - [ ] Mobile nav (nav rail disappears at 768px with no replacement)
 - [ ] Basic ARIA attributes on interactive elements
 - [ ] CSV export of current sector data
+- [ ] Self-contained data pipeline (copy refresh_data.py + parse_pdf.py from BPO, adapt paths)
 
 ### Out of Scope
 
@@ -54,7 +55,7 @@ A user can search any NAF sector code and instantly see its accident profile com
 
 ## Context
 
-- **Data source**: CNAM publishes BPO statistics yearly on ameli.fr (not data.gouv.fr). Excel files are downloaded and processed by `refresh_data.py` in the BPO project (`~/.claude/bpo/`). CNAM has 46 datasets on data.gouv.fr but none cover sinistralité.
+- **Data source**: CNAM publishes BPO statistics yearly on ameli.fr (not data.gouv.fr). Excel files are downloaded and processed by the data pipeline in `data/pipeline/`. CNAM has 46 datasets on data.gouv.fr but none cover sinistralité.
 - **Current state**: Working dashboard with 9.2 MB of static JSON across 3 files (at-data.json, mp-data.json, trajet-data.json). Pre-processed from the ameli.fr Excel files.
 - **Quality debt**: No tests, no error handling on fetch, dead CSS from removed features, Chart.js font references DM Sans (not loaded, falls back to sans-serif), ES5/ES6 style split between dashboard and landing page.
 - **Deployment**: GitHub Pages via `ayming-france/sinistralite-france` (public, deploy remote). Backup on `xXencarvXx/datagouv` (private, origin remote).
