@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sinistralité France | Données ouvertes</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a73e8'/%3E%3Ctext x='16' y='22' font-family='system-ui' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3ESF%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/nav.css">
+<link rel="stylesheet" href="styles/search.css">
+<link rel="stylesheet" href="styles/kpi.css">
+<link rel="stylesheet" href="styles/charts.css">
+<link rel="stylesheet" href="styles/drawers.css">
+<link rel="stylesheet" href="styles/dark.css">
+</head>
+<body>
+
+<!-- Top nav bar -->
+<nav class="top-nav">
+  <a href="landing.html" class="top-nav-logo"><span style="font-weight:700;font-size:1rem;color:var(--text)">Sinistralité France</span></a>
+  <div class="top-nav-right">
+    <button class="theme-toggle" id="themeToggle" aria-label="Changer le thème">
+      <i data-lucide="sun" class="icon-sun"></i>
+      <i data-lucide="moon" class="icon-moon"></i>
+    </button>
+  </div>
+</nav>
+
+<!-- Nav rail (GA4-style) -->
+<nav class="nav-rail" id="navRail">
+  <div class="nav-items">
+    <button class="nav-item active" data-view="at">
+      <span class="nav-icon-wrap"><i data-lucide="hard-hat"></i></span>
+      <span class="nav-label">Accidents du Travail</span>
+    </button>
+    <button class="nav-item" data-view="mp">
+      <span class="nav-icon-wrap"><i data-lucide="thermometer"></i></span>
+      <span class="nav-label">Maladies Pro.</span>
+    </button>
+    <button class="nav-item" data-view="trajet">
+      <span class="nav-icon-wrap"><i data-lucide="car"></i></span>
+      <span class="nav-label">Trajet</span>
+    </button>
+    <div class="nav-divider"></div>
+    <button class="nav-item disabled" data-view="overview">
+      <span class="nav-icon-wrap"><i data-lucide="layout-dashboard"></i></span>
+      <span class="nav-label">Vue d'ensemble</span>
+      <span class="nav-badge">bientôt</span>
+    </button>
+  </div>
+</nav>
+
+<div class="container">
+  <header>
+    <div class="header-eyebrow" id="headerEyebrow">Ameli Open Data 2023</div>
+    <h1 id="headerTitle">Accidents du Travail par Secteur</h1>
+    <p id="headerSubtitle">Statistiques de sinistralité par code NAF. Sélectionnez un secteur pour commencer.</p>
+  </header>
+
+  <!-- AT VIEW -->
+  <div class="view active" id="view-at">
+    <div class="search-section">
+      <div class="search-row">
+        <div class="search-wrapper">
+          <span class="icon">/</span>
+          <input type="text" id="at-searchInput" placeholder="Tapez un code NAF ou un mot-clé pour explorer un secteur..." autocomplete="off">
+          <div class="level-tabs" id="at-levelTabs">
+            <button data-level="naf2" class="active">NAF2</button>
+            <button data-level="naf4">NAF4</button>
+            <button data-level="naf5">NAF</button>
+          </div>
+          <div class="autocomplete" id="at-autocomplete"></div>
+        </div>
+        <div class="action-icons">
+          <button class="action-btn" id="shareBtn" data-tip="Partager"><i data-lucide="share-2"></i></button>
+          <button class="action-btn" id="insightsBtn" data-tip="Insights"><i data-lucide="sparkles"></i><span class="notif-badge" id="insightsBadge"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" id="at-emptyState">
+      <div class="empty-inner">
+        <div class="national-state" id="at-nationalState"></div>
+      </div>
+    </div>
+
+    <div class="results-section" id="at-results">
+      <div class="selection-header">
+        <div class="breadcrumb" id="at-breadcrumb"></div>
+        <h2 id="at-selTitle"></h2>
+        <div class="sub" id="at-selSub"></div>
+      </div>
+      <div class="kpi-grid" id="at-kpiGrid"></div>
+      <div class="comparison-card" id="at-compCard">
+        <div class="comp-header">
+          <h3 id="at-compTitle">Comparaison</h3>
+          <div class="comp-toggle" id="at-compToggle">
+            <button class="active" data-mode="chart"><i data-lucide="bar-chart-3"></i></button>
+            <button data-mode="table"><i data-lucide="list"></i></button>
+          </div>
+        </div>
+        <div class="chart-wrap" id="at-compWrap" style="height:320px"><canvas id="at-compChart"></canvas></div>
+        <div class="comp-table-wrap" id="at-compTable"></div>
+      </div>
+      <div class="position-card" id="at-positionCard">
+        <h3 id="at-posTitle">Positionnement IF</h3>
+        <div class="pos-strip-wrap" id="at-posStrip"></div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3>Causes d'accidents</h3>
+          <div class="chart-wrap" id="at-causesWrap" style="height:320px"><canvas id="at-causesChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3>Cascade de sévérité</h3>
+          <div id="at-funnelWrap"></div>
+        </div>
+      </div>
+      <div class="evo-section" id="at-evoSection" style="display:none">
+        <h3 class="evo-title">Évolution 2019 - 2023</h3>
+        <div class="evo-grid">
+          <div class="evo-card"><div class="evo-chart-wrap"><canvas id="at-evoEvents"></canvas></div></div>
+          <div class="evo-card"><div class="evo-chart-wrap"><canvas id="at-evoIF"></canvas></div></div>
+        </div>
+      </div>
+      <div class="demo-section" id="at-demoSection" style="display:none">
+        <h3 class="evo-title">Démographie des AT</h3>
+        <div class="demo-grid">
+          <div class="demo-card"><div class="demo-chart-wrap"><canvas id="at-demoSex"></canvas></div></div>
+          <div class="demo-card"><div class="demo-chart-wrap"><canvas id="at-demoAge"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MP VIEW -->
+  <div class="view" id="view-mp">
+    <div class="search-section">
+      <div class="search-row">
+        <div class="search-wrapper">
+          <span class="icon">/</span>
+          <input type="text" id="mp-searchInput" placeholder="Tapez un code NAF ou un mot-clé pour explorer un secteur..." autocomplete="off">
+          <div class="level-tabs" id="mp-levelTabs">
+            <button data-level="naf2" class="active">NAF2</button>
+            <button data-level="naf4">NAF4</button>
+            <button data-level="naf5">NAF</button>
+          </div>
+          <div class="autocomplete" id="mp-autocomplete"></div>
+        </div>
+        <div class="action-icons">
+          <button class="action-btn" id="mp-shareBtn" data-tip="Partager"><i data-lucide="share-2"></i></button>
+          <button class="action-btn" id="mp-insightsBtn" data-tip="Insights"><i data-lucide="sparkles"></i><span class="notif-badge" id="mp-insightsBadge"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" id="mp-emptyState">
+      <div class="empty-inner">
+        <div class="national-state" id="mp-nationalState"></div>
+      </div>
+    </div>
+
+    <div class="results-section" id="mp-results">
+      <div class="selection-header">
+        <div class="breadcrumb" id="mp-breadcrumb"></div>
+        <h2 id="mp-selTitle"></h2>
+        <div class="sub" id="mp-selSub"></div>
+      </div>
+      <div class="kpi-grid" id="mp-kpiGrid"></div>
+      <div class="comparison-card" id="mp-compCard">
+        <div class="comp-header">
+          <h3 id="mp-compTitle">Comparaison</h3>
+          <div class="comp-toggle" id="mp-compToggle">
+            <button class="active" data-mode="chart"><i data-lucide="bar-chart-3"></i></button>
+            <button data-mode="table"><i data-lucide="list"></i></button>
+          </div>
+        </div>
+        <div class="chart-wrap" id="mp-compWrap" style="height:320px"><canvas id="mp-compChart"></canvas></div>
+        <div class="comp-table-wrap" id="mp-compTable"></div>
+      </div>
+      <div class="position-card" id="mp-positionCard">
+        <h3 id="mp-posTitle">Positionnement IF</h3>
+        <div class="pos-strip-wrap" id="mp-posStrip"></div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3>Types de maladies</h3>
+          <div class="chart-wrap" id="mp-causesWrap" style="height:320px"><canvas id="mp-causesChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3>Cascade de sévérité</h3>
+          <div id="mp-funnelWrap"></div>
+        </div>
+      </div>
+      <div class="evo-section" id="mp-evoSection" style="display:none">
+        <h3 class="evo-title">Évolution 2019 - 2023</h3>
+        <div class="evo-grid">
+          <div class="evo-card"><div class="evo-chart-wrap"><canvas id="mp-evoEvents"></canvas></div></div>
+          <div class="evo-card"><div class="evo-chart-wrap"><canvas id="mp-evoIF"></canvas></div></div>
+        </div>
+      </div>
+      <div class="demo-section" id="mp-demoSection" style="display:none">
+        <h3 class="evo-title">Démographie des MP</h3>
+        <div class="demo-grid">
+          <div class="demo-card"><div class="demo-chart-wrap"><canvas id="mp-demoSex"></canvas></div></div>
+          <div class="demo-card"><div class="demo-chart-wrap"><canvas id="mp-demoAge"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAJET VIEW -->
+  <div class="view" id="view-trajet">
+    <div class="search-section">
+      <div class="search-row">
+        <div class="search-wrapper">
+          <span class="icon">/</span>
+          <input type="text" id="trajet-searchInput" placeholder="Tapez un code NAF ou un mot-clé pour explorer un secteur..." autocomplete="off">
+          <div class="level-tabs" id="trajet-levelTabs">
+            <button data-level="naf2" class="active">NAF2</button>
+            <button data-level="naf4">NAF4</button>
+            <button data-level="naf5">NAF</button>
+          </div>
+          <div class="autocomplete" id="trajet-autocomplete"></div>
+        </div>
+        <div class="action-icons">
+          <button class="action-btn" id="trajet-shareBtn" data-tip="Partager"><i data-lucide="share-2"></i></button>
+          <button class="action-btn" id="trajet-insightsBtn" data-tip="Insights"><i data-lucide="sparkles"></i><span class="notif-badge" id="trajet-insightsBadge"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" id="trajet-emptyState">
+      <div class="empty-inner">
+        <div class="national-state" id="trajet-nationalState"></div>
+      </div>
+    </div>
+
+    <div class="results-section" id="trajet-results">
+      <div class="selection-header">
+        <div class="breadcrumb" id="trajet-breadcrumb"></div>
+        <h2 id="trajet-selTitle"></h2>
+        <div class="sub" id="trajet-selSub"></div>
+      </div>
+      <div class="kpi-grid" id="trajet-kpiGrid"></div>
+      <div class="comparison-card" id="trajet-compCard">
+        <div class="comp-header">
+          <h3 id="trajet-compTitle">Comparaison</h3>
+          <div class="comp-toggle" id="trajet-compToggle">
+            <button class="active" data-mode="chart"><i data-lucide="bar-chart-3"></i></button>
+            <button data-mode="table"><i data-lucide="list"></i></button>
+          </div>
+        </div>
+        <div class="chart-wrap" id="trajet-compWrap" style="height:320px"><canvas id="trajet-compChart"></canvas></div>
+        <div class="comp-table-wrap" id="trajet-compTable"></div>
+      </div>
+      <div class="position-card" id="trajet-positionCard">
+        <h3 id="trajet-posTitle">Positionnement IF</h3>
+        <div class="pos-strip-wrap" id="trajet-posStrip"></div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-card" id="trajet-evoSection" style="display:none">
+          <h3>Évolution 2019 - 2023</h3>
+          <div class="evo-chart-wrap"><canvas id="trajet-evoEvents"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3>Cascade de sévérité</h3>
+          <div id="trajet-funnelWrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared drawers -->
+  <div class="insights-drawer" id="insightsDrawer">
+    <div class="insights-drawer-header">
+      <span class="drawer-icon"><i data-lucide="sparkles"></i></span>
+      <h3>Insights</h3>
+      <button class="close-btn" id="insightsCloseBtn" title="Fermer">&times;</button>
+    </div>
+    <div class="insights-drawer-sub" id="drawerSub">Sélectionnez un secteur</div>
+    <div class="insights-drawer-body" id="drawerBody">
+      <div class="insights-drawer-empty">Sélectionnez un secteur pour<br>afficher les insights.</div>
+    </div>
+  </div>
+
+  <div class="share-drawer" id="shareDrawer">
+    <div class="share-drawer-header">
+      <span class="drawer-icon"><i data-lucide="share-2"></i></span>
+      <h3>Partager</h3>
+      <button class="close-btn" id="shareCloseBtn" title="Fermer">&times;</button>
+    </div>
+    <div class="share-drawer-body">
+      <button class="share-option" id="copyLinkBtn">
+        <span class="share-option-icon">&#x1F517;</span>
+        <span class="share-option-label">Copier le lien</span>
+        <span class="share-option-arrow">&#x203A;</span>
+      </button>
+      <button class="share-option" id="downloadPDFBtn">
+        <span class="share-option-icon">&#x2193;</span>
+        <span class="share-option-label">Télécharger PDF</span>
+        <span class="share-option-arrow">&#x203A;</span>
+      </button>
+    </div>
+  </div>
+
+  <footer>
+    <span id="footerSource">Source : <a href="https://www.data.gouv.fr" target="_blank">data.gouv.fr, données ouvertes</a></span>
+    <span id="footerStats"></span>
+  </footer>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
