@@ -30,7 +30,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. L'utilisateur voit un skeleton ou spinner pendant le chargement des données, pas un écran vide
   4. Si une donnée échoue à se charger, l'utilisateur voit un message d'erreur clair avec un bouton pour réessayer
   5. La police des graphiques Chart.js est Lato, la clé localStorage du thème est cohérente, et aucune classe CSS morte ne subsiste
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — Branding: accents, favicon SVG, nav logo, Lato font, localStorage key
+- [ ] 01-02-PLAN.md — Robustesse: skeleton loaders, error handling, dead CSS cleanup + visual checkpoint
 
 ### Phase 2: Navigation mobile
 **Goal**: Un utilisateur sur téléphone peut naviguer entre les trois vues AT, MP et Trajet
