@@ -62,7 +62,7 @@ export function renderCausesChart(viewId, causes) {
             padding: 10,
             usePointStyle: true,
             pointStyle: 'circle',
-            font: { size: 11, family: "'DM Sans', sans-serif" },
+            font: { size: 11, family: "'Lato', sans-serif" },
             color: '#8b949e',
             generateLabels: function(chart) {
               var d = chart.data;
@@ -92,7 +92,7 @@ export function renderCausesChart(viewId, causes) {
         },
         datalabels: {
           color: '#fff',
-          font: { size: 12, weight: '600', family: "'DM Sans', sans-serif" },
+          font: { size: 12, weight: '600', family: "'Lato', sans-serif" },
           formatter: function(value) {
             return value >= 3 ? Math.round(value) + '%' : '';
           },
@@ -551,7 +551,7 @@ export function renderDemographics(viewId, entry) {
             padding: 12,
             usePointStyle: true,
             pointStyle: 'circle',
-            font: { size: 11, family: "'DM Sans', sans-serif" },
+            font: { size: 11, family: "'Lato', sans-serif" },
             color: themeColor('--text'),
             generateLabels: function(chart) {
               var d = chart.data;
@@ -571,7 +571,7 @@ export function renderDemographics(viewId, entry) {
         },
         datalabels: {
           color: '#fff',
-          font: { size: 14, weight: '600', family: "'DM Sans', sans-serif" },
+          font: { size: 14, weight: '600', family: "'Lato', sans-serif" },
           formatter: function(value) {
             var pct = sexTotal > 0 ? (value / sexTotal * 100).toFixed(0) : 0;
             return pct + '%';
@@ -635,7 +635,7 @@ export function renderDemographics(viewId, entry) {
         },
         y: {
           grid: { display: false },
-          ticks: { font: { size: 11, family: "'DM Sans', sans-serif" }, color: themeColor('--chart-label') }
+          ticks: { font: { size: 11, family: "'Lato', sans-serif" }, color: themeColor('--chart-label') }
         }
       }
     }

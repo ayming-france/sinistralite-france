@@ -63,7 +63,7 @@ export function switchView(viewId) {
 export function initNav(renderFn) {
   // Chart defaults
   Chart.defaults.color = '#8b949e';
-  Chart.defaults.font.family = "'DM Sans', sans-serif";
+  Chart.defaults.font.family = "'Lato', sans-serif";
   updateChartDefaults();
 
   // Nav rail click handlers
