@@ -257,7 +257,8 @@ export function downloadCSV(viewId) {
     // Already at finest level, export just this row
     rows.push(makeRow(vs.level, code, entry));
   } else {
-    // Export all NAF 5 children
+    // Selected sector first, then NAF 5 children
+    rows.push(makeRow(vs.level, code, entry));
     var naf5Store = getStore(viewId, 'naf5');
     if (naf5Store) {
       var keys = Object.keys(naf5Store).sort();
