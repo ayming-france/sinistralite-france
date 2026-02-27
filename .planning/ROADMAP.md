@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Branding et robustesse** (1/2 plans) - Accents, titres, favicon, états de chargement, CSS mort, polices, localStorage
 - [x] **Phase 2: Navigation mobile** (0/1 plans) - Remplacement du nav rail disparu sous 768px (completed 2026-02-27)
-- [ ] **Phase 3: Accessibilité** - ARIA, skip link, annonces screen reader
+- [x] **Phase 3: Accessibilité** - ARIA, skip link, annonces screen reader (completed 2026-02-27)
 - [ ] **Phase 4: Export CSV** - Téléchargement CSV des données du secteur courant
 - [ ] **Phase 5: Pipeline de données** - Scripts Python autonomes avec documentation
 
@@ -55,7 +55,7 @@ Plans:
   1. Chaque bouton, input et lien interactif a un aria-label descriptif lisible par un screen reader
   2. L'ouverture et la fermeture des drawers (Insights, Share) est annoncée par aria-live ou aria-expanded
   3. Un lien "Aller au contenu" est le premier élément focusable sur la page et fonctionne au clavier
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
 - [ ] 03-01-PLAN.md — ARIA labels, skip link, drawer focus management, :focus-visible CSS
 
@@ -90,6 +90,6 @@ Phases exécutent dans l'ordre numérique : 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Branding et robustesse | 1/2 | Complete    | 2026-02-27 |
 | 2. Navigation mobile | 0/1 | Complete    | 2026-02-27 |
-| 3. Accessibilité | 0/TBD | Not started | - |
+| 3. Accessibilité | 1/1 | Complete   | 2026-02-27 |
 | 4. Export CSV | 0/TBD | Not started | - |
 | 5. Pipeline de données | 0/TBD | Not started | - |

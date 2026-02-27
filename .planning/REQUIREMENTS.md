@@ -28,9 +28,9 @@ Requirements for polish release. Each maps to roadmap phases.
 
 ### Accessibility
 
-- [ ] **A11Y-01**: All interactive elements (buttons, inputs, links) have aria-labels
-- [ ] **A11Y-02**: Drawer open/close is announced to screen readers
-- [ ] **A11Y-03**: Skip-to-content link is present for keyboard users
+- [x] **A11Y-01**: All interactive elements (buttons, inputs, links) have aria-labels
+- [x] **A11Y-02**: Drawer open/close is announced to screen readers
+- [x] **A11Y-03**: Skip-to-content link is present for keyboard users
 
 ### Export
 
@@ -90,9 +90,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | ROBUST-05 | Phase 1 | Complete (01-01) |
 | MOBILE-01 | Phase 2 | Complete |
 | MOBILE-02 | Phase 2 | Complete |
-| A11Y-01 | Phase 3 | Pending |
-| A11Y-02 | Phase 3 | Pending |
-| A11Y-03 | Phase 3 | Pending |
+| A11Y-01 | Phase 3 | Complete |
+| A11Y-02 | Phase 3 | Complete |
+| A11Y-03 | Phase 3 | Complete |
 | EXPORT-01 | Phase 4 | Pending |
 | EXPORT-02 | Phase 4 | Pending |
 | PIPE-01 | Phase 5 | Pending |
