@@ -236,7 +236,8 @@
 
   @media (max-width: 768px) {
     .search-row { flex-wrap: wrap; }
-    .search-wrapper { flex: 1 1 100%; }
+    .search-wrapper { flex: 1 1 100%; flex-wrap: wrap; }
     .action-icons { flex: 0 0 auto; }
-    .level-tabs button { padding: 8px 10px; font-size: 0.72rem; }
+    .level-tabs { flex-shrink: 1; overflow-x: auto; gap: 1px; padding-right: 4px; }
+    .level-tabs button { padding: 8px 8px; font-size: 0.68rem; min-width: 0; }
   }

@@ -31,6 +31,7 @@ export function toggleTheme(renderFn) {
 
 export function switchView(viewId) {
   if (viewId === state.activeView) return;
+  var prevView = state.activeView;
   state.activeView = viewId;
 
   // Update nav
@@ -51,10 +52,11 @@ export function switchView(viewId) {
   // Update footer
   el('footerSource').innerHTML = 'Source : <a href="' + cfg.sourceUrl + '" target="_blank">' + cfg.sourceLabel + '</a>';
 
-  // Update hash
-  var vs = state.views[viewId];
-  if (vs.code) {
-    window.location.hash = viewId + '/' + vs.code;
+  // Always carry over the selected sector across tabs
+  var prevVs = state.views[prevView];
+  var code = prevVs && prevVs.code ? prevVs.code : state.views[viewId].code;
+  if (code) {
+    window.location.hash = viewId + '/' + code;
   } else {
     window.location.hash = viewId;
   }
