@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-27)
 
 **Core value:** Un utilisateur peut chercher un code NAF et voir instantanément le profil accidentel du secteur comparé aux moyennes nationales
-**Current focus:** Phase 3 - Accessibilité
+**Current focus:** Phase 4 - Export CSV
 
 ## Current Position
 
-Phase: 3 of 5 (Accessibilité)
+Phase: 4 of 5 (Export CSV)
 Plan: 1 of 1 in current phase
 Status: Completed
-Last activity: 2026-02-28 — Plan 03-01 complété (skip link, ARIA labels, focus trap drawers, :focus-visible)
+Last activity: 2026-02-28 — Plan 04-01 complété (CSV export button, downloadCSV function, disabled state)
 
-Progress: [████░░░░░░] 40%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -30,10 +30,11 @@ Progress: [████░░░░░░] 40%
 | 01-branding-et-robustesse | 2 | 105 min | 53 min |
 | 02-navigation-mobile | 1 | 30 min | 30 min |
 | 03-accessibilit | 1 | 3 min | 3 min |
+| 04-export-csv | 1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (15 min), 01-02 (90 min), 02-01 (30 min), 03-01 (3 min)
-- Trend: ARIA retrofitting très rapide grâce à l'audit préalable (RESEARCH.md complet)
+- Last 5 plans: 01-01 (15 min), 01-02 (90 min), 02-01 (30 min), 03-01 (3 min), 04-01 (2 min)
+- Trend: Export très rapide grâce au RESEARCH.md complet et à la structure existante des drawers
 
 *Updated after each plan completion*
 
@@ -59,6 +60,9 @@ Recent decisions affecting current work:
 - [03-01]: Focus trap implémenté en vanilla JS -- 2 drawers simples ne justifient pas une lib CDN.
 - [03-01]: releaseFocus exporté depuis insights.js pour disponibilité dans app.js si besoin futur.
 - [03-01]: aria-expanded synchronisé via setAllBtns pour les 3 préfixes (at/mp/trajet) en une seule passe.
+- [04-01]: downloadCSV uses hardcoded eventLabel map to avoid circular dependency between insights.js and state.js.
+- [04-01]: CSV button disabled state updated at render() end and at share drawer open to cover view-switch scenarios.
+- [04-01]: taux_gravite absent in Trajet data: null guard outputs empty string in CSV.
 
 ### Pending Todos
 
@@ -71,5 +75,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 03-01-PLAN.md (skip link, ARIA labels, focus trap drawers, :focus-visible)
+Stopped at: Completed 04-01-PLAN.md (CSV export button, downloadCSV function, disabled state)
 Resume file: None

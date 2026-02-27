@@ -34,8 +34,8 @@ Requirements for polish release. Each maps to roadmap phases.
 
 ### Export
 
-- [ ] **EXPORT-01**: User can export current sector's KPI data as a CSV file
-- [ ] **EXPORT-02**: CSV includes sector code, name, and all displayed KPI values
+- [x] **EXPORT-01**: User can export current sector's KPI data as a CSV file
+- [x] **EXPORT-02**: CSV includes sector code, name, and all displayed KPI values
 
 ### Data Pipeline
 
@@ -93,8 +93,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | A11Y-01 | Phase 3 | Complete |
 | A11Y-02 | Phase 3 | Complete |
 | A11Y-03 | Phase 3 | Complete |
-| EXPORT-01 | Phase 4 | Pending |
-| EXPORT-02 | Phase 4 | Pending |
+| EXPORT-01 | Phase 4 | Complete |
+| EXPORT-02 | Phase 4 | Complete |
 | PIPE-01 | Phase 5 | Pending |
 | PIPE-02 | Phase 5 | Pending |
 | PIPE-03 | Phase 5 | Pending |
