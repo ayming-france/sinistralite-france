@@ -4,6 +4,27 @@ import { fmt, el, viewEl } from './utils.js';
 import { state } from './state.js';
 import { getData, getStore } from './data.js';
 
+var FOCUSABLE = 'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+function trapFocus(drawer) {
+  var focusable = Array.from(drawer.querySelectorAll(FOCUSABLE));
+  var first = focusable[0];
+  var last = focusable[focusable.length - 1];
+  drawer._trapHandler = function(e) {
+    if (e.key !== 'Tab') return;
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  };
+  drawer.addEventListener('keydown', drawer._trapHandler);
+}
+
+export function releaseFocus(drawer) {
+  if (drawer._trapHandler) drawer.removeEventListener('keydown', drawer._trapHandler);
+}
+
 export function renderInsights(viewId, s, nat, causes, cfg, yearly) {
   var insights = [];
 
@@ -112,7 +133,10 @@ export function renderInsights(viewId, s, nat, causes, cfg, yearly) {
 function setAllBtns(suffix, cls, val) {
   ['', 'mp-', 'trajet-'].forEach(function(p) {
     var b = el(p + suffix);
-    if (b) b.classList.toggle(cls, val);
+    if (b) {
+      b.classList.toggle(cls, val);
+      b.setAttribute('aria-expanded', val ? 'true' : 'false');
+    }
   });
 }
 
@@ -121,10 +145,21 @@ export function toggleInsights() {
   if (shareDrawer.classList.contains('open')) {
     shareDrawer.classList.remove('open');
     setAllBtns('shareBtn', 'active', false);
+    releaseFocus(shareDrawer);
   }
   var drawer = el('insightsDrawer');
   var isOpen = drawer.classList.toggle('open');
   setAllBtns('insightsBtn', 'active', isOpen);
+  if (isOpen) {
+    trapFocus(drawer);
+    var closeBtn = drawer.querySelector('.close-btn');
+    if (closeBtn) closeBtn.focus();
+  } else {
+    releaseFocus(drawer);
+    var prefix = state.activeView === 'at' ? '' : state.activeView + '-';
+    var trigger = el(prefix + 'insightsBtn');
+    if (trigger) trigger.focus();
+  }
 }
 
 export function toggleShare() {
@@ -132,10 +167,21 @@ export function toggleShare() {
   if (insightsDrawer.classList.contains('open')) {
     insightsDrawer.classList.remove('open');
     setAllBtns('insightsBtn', 'active', false);
+    releaseFocus(insightsDrawer);
   }
   var drawer = el('shareDrawer');
   var isOpen = drawer.classList.toggle('open');
   setAllBtns('shareBtn', 'active', isOpen);
+  if (isOpen) {
+    trapFocus(drawer);
+    var closeBtn = drawer.querySelector('.close-btn');
+    if (closeBtn) closeBtn.focus();
+  } else {
+    releaseFocus(drawer);
+    var prefix = state.activeView === 'at' ? '' : state.activeView + '-';
+    var trigger = el(prefix + 'shareBtn');
+    if (trigger) trigger.focus();
+  }
 }
 
 export function copyLink() {

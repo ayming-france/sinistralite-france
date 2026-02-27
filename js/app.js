@@ -7,7 +7,7 @@ import { initNav, switchView } from './nav.js';
 import { setupSearch, selectCode, setLevel } from './search.js';
 import { renderKPIs, renderNationalState } from './kpi.js';
 import { renderCausesChart, renderFunnelChart, renderPositionStrip, renderComparisonChart, setupCompToggle, renderEvolutionCharts, renderDemographics } from './charts.js';
-import { renderInsights, toggleInsights, toggleShare, copyLink, downloadPDF } from './insights.js';
+import { renderInsights, toggleInsights, toggleShare, copyLink, downloadPDF, releaseFocus } from './insights.js';
 
 // Event listeners for drawer buttons (all views)
 function attachDrawerListeners() {
