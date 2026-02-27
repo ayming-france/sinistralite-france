@@ -7,7 +7,16 @@ import { initNav, switchView } from './nav.js';
 import { setupSearch, selectCode, setLevel } from './search.js';
 import { renderKPIs, renderNationalState } from './kpi.js';
 import { renderCausesChart, renderFunnelChart, renderPositionStrip, renderComparisonChart, setupCompToggle, renderEvolutionCharts, renderDemographics } from './charts.js';
-import { renderInsights, toggleInsights, toggleShare, copyLink, downloadPDF, releaseFocus } from './insights.js';
+import { renderInsights, toggleInsights, toggleShare, copyLink, downloadCSV, releaseFocus } from './insights.js';
+
+// ── CSV button disabled state ──
+function updateCSVBtnState() {
+  var csvBtn = el('downloadCSVBtn');
+  if (!csvBtn) return;
+  var hasCode = !!(state.views[state.activeView] && state.views[state.activeView].code);
+  csvBtn.disabled = !hasCode;
+  csvBtn.setAttribute('aria-disabled', hasCode ? 'false' : 'true');
+}
 
 // Event listeners for drawer buttons (all views)
 function attachDrawerListeners() {
@@ -17,7 +26,7 @@ function attachDrawerListeners() {
   });
   ['shareBtn', 'mp-shareBtn', 'trajet-shareBtn'].forEach(function(id) {
     var btn = el(id);
-    if (btn) btn.addEventListener('click', toggleShare);
+    if (btn) btn.addEventListener('click', function() { updateCSVBtnState(); toggleShare(); });
   });
   var closeIns = el('insightsCloseBtn');
   if (closeIns) closeIns.addEventListener('click', toggleInsights);
@@ -25,8 +34,8 @@ function attachDrawerListeners() {
   if (closeShare) closeShare.addEventListener('click', toggleShare);
   var copyBtn = el('copyLinkBtn');
   if (copyBtn) copyBtn.addEventListener('click', copyLink);
-  var pdfBtn = el('downloadPDFBtn');
-  if (pdfBtn) pdfBtn.addEventListener('click', downloadPDF);
+  var csvBtn = el('downloadCSVBtn');
+  if (csvBtn) csvBtn.addEventListener('click', function() { downloadCSV(state.activeView); });
 }
 
 // ── Render orchestration ──
@@ -94,6 +103,7 @@ function render(viewId, code, level) {
   renderComparisonChart(viewId, code, level, render);
   renderEvolutionCharts(viewId, entry, level);
   renderDemographics(viewId, entry);
+  updateCSVBtnState();
 }
 
 // ── URL hash routing ──
