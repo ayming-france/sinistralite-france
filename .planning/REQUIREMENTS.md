@@ -9,17 +9,17 @@ Requirements for polish release. Each maps to roadmap phases.
 
 ### Branding
 
-- [ ] **BRAND-01**: All French labels display proper accents (12 occurrences in kpi.js, state.js)
-- [ ] **BRAND-02**: Nav logo and page title show "Sinistralité France"
-- [ ] **BRAND-03**: Inline SVG favicon appears in browser tab on both index.html and landing.html
+- [x] **BRAND-01**: All French labels display proper accents (12 occurrences in kpi.js, state.js)
+- [x] **BRAND-02**: Nav logo and page title show "Sinistralité France"
+- [x] **BRAND-03**: Inline SVG favicon appears in browser tab on both index.html and landing.html
 
 ### Robustness
 
 - [ ] **ROBUST-01**: User sees a loading skeleton/spinner while data fetches
 - [ ] **ROBUST-02**: User sees a clear error message with retry button if data fetch fails
-- [ ] **ROBUST-03**: Chart.js font references use Lato (not DM Sans which is not loaded)
+- [x] **ROBUST-03**: Chart.js font references use Lato (not DM Sans which is not loaded)
 - [ ] **ROBUST-04**: Dead CSS classes from removed features are cleaned up
-- [ ] **ROBUST-05**: localStorage theme key is consistent between dashboard and landing page
+- [x] **ROBUST-05**: localStorage theme key is consistent between dashboard and landing page
 
 ### Mobile
 
@@ -80,14 +80,14 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BRAND-01 | Phase 1 | Pending |
-| BRAND-02 | Phase 1 | Pending |
-| BRAND-03 | Phase 1 | Pending |
+| BRAND-01 | Phase 1 | Complete (01-01) |
+| BRAND-02 | Phase 1 | Complete (01-01) |
+| BRAND-03 | Phase 1 | Complete (01-01) |
 | ROBUST-01 | Phase 1 | Pending |
 | ROBUST-02 | Phase 1 | Pending |
-| ROBUST-03 | Phase 1 | Pending |
+| ROBUST-03 | Phase 1 | Complete (01-01) |
 | ROBUST-04 | Phase 1 | Pending |
-| ROBUST-05 | Phase 1 | Pending |
+| ROBUST-05 | Phase 1 | Complete (01-01) |
 | MOBILE-01 | Phase 2 | Pending |
 | MOBILE-02 | Phase 2 | Pending |
 | A11Y-01 | Phase 3 | Pending |
@@ -107,4 +107,4 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ---
 *Requirements defined: 2026-02-27*
-*Last updated: 2026-02-27 — traceability updated after roadmap creation*
+*Last updated: 2026-02-27 — BRAND-01/02/03, ROBUST-03/05 completed via plan 01-01*

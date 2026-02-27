@@ -12,7 +12,7 @@ This milestone brings an already-functional dashboard to production quality. The
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Branding et robustesse** - Accents, titres, favicon, états de chargement, CSS mort, polices, localStorage
+- [x] **Phase 1: Branding et robustesse** (1/2 plans) - Accents, titres, favicon, états de chargement, CSS mort, polices, localStorage
 - [ ] **Phase 2: Navigation mobile** - Remplacement du nav rail disparu sous 768px
 - [ ] **Phase 3: Accessibilité** - ARIA, skip link, annonces screen reader
 - [ ] **Phase 4: Export CSV** - Téléchargement CSV des données du secteur courant
@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. La police des graphiques Chart.js est Lato, la clé localStorage du thème est cohérente, et aucune classe CSS morte ne subsiste
 **Plans:** 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — Branding: accents, favicon SVG, nav logo, Lato font, localStorage key
+- [x] 01-01-PLAN.md — Branding: accents, favicon SVG, nav logo, Lato font, localStorage key
 - [ ] 01-02-PLAN.md — Robustesse: skeleton loaders, error handling, dead CSS cleanup + visual checkpoint
 
 ### Phase 2: Navigation mobile
@@ -84,7 +84,7 @@ Phases exécutent dans l'ordre numérique : 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Branding et robustesse | 0/TBD | Not started | - |
+| 1. Branding et robustesse | 1/2 | In progress | - |
 | 2. Navigation mobile | 0/TBD | Not started | - |
 | 3. Accessibilité | 0/TBD | Not started | - |
 | 4. Export CSV | 0/TBD | Not started | - |
