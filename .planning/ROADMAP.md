@@ -67,7 +67,9 @@ Plans:
   1. Un bouton d'export CSV est accessible depuis le dashboard pour le secteur sélectionné
   2. Le fichier téléchargé contient le code NAF, le nom du secteur, et toutes les valeurs KPI affichées (IF, TG, événements, IP, décès, jours perdus, salariés)
   3. Le CSV s'ouvre correctement dans Excel avec les accents français préservés (encodage UTF-8 BOM)
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 04-01-PLAN.md — CSV export: bouton dans Share drawer, downloadCSV avec Blob + BOM, disabled state
 
 ### Phase 5: Pipeline de données
 **Goal**: Le projet contient un pipeline Python autonome documenté permettant de régénérer les fichiers JSON depuis les sources ameli.fr sans dépendance externe au projet BPO
