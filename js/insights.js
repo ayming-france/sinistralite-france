@@ -195,4 +195,65 @@ export function copyLink() {
   });
 }
 
-export function downloadPDF() { window.print(); }
+export function downloadCSV(viewId) {
+  var vs = state.views[viewId];
+  if (!vs || !vs.code) return;
+
+  var store = getStore(viewId, vs.level);
+  var entry = store[vs.code];
+  if (!entry) return;
+
+  var s = entry.stats;
+  var code = vs.code;
+  var libelle = (entry.libelle || '').replace(/"/g, '""');
+
+  var eventLabels = {
+    at: 'AT en 1er règlement',
+    mp: 'MP en 1er règlement',
+    trajet: 'Accidents de trajet'
+  };
+  var eventKeys = {
+    at: 'at_1er_reglement',
+    mp: 'mp_1er_reglement',
+    trajet: 'trajet_count'
+  };
+  var viewCodes = { at: 'AT', mp: 'MP', trajet: 'Trajet' };
+
+  var eventLabel = eventLabels[viewId];
+  var eventKey = eventKeys[viewId];
+
+  var headers = [
+    'Code NAF',
+    'Secteur',
+    'Indice de fréquence',
+    'Taux de gravité',
+    eventLabel,
+    'Incapacités permanentes',
+    'Décès',
+    'Jours perdus',
+    'Salariés'
+  ].join(';');
+
+  var row = [
+    code,
+    '"' + libelle + '"',
+    s.indice_frequence != null ? s.indice_frequence : '',
+    s.taux_gravite != null ? s.taux_gravite : '',
+    s[eventKey] != null ? s[eventKey] : '',
+    s.nouvelles_ip != null ? s.nouvelles_ip : '',
+    s.deces != null ? s.deces : '',
+    s.journees_it != null ? s.journees_it : '',
+    s.nb_salaries != null ? s.nb_salaries : ''
+  ].join(';');
+
+  var csv = '\uFEFF' + headers + '\r\n' + row + '\r\n';
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'sinistralite-' + viewCodes[viewId] + '-' + code + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
