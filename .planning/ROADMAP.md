@@ -90,6 +90,6 @@ Phases exécutent dans l'ordre numérique : 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Branding et robustesse | 1/2 | Complete    | 2026-02-27 |
 | 2. Navigation mobile | 0/1 | Complete    | 2026-02-27 |
-| 3. Accessibilité | 1/1 | Complete   | 2026-02-27 |
+| 3. Accessibilité | 1/1 | Complete    | 2026-02-27 |
 | 4. Export CSV | 0/TBD | Not started | - |
 | 5. Pipeline de données | 0/TBD | Not started | - |
