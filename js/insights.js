@@ -222,7 +222,10 @@ export function downloadCSV(viewId) {
   var eventLabel = eventLabels[viewId];
   var eventKey = eventKeys[viewId];
 
+  var viewNames = { at: 'Accidents du Travail', mp: 'Maladies Professionnelles', trajet: 'Accidents de Trajet' };
+
   var headers = [
+    'Type',
     'Code NAF',
     'Secteur',
     'Indice de fréquence',
@@ -235,6 +238,7 @@ export function downloadCSV(viewId) {
   ].join(';');
 
   var row = [
+    viewNames[viewId],
     code,
     '"' + libelle + '"',
     s.indice_frequence != null ? s.indice_frequence : '',
