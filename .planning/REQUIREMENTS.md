@@ -78,35 +78,33 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ## Traceability
 
-Updated during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BRAND-01 | — | Pending |
-| BRAND-02 | — | Pending |
-| BRAND-03 | — | Pending |
-| ROBUST-01 | — | Pending |
-| ROBUST-02 | — | Pending |
-| ROBUST-03 | — | Pending |
-| ROBUST-04 | — | Pending |
-| ROBUST-05 | — | Pending |
-| MOBILE-01 | — | Pending |
-| MOBILE-02 | — | Pending |
-| A11Y-01 | — | Pending |
-| A11Y-02 | — | Pending |
-| A11Y-03 | — | Pending |
-| EXPORT-01 | — | Pending |
-| EXPORT-02 | — | Pending |
-| PIPE-01 | — | Pending |
-| PIPE-02 | — | Pending |
-| PIPE-03 | — | Pending |
-| PIPE-04 | — | Pending |
+| BRAND-01 | Phase 1 | Pending |
+| BRAND-02 | Phase 1 | Pending |
+| BRAND-03 | Phase 1 | Pending |
+| ROBUST-01 | Phase 1 | Pending |
+| ROBUST-02 | Phase 1 | Pending |
+| ROBUST-03 | Phase 1 | Pending |
+| ROBUST-04 | Phase 1 | Pending |
+| ROBUST-05 | Phase 1 | Pending |
+| MOBILE-01 | Phase 2 | Pending |
+| MOBILE-02 | Phase 2 | Pending |
+| A11Y-01 | Phase 3 | Pending |
+| A11Y-02 | Phase 3 | Pending |
+| A11Y-03 | Phase 3 | Pending |
+| EXPORT-01 | Phase 4 | Pending |
+| EXPORT-02 | Phase 4 | Pending |
+| PIPE-01 | Phase 5 | Pending |
+| PIPE-02 | Phase 5 | Pending |
+| PIPE-03 | Phase 5 | Pending |
+| PIPE-04 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 19 total
-- Mapped to phases: 0
-- Unmapped: 19 (roadmap not yet created)
+- Mapped to phases: 19
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-27*
-*Last updated: 2026-02-27 after initial definition*
+*Last updated: 2026-02-27 — traceability updated after roadmap creation*
