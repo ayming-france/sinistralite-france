@@ -4,7 +4,7 @@ var DATASETS = {};
 
 export async function loadDataset(type) {
   if (DATASETS[type]) return DATASETS[type];
-  var resp = await fetch('/data/' + type + '-data.json');
+  var resp = await fetch('./data/' + type + '-data.json');
   var json = await resp.json();
   DATASETS[type] = json;
   return json;
