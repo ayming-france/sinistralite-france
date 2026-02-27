@@ -15,10 +15,10 @@ Requirements for polish release. Each maps to roadmap phases.
 
 ### Robustness
 
-- [ ] **ROBUST-01**: User sees a loading skeleton/spinner while data fetches
-- [ ] **ROBUST-02**: User sees a clear error message with retry button if data fetch fails
+- [x] **ROBUST-01**: User sees a loading skeleton/spinner while data fetches
+- [x] **ROBUST-02**: User sees a clear error message with retry button if data fetch fails
 - [x] **ROBUST-03**: Chart.js font references use Lato (not DM Sans which is not loaded)
-- [ ] **ROBUST-04**: Dead CSS classes from removed features are cleaned up
+- [x] **ROBUST-04**: Dead CSS classes from removed features are cleaned up
 - [x] **ROBUST-05**: localStorage theme key is consistent between dashboard and landing page
 
 ### Mobile
@@ -83,10 +83,10 @@ Deferred to future release. Tracked but not in current roadmap.
 | BRAND-01 | Phase 1 | Complete (01-01) |
 | BRAND-02 | Phase 1 | Complete (01-01) |
 | BRAND-03 | Phase 1 | Complete (01-01) |
-| ROBUST-01 | Phase 1 | Pending |
-| ROBUST-02 | Phase 1 | Pending |
+| ROBUST-01 | Phase 1 | Complete |
+| ROBUST-02 | Phase 1 | Complete |
 | ROBUST-03 | Phase 1 | Complete (01-01) |
-| ROBUST-04 | Phase 1 | Pending |
+| ROBUST-04 | Phase 1 | Complete |
 | ROBUST-05 | Phase 1 | Complete (01-01) |
 | MOBILE-01 | Phase 2 | Pending |
 | MOBILE-02 | Phase 2 | Pending |
