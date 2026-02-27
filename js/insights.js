@@ -218,7 +218,6 @@ export function downloadCSV(viewId) {
   var viewNames = { at: 'Accidents du Travail', mp: 'Maladies Professionnelles', trajet: 'Accidents de Trajet' };
   var eventLabel = eventLabels[viewId];
   var eventKey = eventKeys[viewId];
-  var levels = ['naf2', 'naf4', 'naf5'];
   var levelLabels = { naf2: 'NAF 2', naf4: 'NAF 4', naf5: 'NAF 5' };
 
   var headers = [
@@ -253,18 +252,19 @@ export function downloadCSV(viewId) {
   }
 
   var rows = [];
-  // Selected sector row first
-  rows.push(makeRow(vs.level, code, entry));
 
-  // Children from finer levels
-  var startIdx = levels.indexOf(vs.level);
-  for (var i = startIdx + 1; i < levels.length; i++) {
-    var childStore = getStore(viewId, levels[i]);
-    if (!childStore) continue;
-    var keys = Object.keys(childStore).sort();
-    for (var j = 0; j < keys.length; j++) {
-      if (keys[j].indexOf(code) === 0 && keys[j] !== code) {
-        rows.push(makeRow(levels[i], keys[j], childStore[keys[j]]));
+  if (vs.level === 'naf5') {
+    // Already at finest level, export just this row
+    rows.push(makeRow(vs.level, code, entry));
+  } else {
+    // Export all NAF 5 children
+    var naf5Store = getStore(viewId, 'naf5');
+    if (naf5Store) {
+      var keys = Object.keys(naf5Store).sort();
+      for (var j = 0; j < keys.length; j++) {
+        if (keys[j].indexOf(code) === 0) {
+          rows.push(makeRow('naf5', keys[j], naf5Store[keys[j]]));
+        }
       }
     }
   }
