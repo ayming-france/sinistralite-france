@@ -13,7 +13,7 @@ This milestone brings an already-functional dashboard to production quality. The
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Branding et robustesse** (1/2 plans) - Accents, titres, favicon, états de chargement, CSS mort, polices, localStorage
-- [ ] **Phase 2: Navigation mobile** (0/1 plans) - Remplacement du nav rail disparu sous 768px
+- [x] **Phase 2: Navigation mobile** (0/1 plans) - Remplacement du nav rail disparu sous 768px (completed 2026-02-27)
 - [ ] **Phase 3: Accessibilité** - ARIA, skip link, annonces screen reader
 - [ ] **Phase 4: Export CSV** - Téléchargement CSV des données du secteur courant
 - [ ] **Phase 5: Pipeline de données** - Scripts Python autonomes avec documentation
@@ -43,7 +43,7 @@ Plans:
   1. Sur un écran de 375px (iPhone SE), une navigation alternative (bottom bar ou hamburger) est visible et utilisable
   2. L'utilisateur peut basculer entre AT, MP et Trajet depuis un mobile sans avoir accès au nav rail de bureau
   3. La vue active est visuellement indiquée dans la navigation mobile
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
 - [ ] 02-01-PLAN.md — Bottom tab bar: HTML, CSS responsive, visual checkpoint
 
@@ -87,7 +87,7 @@ Phases exécutent dans l'ordre numérique : 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Branding et robustesse | 1/2 | Complete    | 2026-02-27 |
-| 2. Navigation mobile | 0/1 | Planned | - |
+| 2. Navigation mobile | 0/1 | Complete    | 2026-02-27 |
 | 3. Accessibilité | 0/TBD | Not started | - |
 | 4. Export CSV | 0/TBD | Not started | - |
 | 5. Pipeline de données | 0/TBD | Not started | - |
