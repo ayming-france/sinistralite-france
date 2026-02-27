@@ -56,6 +56,35 @@
 </nav>
 
 <div class="container">
+
+  <div class="loading-skeleton" id="loadingSkeleton">
+    <div class="skeleton-header">
+      <div class="skeleton-line skeleton-title"></div>
+      <div class="skeleton-line skeleton-subtitle"></div>
+    </div>
+    <div class="skeleton-kpi-grid">
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+    </div>
+    <div class="skeleton-charts">
+      <div class="skeleton-chart-card"></div>
+      <div class="skeleton-chart-card"></div>
+    </div>
+  </div>
+
+  <div class="error-state" id="errorState" style="display:none">
+    <div class="error-content">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <h2>Erreur de chargement</h2>
+      <p id="errorMessage">Impossible de charger les données.</p>
+      <button class="retry-btn" id="retryBtn">Réessayer</button>
+    </div>
+  </div>
+
   <header>
     <div class="header-eyebrow" id="headerEyebrow">Ameli Open Data 2023</div>
     <h1 id="headerTitle">Accidents du Travail par Secteur</h1>

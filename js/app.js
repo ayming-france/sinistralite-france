@@ -148,66 +148,89 @@ function loadFromHash() {
 
 // ── Init ──
 document.addEventListener('DOMContentLoaded', async function() {
-  // Load all 3 datasets in parallel
-  await Promise.all([
-    loadDataset('at'),
-    loadDataset('mp'),
-    loadDataset('trajet'),
-  ]);
+  try {
+    // Load all 3 datasets in parallel
+    await Promise.all([
+      loadDataset('at'),
+      loadDataset('mp'),
+      loadDataset('trajet'),
+    ]);
 
-  // Init nav (pass render for theme toggle re-render)
-  initNav(render);
+    // Hide skeleton, reveal content
+    var skeleton = document.getElementById('loadingSkeleton');
+    if (skeleton) skeleton.style.display = 'none';
 
-  // Attach drawer button listeners
-  attachDrawerListeners();
+    // Init nav (pass render for theme toggle re-render)
+    initNav(render);
 
-  // Setup search for each view
-  setupSearch('at', render);
-  setupSearch('mp', render);
-  setupSearch('trajet', render);
+    // Attach drawer button listeners
+    attachDrawerListeners();
 
-  // Setup comparison toggles
-  setupCompToggle('at');
-  setupCompToggle('mp');
-  setupCompToggle('trajet');
+    // Setup search for each view
+    setupSearch('at', render);
+    setupSearch('mp', render);
+    setupSearch('trajet', render);
 
-  // Render national default state for each view
-  ['at', 'mp', 'trajet'].forEach(function(viewId) {
-    renderNationalState(viewId, getData, getStore, VIEW_CONFIG[viewId], setLevel, selectCode, render);
-  });
+    // Setup comparison toggles
+    setupCompToggle('at');
+    setupCompToggle('mp');
+    setupCompToggle('trajet');
 
-  // Click outside closes drawers
-  document.addEventListener('click', function(e) {
-    var insDrawer = el('insightsDrawer');
-    var shareDrawer = el('shareDrawer');
-    if (insDrawer.classList.contains('open') && !insDrawer.contains(e.target) && !e.target.closest('.action-btn')) {
-      toggleInsights();
-    }
-    if (shareDrawer.classList.contains('open') && !shareDrawer.contains(e.target) && !e.target.closest('.action-btn')) {
-      toggleShare();
-    }
-  });
+    // Render national default state for each view
+    ['at', 'mp', 'trajet'].forEach(function(viewId) {
+      renderNationalState(viewId, getData, getStore, VIEW_CONFIG[viewId], setLevel, selectCode, render);
+    });
 
-  // Keyboard shortcuts
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      if (el('insightsDrawer').classList.contains('open')) { toggleInsights(); return; }
-      if (el('shareDrawer').classList.contains('open')) { toggleShare(); return; }
-    }
-    if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
-      var searchInput = viewEl(state.activeView, 'searchInput');
-      if (document.activeElement !== searchInput) {
-        e.preventDefault();
-        searchInput.focus();
-        searchInput.select();
+    // Click outside closes drawers
+    document.addEventListener('click', function(e) {
+      var insDrawer = el('insightsDrawer');
+      var shareDrawer = el('shareDrawer');
+      if (insDrawer.classList.contains('open') && !insDrawer.contains(e.target) && !e.target.closest('.action-btn')) {
+        toggleInsights();
       }
-    }
-  });
+      if (shareDrawer.classList.contains('open') && !shareDrawer.contains(e.target) && !e.target.closest('.action-btn')) {
+        toggleShare();
+      }
+    });
 
-  // Hash routing
-  window.addEventListener('hashchange', loadFromHash);
-  loadFromHash();
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        if (el('insightsDrawer').classList.contains('open')) { toggleInsights(); return; }
+        if (el('shareDrawer').classList.contains('open')) { toggleShare(); return; }
+      }
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+        var searchInput = viewEl(state.activeView, 'searchInput');
+        if (document.activeElement !== searchInput) {
+          e.preventDefault();
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+    });
 
-  // Init Lucide icons
-  lucide.createIcons();
+    // Hash routing
+    window.addEventListener('hashchange', loadFromHash);
+    loadFromHash();
+
+    // Init Lucide icons
+    lucide.createIcons();
+
+  } catch (err) {
+    // Hide skeleton
+    var skel = document.getElementById('loadingSkeleton');
+    if (skel) skel.style.display = 'none';
+
+    // Show error state
+    var errorState = document.getElementById('errorState');
+    var errorMsg = document.getElementById('errorMessage');
+    if (errorState) errorState.style.display = 'flex';
+    if (errorMsg) errorMsg.textContent = err.message || 'Impossible de charger les données.';
+
+    // Retry button reloads the page
+    var retryBtn = document.getElementById('retryBtn');
+    if (retryBtn) retryBtn.addEventListener('click', function() {
+      window.location.reload();
+    });
+  }
 });
