@@ -203,10 +203,7 @@ export function downloadCSV(viewId) {
   var entry = store[vs.code];
   if (!entry) return;
 
-  var s = entry.stats;
   var code = vs.code;
-  var libelle = (entry.libelle || '').replace(/"/g, '""');
-
   var eventLabels = {
     at: 'AT en 1er règlement',
     mp: 'MP en 1er règlement',
@@ -218,14 +215,15 @@ export function downloadCSV(viewId) {
     trajet: 'trajet_count'
   };
   var viewCodes = { at: 'AT', mp: 'MP', trajet: 'Trajet' };
-
+  var viewNames = { at: 'Accidents du Travail', mp: 'Maladies Professionnelles', trajet: 'Accidents de Trajet' };
   var eventLabel = eventLabels[viewId];
   var eventKey = eventKeys[viewId];
-
-  var viewNames = { at: 'Accidents du Travail', mp: 'Maladies Professionnelles', trajet: 'Accidents de Trajet' };
+  var levels = ['naf2', 'naf4', 'naf5'];
+  var levelLabels = { naf2: 'NAF 2', naf4: 'NAF 4', naf5: 'NAF 5' };
 
   var headers = [
     'Type',
+    'Niveau',
     'Code NAF',
     'Secteur',
     'Indice de fréquence',
@@ -237,20 +235,41 @@ export function downloadCSV(viewId) {
     'Salariés'
   ].join(';');
 
-  var row = [
-    viewNames[viewId],
-    code,
-    '"' + libelle + '"',
-    s.indice_frequence != null ? s.indice_frequence : '',
-    s.taux_gravite != null ? s.taux_gravite : '',
-    s[eventKey] != null ? s[eventKey] : '',
-    s.nouvelles_ip != null ? s.nouvelles_ip : '',
-    s.deces != null ? s.deces : '',
-    s.journees_it != null ? s.journees_it : '',
-    s.nb_salaries != null ? s.nb_salaries : ''
-  ].join(';');
+  function makeRow(level, c, e) {
+    var s = e.stats;
+    return [
+      viewNames[viewId],
+      levelLabels[level],
+      c,
+      '"' + (e.libelle || '').replace(/"/g, '""') + '"',
+      s.indice_frequence != null ? s.indice_frequence : '',
+      s.taux_gravite != null ? s.taux_gravite : '',
+      s[eventKey] != null ? s[eventKey] : '',
+      s.nouvelles_ip != null ? s.nouvelles_ip : '',
+      s.deces != null ? s.deces : '',
+      s.journees_it != null ? s.journees_it : '',
+      s.nb_salaries != null ? s.nb_salaries : ''
+    ].join(';');
+  }
 
-  var csv = '\uFEFF' + headers + '\r\n' + row + '\r\n';
+  var rows = [];
+  // Selected sector row first
+  rows.push(makeRow(vs.level, code, entry));
+
+  // Children from finer levels
+  var startIdx = levels.indexOf(vs.level);
+  for (var i = startIdx + 1; i < levels.length; i++) {
+    var childStore = getStore(viewId, levels[i]);
+    if (!childStore) continue;
+    var keys = Object.keys(childStore).sort();
+    for (var j = 0; j < keys.length; j++) {
+      if (keys[j].indexOf(code) === 0 && keys[j] !== code) {
+        rows.push(makeRow(levels[i], keys[j], childStore[keys[j]]));
+      }
+    }
+  }
+
+  var csv = '\uFEFF' + headers + '\r\n' + rows.join('\r\n') + '\r\n';
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
