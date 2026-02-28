@@ -39,7 +39,21 @@ A user can search any NAF sector code and instantly see its accident profile com
 
 ### Active
 
-(None. Define next milestone requirements with `/gsd:new-milestone`.)
+- [ ] Parse rapport annuel PDF for regional AT/Trajet data by caisse régionale
+- [ ] Generate regional JSON data (21 caisses, 2020-2024, AT + Trajet)
+- [ ] SVG choropleth map of France colored by AT/Trajet intensity per region
+- [ ] Region hover/click interaction with tooltip showing stats
+- [ ] Map integrates into existing dashboard alongside sector view
+
+## Current Milestone: v1.1 Carte régionale
+
+**Goal:** Add a regional map view showing AT and Trajet statistics by caisse régionale, parsed from the rapport annuel PDF.
+
+**Target features:**
+- Pipeline: parse rapport annuel PDF (Tableau 9 p.24 for AT, Tableau 17 p.37 for Trajet)
+- Data: regional JSON with 21 caisses + DOM-TOM, 5 years of AT/Trajet counts
+- Dashboard: inline SVG map of France, choropleth coloring, hover tooltips
+- Note: MP regional data not available in this source
 
 ### Out of Scope
 
@@ -49,7 +63,8 @@ A user can search any NAF sector code and instantly see its accident profile com
 - SIRENE company lookup — separate app
 - Landing page redesign — defer until needed
 - User authentication — not needed for public dashboard
-- IF by company size — data exists in PDFs only (not Excel), fragile to parse
+- IF by company size — bar chart in PDF (vector graphic), values not extractable as text
+- MP by caisse régionale — not available in rapport annuel (only AT and Trajet have regional tables)
 - Mobile native app — responsive web is sufficient
 
 ## Context
@@ -86,4 +101,4 @@ Deployment: GitHub Pages via `ayming-france/sinistralite-france` (public). Backu
 | Pipeline --pdf-dir required arg | Prevents silent runs without demographics data | ✓ Good |
 
 ---
-*Last updated: 2026-02-28 after v1.0 milestone*
+*Last updated: 2026-02-28 after starting v1.1 milestone*

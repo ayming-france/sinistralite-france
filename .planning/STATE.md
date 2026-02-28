@@ -5,15 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Un utilisateur peut chercher un code NAF et voir instantanément le profil accidentel du secteur comparé aux moyennes nationales
-**Current focus:** Planning next milestone
+**Current focus:** v1.1 Carte régionale
 
 ## Current Position
 
-Phase: v1.0 complete (5 phases, 7 plans)
-Status: Milestone shipped
-Last activity: 2026-02-28 — v1.0 milestone completed and archived
-
-Progress: [██████████] 100% (v1.0)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-28 — Milestone v1.1 started
 
 ## Accumulated Context
 
@@ -27,10 +26,10 @@ None.
 
 ### Blockers/Concerns
 
-None.
+- MP regional data not available (rapport annuel only covers AT and Trajet by caisse régionale)
 
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: v1.0 milestone completed
+Stopped at: Defining v1.1 milestone scope
 Resume file: None
