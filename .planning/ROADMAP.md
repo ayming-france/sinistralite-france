@@ -80,7 +80,10 @@ Plans:
   2. Un utilisateur peut lancer le pipeline depuis `data/pipeline/` et obtenir les fichiers at-data.json, mp-data.json, trajet-data.json mis à jour
   3. Le pipeline télécharge les fichiers Excel depuis ameli.fr et parse les fiches PDF par NAF pour les données démographiques
   4. Un README dans `data/pipeline/` explique les prérequis, la commande à lancer, et la fréquence de mise à jour attendue
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 05-01-PLAN.md — Copier et adapter refresh_data.py (téléchargement Excel, génération JSON)
+- [ ] 05-02-PLAN.md — Copier et adapter parse_pdf.py, requirements.txt, README.md
 
 ## Progress
 
@@ -94,4 +97,4 @@ Phases exécutent dans l'ordre numérique : 1 → 2 → 3 → 4 → 5
 | 2. Navigation mobile | 0/1 | Complete    | 2026-02-27 |
 | 3. Accessibilité | 1/1 | Complete    | 2026-02-27 |
 | 4. Export CSV | 1/1 | Complete    | 2026-02-28 |
-| 5. Pipeline de données | 0/TBD | Not started | - |
+| 5. Pipeline de données | 0/2 | Not started | - |
