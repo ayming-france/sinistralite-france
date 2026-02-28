@@ -40,7 +40,7 @@ Requirements for polish release. Each maps to roadmap phases.
 ### Data Pipeline
 
 - [x] **PIPE-01**: Project contains self-contained data pipeline in `data/pipeline/`
-- [ ] **PIPE-02**: Pipeline downloads Excel files from ameli.fr and outputs JSON to `data/`
+- [x] **PIPE-02**: Pipeline downloads Excel files from ameli.fr and outputs JSON to `data/`
 - [x] **PIPE-03**: Pipeline parses per-NAF PDF fiches for demographics data
 - [x] **PIPE-04**: Pipeline has a README explaining how to run a data refresh
 
@@ -96,7 +96,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | EXPORT-01 | Phase 4 | Complete |
 | EXPORT-02 | Phase 4 | Complete |
 | PIPE-01 | Phase 5 | Complete |
-| PIPE-02 | Phase 5 | Pending |
+| PIPE-02 | Phase 5 | Complete |
 | PIPE-03 | Phase 5 | Complete |
 | PIPE-04 | Phase 5 | Complete |
 

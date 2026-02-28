@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 ## Current Position
 
 Phase: 5 of 5 (Pipeline de données)
-Plan: 2 of 3 in current phase
+Plan: 3 of 3 in current phase
 Status: Completed
-Last activity: 2026-02-28 — Plan 05-02 complété (parse_pdf.py avec --pdf-dir CLI, requirements.txt, README.md)
+Last activity: 2026-02-28 — Plan 05-01 complété (refresh_data.py pipeline AT/MP adapte du BPO, JSON only, pas de pickle)
 
-Progress: [█████████░] 90%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -31,7 +31,7 @@ Progress: [█████████░] 90%
 | 02-navigation-mobile | 1 | 30 min | 30 min |
 | 03-accessibilit | 1 | 3 min | 3 min |
 | 04-export-csv | 1 | 2 min | 2 min |
-| 05-pipeline-de-donn-es | 2/3 | 8 min | 4 min |
+| 05-pipeline-de-donn-es | 3/3 | 12 min | 4 min |
 
 **Recent Trend:**
 - Last 5 plans: 01-01 (15 min), 01-02 (90 min), 02-01 (30 min), 03-01 (3 min), 04-01 (2 min)
@@ -65,6 +65,10 @@ Recent decisions affecting current work:
 - [04-01]: downloadCSV uses hardcoded eventLabel map to avoid circular dependency between insights.js and state.js.
 - [04-01]: CSV button disabled state updated at render() end and at share drawer open to cover view-switch scenarios.
 - [04-01]: taux_gravite absent in Trajet data: null guard outputs empty string in CSV.
+- [05-01]: naf38 supprime des sorties JSON (aucune reference dans dashboard JS confirmee par grep).
+- [05-01]: AT 2021 secondary download conserve : fournit les colonnes de causes de risque (col. 20-31) absentes du format 2023.
+- [05-01]: PDF/Trajet entierement optionnel via --pdf-dir : AT+MP generes seuls sans les PDFs.
+- [05-01]: PIPELINE_DIR/OUTPUT_DIR : scripts dans data/pipeline/, JSON dans data/ (un niveau au-dessus).
 - [05-02]: parse_pdf.py uses required --pdf-dir CLI arg (not optional) to avoid silent runs without demographics data.
 - [05-02]: parse_all_pdfs() retains explicit pdf_dir: Path parameter for clean integration with refresh_data.py.
 - [Phase 05]: parse_pdf.py uses required --pdf-dir CLI arg to avoid silent runs without demographics data
@@ -76,10 +80,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Research flag]: Phase 5 (Pipeline) — adapter les chemins de refresh_data.py et parse_pdf.py depuis le projet BPO existant (`~/.claude/bpo/`). Vérifier que les scripts sont bien là avant de planifier.
+None.
 
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 05-02-PLAN.md (parse_pdf.py --pdf-dir CLI, requirements.txt, README.md)
+Stopped at: Completed 05-01-PLAN.md (refresh_data.py pipeline AT/MP, JSON only, PIPELINE_DIR/OUTPUT_DIR, no pickle)
 Resume file: None

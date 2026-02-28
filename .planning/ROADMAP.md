@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Navigation mobile** (0/1 plans) - Remplacement du nav rail disparu sous 768px (completed 2026-02-27)
 - [x] **Phase 3: Accessibilité** - ARIA, skip link, annonces screen reader (completed 2026-02-27)
 - [x] **Phase 4: Export CSV** - Téléchargement CSV des données du secteur courant (completed 2026-02-27)
-- [ ] **Phase 5: Pipeline de données** - Scripts Python autonomes avec documentation
+- [x] **Phase 5: Pipeline de données** - Scripts Python autonomes avec documentation (completed 2026-02-28)
 
 ## Phase Details
 
@@ -80,7 +80,7 @@ Plans:
   2. Un utilisateur peut lancer le pipeline depuis `data/pipeline/` et obtenir les fichiers at-data.json, mp-data.json, trajet-data.json mis à jour
   3. Le pipeline télécharge les fichiers Excel depuis ameli.fr et parse les fiches PDF par NAF pour les données démographiques
   4. Un README dans `data/pipeline/` explique les prérequis, la commande à lancer, et la fréquence de mise à jour attendue
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 05-01-PLAN.md — Copier et adapter refresh_data.py (téléchargement Excel, génération JSON)
 - [ ] 05-02-PLAN.md — Copier et adapter parse_pdf.py, requirements.txt, README.md
@@ -97,4 +97,4 @@ Phases exécutent dans l'ordre numérique : 1 → 2 → 3 → 4 → 5
 | 2. Navigation mobile | 0/1 | Complete    | 2026-02-27 |
 | 3. Accessibilité | 1/1 | Complete    | 2026-02-27 |
 | 4. Export CSV | 1/1 | Complete    | 2026-02-28 |
-| 5. Pipeline de données | 1/2 | In Progress|  |
+| 5. Pipeline de données | 2/2 | Complete   | 2026-02-28 |
