@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A public dashboard that makes French workplace accident statistics (sinistralité) easy to understand, sector by sector. Built for both Ayming consultants analyzing client risk profiles and anyone interested in occupational safety data in France. Serves BPO data (AT, MP, Trajet) from pre-processed JSON files. Modular vanilla JS + ES modules architecture, upgraded from the original BPO single-file dashboard.
+A public dashboard that makes French workplace accident statistics (sinistralité) easy to understand, sector by sector. Built for Ayming consultants analyzing client risk profiles and anyone interested in occupational safety data in France. Features mobile navigation, accessibility, CSV export, and a self-contained data pipeline. Vanilla JS + ES modules architecture with static JSON data from ameli.fr.
 
 ## Core Value
 
@@ -21,31 +21,30 @@ A user can search any NAF sector code and instantly see its accident profile com
 - ✓ Comparison bar chart (top/bottom sectors) with click-to-navigate — existing
 - ✓ Multi-year evolution line charts (IF, TG) — existing
 - ✓ Demographics chart (age/gender distribution) — existing
-- ✓ Insights drawer with automated risk analysis (IF ratio, TG ratio, IP rate, deaths, trends) — existing
+- ✓ Insights drawer with automated risk analysis — existing
 - ✓ Share drawer (copy link, print/PDF) — existing
 - ✓ Dark/light theme toggle with persistence — existing
 - ✓ Hash-based deep linking (view/code) — existing
 - ✓ Responsive layout (mobile full-width drawers) — existing
 - ✓ Click-outside-to-close for drawers — existing
 - ✓ Keyboard shortcuts (Escape to close, / to focus search) — existing
+- ✓ French accents on all labels (12 occurrences fixed) — v1.0
+- ✓ Branding "Sinistralité France" with SVG favicon — v1.0
+- ✓ Skeleton loaders and error handling with retry — v1.0
+- ✓ Chart.js Lato font, dead CSS cleanup, localStorage key fix — v1.0
+- ✓ Mobile bottom tab bar navigation (AT, MP, Trajet) — v1.0
+- ✓ ARIA labels (38), skip link, drawer focus trap, :focus-visible — v1.0
+- ✓ CSV export with UTF-8 BOM, semicolon separator, children rows — v1.0
+- ✓ Self-contained Python data pipeline (refresh_data.py, parse_pdf.py) — v1.0
 
 ### Active
 
-- [ ] Fix missing French accents in labels (12 occurrences)
-- [ ] Update branding to "Sinistralité France"
-- [ ] Add favicon
-- [ ] Add error handling on data fetch (loading state, error messages)
-- [ ] Fix dead CSS classes and font reference bugs (DM Sans → Lato)
-- [ ] Fix localStorage key mismatch between dashboard and landing page
-- [ ] Mobile nav (nav rail disappears at 768px with no replacement)
-- [ ] Basic ARIA attributes on interactive elements
-- [ ] CSV export of current sector data
-- [ ] Self-contained data pipeline (copy refresh_data.py + parse_pdf.py from BPO, adapt paths)
+(None. Define next milestone requirements with `/gsd:new-milestone`.)
 
 ### Out of Scope
 
-- Live datagouv MCP queries — sinistralité data is on ameli.fr, not data.gouv.fr. Static JSON from BPO pipeline is the right approach.
-- Cloudflare Worker proxy — not needed since data is static, updated annually via BPO refresh_data.py
+- Live datagouv MCP queries — sinistralité data is on ameli.fr, not data.gouv.fr. Static JSON pipeline is the right approach.
+- Cloudflare Worker proxy — not needed since data is static, updated annually
 - Ameli health data integration — separate app/milestone if needed
 - SIRENE company lookup — separate app
 - Landing page redesign — defer until needed
@@ -55,11 +54,11 @@ A user can search any NAF sector code and instantly see its accident profile com
 
 ## Context
 
-- **Data source**: CNAM publishes BPO statistics yearly on ameli.fr (not data.gouv.fr). Excel files are downloaded and processed by the data pipeline in `data/pipeline/`. CNAM has 46 datasets on data.gouv.fr but none cover sinistralité.
-- **Current state**: Working dashboard with 9.2 MB of static JSON across 3 files (at-data.json, mp-data.json, trajet-data.json). Pre-processed from the ameli.fr Excel files.
-- **Quality debt**: No tests, no error handling on fetch, dead CSS from removed features, Chart.js font references DM Sans (not loaded, falls back to sans-serif), ES5/ES6 style split between dashboard and landing page.
-- **Deployment**: GitHub Pages via `ayming-france/sinistralite-france` (public, deploy remote). Backup on `xXencarvXx/datagouv` (private, origin remote).
-- **Landing page**: 1,869-line self-contained HTML page, deferred from this milestone.
+Shipped v1.0 with 7,091 LOC across JS, CSS, HTML, and Python.
+Tech stack: Vanilla JS + ES modules, Chart.js 4.4.7, Lucide icons, Lato font. No build step.
+Data: 9.2 MB static JSON (at-data.json, mp-data.json, trajet-data.json) from ameli.fr Excel files.
+Pipeline: Python scripts in `data/pipeline/` with optional PDF parsing for demographics.
+Deployment: GitHub Pages via `ayming-france/sinistralite-france` (public). Backup on `xXencarvXx/datagouv` (private).
 
 ## Constraints
 
@@ -77,7 +76,14 @@ A user can search any NAF sector code and instantly see its accident profile com
 | Static JSON from BPO pipeline | Sinistralité data is on ameli.fr, not datagouv. Annual refresh is sufficient. | ✓ Good |
 | No backend/proxy needed | Data is static, updated yearly. No live queries required. | ✓ Good |
 | Dashboard-first, landing page later | Core value is the dashboard; landing page deferred | ✓ Good |
-| v1 = polish only | Fix quality debt while codebase is small and manageable | — Pending |
+| v1 = polish only | Fix quality debt while codebase is small and manageable | ✓ Good |
+| Lato as sole font | DM Sans was never loaded; Lato is consistent across all charts and UI | ✓ Good |
+| SVG data URI favicon | No external file needed, tricolore design (bleu/blanc/rouge) | ✓ Good |
+| localStorage key: datagouv-theme | Namespaced, shared between dashboard and landing page | ✓ Good |
+| Bottom tab bar for mobile | Simpler than hamburger, matches 3-view structure exactly | ✓ Good |
+| Focus trap in vanilla JS | 2 drawers too simple to justify a CDN library | ✓ Good |
+| CSV semicolons + UTF-8 BOM | French Excel defaults expect semicolons; BOM preserves accents | ✓ Good |
+| Pipeline --pdf-dir required arg | Prevents silent runs without demographics data | ✓ Good |
 
 ---
-*Last updated: 2026-02-27 after research (datagouv has no sinistralité data, scope reduced to polish)*
+*Last updated: 2026-02-28 after v1.0 milestone*
