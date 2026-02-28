@@ -271,12 +271,13 @@ export function downloadCSV(viewId) {
   }
 
   var libelle = (entry.libelle || '').replace(/"/g, '""');
+  var pad = ';;;;;;;;;;';
   var meta = [
-    'Sinistralité France',
-    'Source : données CNAM/ameli.fr 2023',
-    'Vue : ' + viewNames[viewId],
-    'Secteur : ' + code + ' - ' + libelle,
-    ''
+    'Sinistralité France' + pad,
+    'Source : données CNAM/ameli.fr 2023' + pad,
+    'Vue : ' + viewNames[viewId] + pad,
+    'Secteur : ' + code + ' - ' + libelle + pad,
+    pad
   ].join('\r\n');
 
   var csv = '\uFEFF' + meta + '\r\n' + headers + '\r\n' + rows.join('\r\n') + '\r\n';
