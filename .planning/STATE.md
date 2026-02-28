@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-27)
 
 **Core value:** Un utilisateur peut chercher un code NAF et voir instantanément le profil accidentel du secteur comparé aux moyennes nationales
-**Current focus:** Phase 4 - Export CSV
+**Current focus:** Phase 5 - Pipeline de données
 
 ## Current Position
 
-Phase: 4 of 5 (Export CSV)
-Plan: 1 of 1 in current phase
+Phase: 5 of 5 (Pipeline de données)
+Plan: 2 of 3 in current phase
 Status: Completed
-Last activity: 2026-02-28 — Plan 04-01 complété (CSV export button, downloadCSV function, disabled state)
+Last activity: 2026-02-28 — Plan 05-02 complété (parse_pdf.py avec --pdf-dir CLI, requirements.txt, README.md)
 
-Progress: [████████░░] 80%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
@@ -31,12 +31,14 @@ Progress: [████████░░] 80%
 | 02-navigation-mobile | 1 | 30 min | 30 min |
 | 03-accessibilit | 1 | 3 min | 3 min |
 | 04-export-csv | 1 | 2 min | 2 min |
+| 05-pipeline-de-donn-es | 2/3 | 8 min | 4 min |
 
 **Recent Trend:**
 - Last 5 plans: 01-01 (15 min), 01-02 (90 min), 02-01 (30 min), 03-01 (3 min), 04-01 (2 min)
 - Trend: Export très rapide grâce au RESEARCH.md complet et à la structure existante des drawers
 
 *Updated after each plan completion*
+| Phase 05 P02 | 8 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -63,6 +65,10 @@ Recent decisions affecting current work:
 - [04-01]: downloadCSV uses hardcoded eventLabel map to avoid circular dependency between insights.js and state.js.
 - [04-01]: CSV button disabled state updated at render() end and at share drawer open to cover view-switch scenarios.
 - [04-01]: taux_gravite absent in Trajet data: null guard outputs empty string in CSV.
+- [05-02]: parse_pdf.py uses required --pdf-dir CLI arg (not optional) to avoid silent runs without demographics data.
+- [05-02]: parse_all_pdfs() retains explicit pdf_dir: Path parameter for clean integration with refresh_data.py.
+- [Phase 05]: parse_pdf.py uses required --pdf-dir CLI arg to avoid silent runs without demographics data
+- [Phase 05]: parse_all_pdfs() retains explicit pdf_dir: Path parameter for clean integration with refresh_data.py
 
 ### Pending Todos
 
@@ -75,5 +81,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 04-01-PLAN.md (CSV export button, downloadCSV function, disabled state)
+Stopped at: Completed 05-02-PLAN.md (parse_pdf.py --pdf-dir CLI, requirements.txt, README.md)
 Resume file: None

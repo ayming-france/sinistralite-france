@@ -39,10 +39,10 @@ Requirements for polish release. Each maps to roadmap phases.
 
 ### Data Pipeline
 
-- [ ] **PIPE-01**: Project contains self-contained data pipeline in `data/pipeline/`
+- [x] **PIPE-01**: Project contains self-contained data pipeline in `data/pipeline/`
 - [ ] **PIPE-02**: Pipeline downloads Excel files from ameli.fr and outputs JSON to `data/`
-- [ ] **PIPE-03**: Pipeline parses per-NAF PDF fiches for demographics data
-- [ ] **PIPE-04**: Pipeline has a README explaining how to run a data refresh
+- [x] **PIPE-03**: Pipeline parses per-NAF PDF fiches for demographics data
+- [x] **PIPE-04**: Pipeline has a README explaining how to run a data refresh
 
 ## v2 Requirements
 
@@ -95,10 +95,10 @@ Deferred to future release. Tracked but not in current roadmap.
 | A11Y-03 | Phase 3 | Complete |
 | EXPORT-01 | Phase 4 | Complete |
 | EXPORT-02 | Phase 4 | Complete |
-| PIPE-01 | Phase 5 | Pending |
+| PIPE-01 | Phase 5 | Complete |
 | PIPE-02 | Phase 5 | Pending |
-| PIPE-03 | Phase 5 | Pending |
-| PIPE-04 | Phase 5 | Pending |
+| PIPE-03 | Phase 5 | Complete |
+| PIPE-04 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 19 total
