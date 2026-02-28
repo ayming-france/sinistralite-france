@@ -308,6 +308,72 @@ def parse_siege_lesions(cell_text: str) -> dict[str, int]:
     return result
 
 
+def _extract_section(cell_text: str, header: str, stop_headers: list[str]) -> str:
+    """Extrait le texte entre un header de section et le prochain header (ou la fin)."""
+    lines = cell_text.split("\n")
+    in_section = False
+    section_lines = []
+    for line in lines:
+        if header in line.upper():
+            in_section = True
+            continue
+        if in_section:
+            if any(h in line.upper() for h in stop_headers):
+                break
+            section_lines.append(line)
+    return "\n".join(section_lines)
+
+
+def _parse_section_rows(section_text: str, patterns: list[tuple[str, str]]) -> dict[str, int]:
+    """Parse les lignes d'une section de répartition avec les patterns donnés."""
+    result = {}
+    for group_name, pattern in patterns:
+        m = re.search(
+            r"\d+\s*" + pattern + r".*?\s+([\d\s]+?)$",
+            section_text,
+            re.MULTILINE,
+        )
+        if m:
+            nums_text = m.group(1).strip()
+            digit_groups = re.findall(r"\d+", nums_text)
+            values = parse_table_row_numbers(digit_groups, ROW_MAX_VALUES)
+            result[group_name] = values[0] if values else 0
+        else:
+            result[group_name] = 0
+    return result
+
+
+def parse_activite_physique(cell_text: str) -> dict[str, int]:
+    """Extrait les comptes AT par activité physique spécifique depuis une cellule (page 2, cell [1][6])."""
+    section = _extract_section(cell_text, "ACTIVITE PHYSIQUE", ["REPARTITION", "MODALITE"])
+    return _parse_section_rows(section, [
+        ("operation_machine", r"Op[ée]ration de machine"),
+        ("outils_main", r"Travail avec des outils [àa] main"),
+        ("conduite_transport", r"Conduite/pr[ée]sence moyen de transport"),
+        ("manipulation_objets", r"Manipulation d.objets"),
+        ("transport_manuel", r"Transport manuel"),
+        ("mouvement", r"Mouvement"),
+        ("presence", r"Pr[ée]sence"),
+        ("autre", r"Autre ou sans information"),
+    ])
+
+
+def parse_modalite_blessure(cell_text: str) -> dict[str, int]:
+    """Extrait les comptes AT par modalité de la blessure depuis une cellule (page 2, cell [1][6])."""
+    section = _extract_section(cell_text, "MODALITE DE LA BLESSURE", ["REPARTITION", "(1)"])
+    return _parse_section_rows(section, [
+        ("contact_electrique", r"Contact courant [ée]lectrique"),
+        ("noyade_ensevelissement", r"Noyade, ensevelissement"),
+        ("ecrasement_mouvement", r"[ÉE]crasement mouvement"),
+        ("heurt_objet", r"Heurt par objet"),
+        ("contact_coupant", r"Contact agent mat[ée]riel coupant"),
+        ("coincement", r"Coincement, [ée]crasement"),
+        ("contrainte_corps", r"Contrainte du corps"),
+        ("morsure", r"Morsure, coup de pied"),
+        ("autre", r"Autre ou sans information"),
+    ])
+
+
 def parse_one_pdf(path: str | Path) -> dict | None:
     """Parse une seule fiche PDF NAF.
 
@@ -356,6 +422,14 @@ def parse_one_pdf(path: str | Path) -> dict | None:
             age = parse_age(cell_text)
             siege = parse_siege_lesions(cell_text)
 
+        # Page 2 right side: activité physique + modalité blessure (cell [1][6])
+        activite = {}
+        modalite = {}
+        if len(tables) >= 3 and len(tables[2]) >= 2 and len(tables[2][1]) >= 7 and tables[2][1][6]:
+            right_cell = tables[2][1][6]
+            activite = parse_activite_physique(right_cell)
+            modalite = parse_modalite_blessure(right_cell)
+
         # Page 3 : détail MP (sexe + âge) - même format, index de tableau différent
         mp_sex = {}
         mp_age = {}
@@ -375,6 +449,8 @@ def parse_one_pdf(path: str | Path) -> dict | None:
             "sex": sex,
             "age": age,
             "siege_lesions": siege,
+            "activite_physique": activite,
+            "modalite_blessure": modalite,
             "mp_sex": mp_sex,
             "mp_age": mp_age,
         }
