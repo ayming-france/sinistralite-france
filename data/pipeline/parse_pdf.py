@@ -276,6 +276,38 @@ def parse_age(cell_text: str) -> dict[str, int]:
     return result
 
 
+def parse_siege_lesions(cell_text: str) -> dict[str, int]:
+    """Extrait les comptes AT par siège des lésions depuis le texte d'une cellule de tableau (page 2)."""
+    siege_patterns = [
+        ("non_determine", r"Localisation de la blessure non d[ée]termin[ée]e"),
+        ("tete", r"T[êe]te, sans autre sp[ée]cification"),
+        ("cou", r"Cou, dont colonne vert[ée]brale"),
+        ("dos", r"Dos, dont colonne vert[ée]brale"),
+        ("torse", r"Torse et organes"),
+        ("membres_superieurs", r"Membres sup[ée]rieurs"),
+        ("membres_inferieurs", r"Membres inf[ée]rieurs"),
+        ("corps_entier", r"Ensemble du corps"),
+        ("autres", r"Autres parties du corps"),
+    ]
+
+    result = {}
+    for group_name, pattern in siege_patterns:
+        m = re.search(
+            r"\d+\s*" + pattern + r".*?\s+([\d\s]+?)$",
+            cell_text,
+            re.MULTILINE,
+        )
+        if m:
+            nums_text = m.group(1).strip()
+            digit_groups = re.findall(r"\d+", nums_text)
+            values = parse_table_row_numbers(digit_groups, ROW_MAX_VALUES)
+            result[group_name] = values[0] if values else 0
+        else:
+            result[group_name] = 0
+
+    return result
+
+
 def parse_one_pdf(path: str | Path) -> dict | None:
     """Parse une seule fiche PDF NAF.
 
@@ -316,10 +348,13 @@ def parse_one_pdf(path: str | Path) -> dict | None:
         sex = {}
         age = {}
 
+        siege = {}
+
         if len(tables) >= 3 and len(tables[2]) >= 2 and tables[2][1][0]:
             cell_text = tables[2][1][0]
             sex = parse_sex(cell_text)
             age = parse_age(cell_text)
+            siege = parse_siege_lesions(cell_text)
 
         # Page 3 : détail MP (sexe + âge) - même format, index de tableau différent
         mp_sex = {}
@@ -339,6 +374,7 @@ def parse_one_pdf(path: str | Path) -> dict | None:
             "mp_yearly": mp_yearly,
             "sex": sex,
             "age": age,
+            "siege_lesions": siege,
             "mp_sex": mp_sex,
             "mp_age": mp_age,
         }
