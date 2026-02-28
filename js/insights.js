@@ -270,7 +270,16 @@ export function downloadCSV(viewId) {
     }
   }
 
-  var csv = '\uFEFF' + headers + '\r\n' + rows.join('\r\n') + '\r\n';
+  var libelle = (entry.libelle || '').replace(/"/g, '""');
+  var meta = [
+    'Sinistralité France',
+    'Source : données CNAM/ameli.fr 2023',
+    'Vue : ' + viewNames[viewId],
+    'Secteur : ' + code + ' - ' + libelle,
+    ''
+  ].join('\r\n');
+
+  var csv = '\uFEFF' + meta + '\r\n' + headers + '\r\n' + rows.join('\r\n') + '\r\n';
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
