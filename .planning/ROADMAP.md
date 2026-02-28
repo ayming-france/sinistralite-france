@@ -97,4 +97,4 @@ Phases exécutent dans l'ordre numérique : 1 → 2 → 3 → 4 → 5
 | 2. Navigation mobile | 0/1 | Complete    | 2026-02-27 |
 | 3. Accessibilité | 1/1 | Complete    | 2026-02-27 |
 | 4. Export CSV | 1/1 | Complete    | 2026-02-28 |
-| 5. Pipeline de données | 2/2 | Complete   | 2026-02-28 |
+| 5. Pipeline de données | 2/2 | Complete    | 2026-02-28 |
