@@ -1,221 +1,226 @@
 # Project Research Summary
 
-**Project:** Sinistralité France — dashboard open data AT/MP/Trajet
-**Domain:** Static SPA dashboard migrating from pre-built JSON to live open data API
-**Researched:** 2026-02-27
-**Confidence:** HIGH (stack and architecture verified with live API calls; features from official RGAA sources; pitfalls from official datagouv GitHub issues)
+**Project:** Sinistralité France — milestone v1.1 carte régionale AT/Trajet
+**Domain:** SVG choroplèthe interactif intégré à un tableau de bord vanilla JS existant
+**Researched:** 2026-02-28
+**Confidence:** HIGH (stack et architecture basés sur inspection directe du code existant)
 
 ## Executive Summary
 
-This project is an upgrade of an existing vanilla JS dashboard that currently serves French workplace accident statistics (sinistralité AT/MP/Trajet) from pre-built JSON files. The data source is ameli.fr Excel files processed by an existing Python pipeline. The upgrade has two distinct workstreams: (1) a "polish" pass to bring the dashboard to production quality, covering accessibility (RGAA 4.1 compliance), mobile navigation, loading states, and metadata; and (2) a "live data" migration that replaces the 9.2 MB static JSON files with live queries. These workstreams have different risk profiles and the polish pass should ship first.
+Ce milestone ajoute une vue carte choroplèthe par caisse régionale au tableau de bord de sinistralité France existant (7 091 LOC, Chart.js 4.4.7, vanilla JS, GitHub Pages). La contrainte fondamentale est l'absence de build step et de dépendances externes. L'approche validée par la recherche est un SVG France inline dans le HTML avec coloration directe via `setAttribute('fill')`, des données extraites du rapport annuel Ameli par un nouveau script Python (`parse_regional.py`), et une intégration comme quatrième vue dans le système de navigation existant. Aucune librairie cartographique (D3, Leaflet, amCharts) n'est justifiée pour 21 régions statiques.
 
-The recommended architecture is a thin Cloudflare Worker acting as a REST-to-JSON-RPC adapter in front of the datagouv MCP server. The browser calls the Worker via a plain REST endpoint (CORS-safe); the Worker proxies to `mcp.data.gouv.fr/mcp` using JSON-RPC 2.0 and caches responses at the edge. For cases where only dataset metadata is needed, the datagouv REST API is CORS-enabled and can be called directly from the browser without any proxy. The existing GitHub Actions pipeline for Excel processing remains the correct approach for the raw sinistralité data, since those files live on ameli.fr (not on data.gouv.fr) and cannot be reached via the datagouv MCP.
+Le premier risque majeur est le mapping caisses-régions, qui n'est pas bijectif. Les 21 caisses du rapport Ameli ne correspondent pas aux 13 régions administratives post-2016 : la région Auvergne-Rhône-Alpes est couverte par deux caisses distinctes (Carsat Auvergne et Carsat Rhône-Alpes), et les DOM-TOM utilisent des CGSS, pas des CARSAT. La table de correspondance doit être construite manuellement et validée avant toute autre étape. Le second risque est le parsing PDF : les noms de caisses longs wrappent sur plusieurs lignes dans `extract_table()` et les cellules fusionnées retournent `None`, deux comportements qui causent des échecs silencieux si non traités explicitement.
 
-The main risks are: the Cloudflare free-tier CPU limit (10 ms per request) may be too tight if the Worker does any JSON transformation beyond simple forwarding; the datagouv Tabular API has a documented, open encoding bug that corrupts French accented characters; and static JSON must not be removed until live data is validated on 50+ NAF codes. All three risks have documented mitigation strategies and none are blockers, but each must be tested before the static JSON is decommissioned.
+La stratégie de mitigation est séquentielle et bien définie. Le pipeline Python doit être validé en premier, car le JSON régional est un prérequis bloquant pour tout le frontend. L'SVG doit être sourcé depuis Wikimedia Commons (CC BY-SA 3.0, DOM-TOM en inset inclus) et adapté manuellement pour correspondre à la géographie des caisses, pas aux régions administratives standard. Le rendu frontend suit les patterns établis du projet existant : `map.js` comme module pair de `kpi.js` et `charts.js`, `map.css` comme feuille de styles isolée, le tout branché sur le `state.activeView` existant sans modifier les cycles de rendu actuels.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The existing stack (vanilla JS ES modules, Chart.js 4.4.7, no build step, CDN dependencies, GitHub Pages) is fixed and will not change. The addition for live data integration is a single-file Cloudflare Worker deployed on the free tier, callable at a `workers.dev` subdomain. No npm packages are needed for the static site. The Worker itself needs no dependencies if it stays a thin proxy. If MCP session management becomes complex, `@modelcontextprotocol/sdk@1.x` can be added to the Worker build only.
+Le projet existant impose une contrainte forte : zéro nouvelle dépendance browser-side. Cette contrainte est tenable car l'API SVG DOM (`path.style.fill = color`) couvre entièrement le besoin de choroplèthe, et une fonction `interpolateColor()` de 10 lignes remplace Chroma.js (58 Ko). Le seul ajout pipeline est `pdfplumber 0.11.9` (déjà dans le venv) pour l'extraction des Tableaux 9 et 17 du rapport annuel. La source SVG recommandée est Wikimedia Commons (CC BY-SA 3.0), à adapter manuellement pour grouper les départements par caisse et non par région administrative.
 
-Direct datagouv REST API calls from the browser (for metadata and dataset discovery) are CORS-enabled and require no proxy. The datagouv Tabular API is also CORS-enabled and supports filtered, paginated queries, but it only indexes resources hosted on data.gouv.fr. The ameli.fr Excel files are not on data.gouv.fr and therefore not accessible via the Tabular API. Those must continue to be processed by the GitHub Actions pipeline.
+**Technologies principales:**
+- SVG inline handcrafté: carte France par caisse régionale — zéro dépendance, manipulation directe depuis JS
+- Vanilla JS ES2020 (existant): coloration, tooltip, event handling — déjà standard du projet
+- pdfplumber 0.11.9: extraction des tableaux PDF du rapport annuel — déjà présent dans le pipeline
 
-**Core technologies:**
-- Datagouv REST API v1: dataset metadata discovery, CORS-enabled, no auth, browser-callable directly
-- Datagouv MCP Server v1.26.0: full data queries via Streamable HTTP/JSON-RPC 2.0, no CORS, Worker-only
-- Cloudflare Workers (free tier): CORS proxy + REST-to-JSON-RPC adapter, 100k requests/day, 10 ms CPU/request
-- GitHub Actions: scheduled pre-build pipeline for ameli.fr Excel files, outputs JSON to repo, already implemented
-- Wrangler CLI 3.x: Cloudflare Worker deployment tooling
+**Bibliothèques exclues avec justification:**
+- D3.js: 60+ Ko, nécessite GeoJSON + projection pour une carte statique de 21 polygones
+- Leaflet: librairie tile-map, aucun apport pour un choroplèthe statique
+- Chroma.js: 58 Ko CDN pour une interpolation linéaire deux couleurs
+- simplemaps SVG France: mappe les 13 régions post-2016, pas les caisses régionales
 
 ### Expected Features
 
-The dashboard already has a strong feature set (NAF search, 6 chart types, 3 views, deep linking, dark mode, print styles). This milestone adds production quality and live data, not new analytical features.
+La recherche identifie 10 fonctionnalités table stakes (attendues par défaut) et 6 différenciateurs. La carte sans coloration proportionnelle et sans tooltip n'a pas de valeur. Le sélecteur d'année (5 boutons pour 2020-2024) est attendu. Le comportement touch mobile est table stakes, pas une amélioration optionnelle.
 
-**Must have (table stakes):**
-- Loading states and fetch error messages — required before live data migration; currently absent
-- Navigation mobile alternative (bottom tab bar or hamburger) — nav rail disappears at 768px with no fallback
-- ARIA attributes on interactive components (nav, search dropdown, drawers) — RGAA 4.1 legal obligation
-- Skip-to-content link — required for keyboard users; currently absent
-- Alternative text for Chart.js canvases — screen reader compliance, RGAA 4 requirement
-- Data source attribution (footer/about section) — required for Licence Ouverte v2.0 reuse
-- Favicon + Open Graph tags — basic production hygiene; currently absent
-- Corrected French accents (12 occurrences identified in source code) — project-wide requirement
-- localStorage key unification between dashboard and landing page
+**Must have — v1.1 (prérequis pour publier):**
+- SVG France schématique, 21 caisses identifiées par ID, DOM-TOM en inset
+- Coloration choroplèthe proportionnelle aux comptages bruts, palette séquentielle 5 paliers
+- Légende avec les 5 paliers et leurs valeurs
+- Tooltip desktop: nom caisse, valeur, année
+- Mise en évidence de la région survolée (stroke + opacité)
+- Sélecteur d'année (2020-2024)
+- Comportement touch mobile: tap ouvre panneau fixe en bas
+- Intégration dans vues AT et Trajet (pas de nouvelle vue dédiée)
+- Note "Données non disponibles" dans la vue MP
 
-**Should have (competitive):**
-- Export CSV for the current sector view — analysts expect this; moderate effort
-- Accessibility declaration (déclaration d'accessibilité) — required after RGAA fixes are in place
-- Color contrast fixes (CSS variables) — several elements below WCAG AA 4.5:1 threshold
-- Live data via datagouv MCP + Cloudflare Worker proxy — replaces 9.2 MB static JSON
-- Lazy loading per view (load at-data.json only when AT view is active) — required for live data performance
+**Should have — v1.1.x (après validation):**
+- Panneau de détail au clic avec stats complètes de la caisse
+- Mini graphique d'évolution (Chart.js déjà chargé) dans le panneau
+- Classement de la caisse parmi les 21 (calculé en JS)
+- Transition CSS animée sur `fill` au changement d'année
+- Mise en évidence automatique de la région max
 
-**Defer (v2+):**
-- Multi-sector comparison (high complexity, partial SPA refactor)
-- "Consultant mode" with estimated cost ratios
-- Extended permalink (year + indicator in hash)
-- Interactive multi-year trend with indicator toggle
+**Defer — v2+ (hors scope v1.1):**
+- Lien carte vers vue sectorielle (nécessite données régionales par NAF, non disponibles)
+- IF régional normalisé (effectifs par caisse absents des tableaux 9 et 17)
+- Carte MP (données régionales absentes du rapport annuel pour les maladies professionnelles)
+
+**Anti-features confirmées:**
+- Zoom/pan SVG: coût élevé en vanilla JS, aucune valeur pour 21 régions toutes visibles
+- 4e onglet de navigation dédié "Carte": casse la symétrie AT/MP/Trajet
+- Animation temporelle automatique: 5 points de données, valeur limitée face à la complexité
 
 ### Architecture Approach
 
-The architecture adds a single new deployment artifact (Cloudflare Worker) between the static SPA and the datagouv MCP server. Only `js/data.js` changes in the existing SPA; all other modules (`app.js`, `kpi.js`, `charts.js`, `insights.js`, etc.) remain unchanged. The Worker exposes a simple REST endpoint that the browser calls with `?tool=X&args=Y` query parameters. The Worker handles CORS, edge caching (1h TTL via `Cache-Control: s-maxage=3600`), MCP session management, and JSON-RPC envelope unwrapping. A three-layer cache (in-memory in `data.js` > browser HTTP cache > Cloudflare edge cache) ensures repeat queries for the same NAF code are served at zero latency.
+La carte s'intègre comme vue pair dans le système existant, sans modifier les cycles de rendu actuels. Le SVG France est inline dans `index.html` (15-30 Ko, acceptable, compressé par gzip). `map.js` est un nouveau module ES isolé, analogue à `kpi.js` et `charts.js`. `app.js` l'importe et l'appelle depuis `DOMContentLoaded`, hors de la fonction `render()` existante. Le JSON régional (`regional-data.json`) suit la convention des 3 datasets existants et est chargé au boot via le même `Promise.all`.
 
-**Major components:**
-1. Browser SPA (`js/*.js` on GitHub Pages) — renders charts, manages state, calls Worker for data
-2. `js/data.js` (data layer, modified) — issues fetch to Worker, maintains in-memory `QUERY_CACHE` Map
-3. Cloudflare Worker (`worker/worker.js`, new) — CORS, edge cache, REST-to-JSON-RPC translation, response normalisation
-4. datagouv MCP Server (external) — executes dataset queries, called only from Worker
-5. GitHub Actions pipeline (existing) — processes ameli.fr Excel files, commits pre-built JSON fallback
+**Composants majeurs:**
+1. `data/pipeline/parse_regional.py` (nouveau): parse Tableau 9 (AT) et Tableau 17 (Trajet) du rapport annuel PDF, produit `regional-data.json`
+2. `data/regional-data.json` (nouveau): 21 caisses, comptages AT et Trajet 2020-2024, structuré par année
+3. `js/map.js` (nouveau): `initMap()`, `updateChoropleth()`, tooltip, toggle métrique et année
+4. `styles/map.css` (nouveau): fill choroplèthe, tooltip, légende, transitions hover
+5. Modifications légères: `data.js` (+loadDataset regional), `state.js` (+state.map), `nav.js` (+switchView map), `app.js` (+initMap), `index.html` (+view-map, +SVG inline, +nav button)
+6. Inchangés: `search.js`, `kpi.js`, `charts.js`, `insights.js`, `utils.js`, tous les CSS existants sauf `nav.css` (ajout mineur)
+
+**Ordre de construction contraint par les dépendances:**
+Pipeline Python (JSON valide) => data.js + state.js => SVG inline + IDs => map.js skeleton => tooltip => controls => navigation => intégration refresh_data.py
 
 ### Critical Pitfalls
 
-1. **Schema rupture silencieuse de l'API tabulaire** — datagouv columns can be renamed without notice when the source file changes. Add a `normalizeATRow()` adapter layer immediately; never hardcode column names in render logic. Detect `NaN`/`undefined` KPIs as schema-change indicators.
+1. **Mapping caisse-to-région non bijectif** — La table doit être construite manuellement. 16 caisses métropolitaines couvrent 13 régions admin. Auvergne-Rhône-Alpes agrège deux caisses distinctes. DOM-TOM hors carte métropolitaine. Prévention: assertion Python `len(mapping) == 16` avant tout rendu.
 
-2. **Cloudflare Worker CPU limit (10 ms)** — JSON-RPC marshalling may exceed the free-tier CPU budget. Keep the Worker as a thin forwarder with no data transformation. Validate in production on the `workers.dev` URL, not just in `wrangler dev` (local has no CPU limit). Budget $5/month for Workers Paid if needed.
+2. **Noms de caisses multi-lignes dans pdfplumber** — Les cellules de nom wrappent sur 2 lignes physiques dans le PDF. Appliquer `' '.join(cell.split())` sur chaque cellule de nom. Tester spécifiquement "Bourgogne-Franche-Comté" et "Île-de-France". Assertion: nombre de caisses extraites == nombre attendu.
 
-3. **Encodage UTF-8 corrompu dans l'API tabulaire** — documented open bug (forum datagouv, February 2026): accented characters appear as `Ã©` or `?`. Test accent integrity (é, è, ê, à, ç) in raw API JSON before decommissioning static JSON. Fall back to `download_and_parse_resource` if encoding is corrupt.
+3. **Cellules fusionnées (merged cells) et lignes de total** — pdfplumber retourne `None` pour les cellules fusionnées. Filtrer les lignes où toutes les colonnes numériques sont `None`. Détecter les lignes "Total" / "Ensemble" et les exclure. Logger les lignes non reconnues plutôt que de les ignorer.
 
-4. **Suppression prématurée des JSON statiques** — removing `at-data.json`, `mp-data.json`, `trajet-data.json` before live data is fully validated risks regression with no fallback. Implement a feature flag (`USE_LIVE_DATA`) and validate on 50+ NAF codes across all divisions before removal.
+4. **Palette de couleurs faussée par un outlier régional** — L'interpolation linéaire min-max est inexploitable si une région domine. Calculer d'abord la distribution des vraies données, puis choisir la méthode (linéaire, clamped au 95e percentile, logarithmique). Ne pas choisir l'algorithme avant d'avoir les vraies données.
 
-5. **Pas d'état de chargement** — the current codebase has no `.catch()` on fetch calls and no loading state. This is a silent failure mode that becomes visible and broken the moment network latency is introduced by live API calls. Fix this before enabling live data.
+5. **Conflits CSS avec le dashboard existant** — `path { fill: none }` en CSS global (utilisé par Chart.js) efface toutes les régions SVG. Encapsuler dans `.map-container svg path`. Inspecter les règles héritées dans DevTools avant d'implémenter la coloration. Tooltips en `position: fixed` pour éviter le clipping par `overflow: hidden`.
+
+6. **Hover inexistant sur mobile** — `mouseenter`/`mouseleave` ne se déclenchent pas sur touch. Utiliser `pointerover`/`pointerout` unifiés. Sur mobile: afficher un panneau fixe en bas, pas un tooltip flottant. Implémenter dès le début, pas comme amélioration a posteriori.
 
 ## Implications for Roadmap
 
-Based on research, the dependency graph strongly dictates a two-track approach: polish first, live data second. The live data migration depends on loading states being in place, which depends on error handling patterns being established. Removing static JSON depends on live data being validated, which depends on the Worker being stable.
+La recherche révèle une dépendance séquentielle forte entre les phases. Le JSON régional est un prérequis bloquant pour tout le frontend. L'SVG structure est un prérequis bloquant pour tout rendu. Quatre phases se dégagent naturellement de ces contraintes.
 
-### Phase 1: Polish et qualité production
+### Phase 1: Pipeline PDF — Extraction régionale
 
-**Rationale:** The dashboard has strong analytical features but is missing basic production-quality signals (loading states, error handling, mobile nav, accessibility). These are P1 blockers that affect all users today and are prerequisites for the live data migration. They also represent legal obligations (RGAA 4.1) that carry financial penalties. This phase has no external dependencies and can ship immediately.
+**Rationale:** Le JSON régional est le prérequis bloquant de tout le reste. Sans données valides, le frontend ne peut pas avancer. Cette phase doit être complète et vérifiée avant d'écrire une seule ligne de JavaScript.
 
-**Delivers:** A production-quality dashboard ready for public launch. All P1 features from FEATURES.md.
-
-**Addresses:**
-- Loading states and fetch error messages (currently silent failures)
-- Navigation mobile alternative (bottom tab bar or hamburger menu)
-- ARIA on nav, search dropdown, drawers
-- Skip-to-content link
-- Chart.js canvas alternative text
-- Data source attribution
-- Favicon + Open Graph tags
-- French accent corrections (12 occurrences)
-- localStorage key unification
-
-**Avoids:** Anti-pattern 3 (no loading state during fetch), UX pitfall (no error message on fetch failure), mobile navigation pitfall.
-
-### Phase 2: Accessibilité et conformité RGAA
-
-**Rationale:** After loading states and interactive ARIA are in place (Phase 1), the remaining accessibility work (color contrast, accessibility declaration) requires a measurable compliance rate to be published honestly. This phase should follow Phase 1 closely, not be bundled with it, to allow testing the Phase 1 ARIA work before committing to a published conformity rate.
-
-**Delivers:** Published accessibility declaration with a credible conformity rate; CSV export; color contrast fixes.
+**Delivers:** `data/pipeline/parse_regional.py` fonctionnel + `data/regional-data.json` validé (21 caisses, AT + Trajet, 2020-2024)
 
 **Addresses:**
-- Export CSV (P2)
-- Déclaration d'accessibilité (requires P1 ARIA work)
-- Color contrast corrections (CSS variables)
+- Table de mapping caisse-to-région construite et vérifiée manuellement
+- Normalisation des noms multi-lignes via `' '.join(cell.split())`
+- Filtrage des cellules fusionnées et des lignes de total
+- Test du parser sur les PDF éditions 2023 et 2024 simultanément
 
-**Uses:** Existing CSS variable system; no new dependencies.
+**Avoids:** Pitfalls 1, 2, 3, 8, 9 (tous liés au pipeline PDF)
 
-**Implements:** No architecture changes; purely frontend quality improvements.
+**Research flag:** Standard. pdfplumber bien documenté. Patterns de merge multi-lignes documentés dans les issues GitHub. Pas besoin de recherche additionnelle.
 
-### Phase 3: Cloudflare Worker scaffold
+### Phase 2: SVG France — Sourcing et intégration structure
 
-**Rationale:** Before touching `data.js`, deploy and validate the Worker in isolation. This is the highest-risk component (CPU limits, CORS configuration, MCP session management). It must be verified against the live `workers.dev` URL before any SPA code is changed. The static JSON remains the source of truth during this phase.
+**Rationale:** L'SVG doit exister dans le DOM avant que `map.js` puisse interroger les `<path>`. C'est le second prérequis technique. L'adaptation manuelle (regroupement par caisse, attribution des IDs) prend du temps et doit être traitée séparément du code.
 
-**Delivers:** A deployed, tested Cloudflare Worker that can proxy one MCP tool call and return correctly shaped JSON. The SPA is not yet connected.
+**Delivers:** SVG France inline dans `index.html` avec 21+ paths identifiés par `data-caisse` correspondant aux clés du JSON régional. DOM-TOM en inset. CSS responsive (`viewBox` sans `width`/`height` fixe).
 
-**Uses:** Cloudflare Workers free tier, Wrangler CLI 3.x, `@modelcontextprotocol/sdk@1.x` (optional).
-
-**Implements:** Architecture Pattern 1 (REST-over-MCP Adapter), Architecture Pattern 2 (Two-Layer Caching).
-
-**Avoids:** Pitfall 2 (CPU limit — test in production on workers.dev, not only locally), Anti-pattern 1 (calling MCP directly from browser).
-
-### Phase 4: Migration vers données live
-
-**Rationale:** With the Worker validated and loading states in place (Phases 1 and 3), `js/data.js` can be modified to call the Worker. The static JSON is kept as a fallback behind a feature flag. This phase ends only when 50+ NAF codes across all divisions are validated and the feature flag is confirmed to restore static behavior correctly.
-
-**Delivers:** Live data from datagouv MCP replacing pre-built JSON; lazy loading per view; full error handling end-to-end.
+**Uses:** Wikimedia Commons SVG (CC BY-SA 3.0), Inkscape pour le nettoyage et la simplification des paths
 
 **Addresses:**
-- Données live via datagouv MCP (P2)
-- Lazy loading par vue (P2)
+- viewBox sans width/height fixe (responsive dès le début)
+- Préfixage des IDs SVG (`map-reg-XX`) pour éviter les conflits DOM
+- Inspection CSS dans DevTools: vérifier qu'aucune règle existante n'affecte les paths cartographiques
 
-**Uses:** Cloudflare Worker from Phase 3; existing GitHub Actions pipeline as fallback.
+**Avoids:** Pitfalls 3 (SVG non responsive), 7 (conflits CSS/DOM)
 
-**Implements:** Architecture Pattern 3 (Module-scope in-memory cache), Build Order steps 3-7 from ARCHITECTURE.md.
+**Research flag:** Standard. Pattern inline SVG documenté et validé. Pas de recherche additionnelle.
 
-**Avoids:** Pitfall 1 (schema rupture — normalizeATRow adapter), Pitfall 3 (UTF-8 encoding — smoke test before decommission), Pitfall 4 (premature static JSON removal — feature flag + 50-code validation).
+### Phase 3: Rendu choroplèthe et interactions
 
-### Phase 5: Fonctionnalités analytiques avancées (v2)
+**Rationale:** Une fois les données et l'SVG en place, la logique de rendu peut être construite en un seul bloc. Coloration, légende, tooltip desktop, highlight hover et sélecteur d'année sont interdépendants et se développent mieux ensemble.
 
-**Rationale:** Only after live data is stable and the dashboard is at production quality should new analytical features be added. These are high-complexity features (multi-sector comparison requires partial SPA refactor) that should not compete for attention with reliability work.
+**Delivers:** `js/map.js` complet (table stakes v1.1) + `styles/map.css`. Carte colorée avec légende, tooltip desktop fonctionnel, sélecteur d'année 2020-2024, bascule AT/Trajet.
 
-**Delivers:** Multi-sector comparison, consultant mode, extended permalink, interactive trend toggle.
+**Uses:** `interpolateColor()` inline (10 lignes), palette séquentielle ColorBrewer validée en simulation daltonienne, tooltip `position: fixed` + `pointer-events: none`
 
-**Addresses:** All P3 features from FEATURES.md.
+**Addresses:**
+- Distribution des vraies données calculée avant de choisir la méthode de couleur
+- Test Deuteranopia dans Chrome DevTools (Rendering > Emulate vision deficiencies)
+- Tooltip `position: fixed` pour éviter le clipping et le flickering
 
-**Avoids:** Over-engineering before the foundation is solid.
+**Avoids:** Pitfalls 4 (outlier couleur), 5 (palette inaccessible), 7 (tooltip clipping)
+
+**Research flag:** Standard pour desktop. Les patterns SVG choroplèthe sans librairie sont bien établis.
+
+### Phase 4: Intégration navigation et mobile
+
+**Rationale:** La navigation et le comportement mobile se greffent sur un rendu fonctionnel. C'est la phase d'assemblage final: wiring `switchView('map')`, hash routing `#map`, fourth tab mobile, events touch, note MP sans données.
+
+**Delivers:** Vue carte accessible depuis la navigation existante. Comportement touch correct sur vrai appareil. URL hashable (`#map`, `#map/at`, `#map/trajet`). Intégration optionnelle dans `refresh_data.py` via `--rapport-pdf`.
+
+**Addresses:**
+- `pointerover`/`pointerout` à la place de `mouseover`/`mouseout`
+- Panneau fixe en bas de carte sur mobile (pas tooltip flottant)
+- `touch-action: none` sur SVG pour éviter scroll parasite lors du tap sur petite région
+- Masquage ou message explicatif dans la vue MP
+
+**Avoids:** Pitfall 6 (hover inexistant sur mobile)
+
+**Research flag:** Standard. Le wiring navigation suit le pattern existant documenté dans ARCHITECTURE.md. Tester sur vrai appareil iOS/Android, pas seulement en émulation DevTools.
 
 ### Phase Ordering Rationale
 
-- **Polish before live data:** Loading states and error handling are prerequisites for live data. Shipping live data without them produces a broken user experience on cache miss.
-- **Worker before SPA modification:** The Worker is an external deployment with its own failure modes (CPU limits, CORS config). Validating it in isolation prevents debugging two changes at once (Anti-pattern 4 from ARCHITECTURE.md).
-- **Accessibility declaration after ARIA fixes:** Publishing a conformity rate before the fixes are tested would be inaccurate and legally problematic.
-- **Feature flag throughout migration:** The coexistence strategy (static + live behind a flag) is the only safe migration path given the 700+ NAF codes that cannot all be tested manually.
+- Pipeline avant frontend: dépendance bloquante. Pas de JSON = pas de coloration possible.
+- SVG avant map.js: `document.getElementById('caisse-XX')` dans `initMap()` doit trouver les paths dans le DOM.
+- Rendu avant navigation: inutile de router vers une vue qui n'existe pas encore.
+- Mobile en dernière phase: le panneau fixe mobile réutilise le panneau de détail au clic (v1.1.x), il est logique de l'implémenter quand la structure du panneau est stable.
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 3 (Worker scaffold):** CPU budget validation needs a real test on workers.dev with the actual MCP round-trip. The 10 ms limit for JSON-RPC marshalling has not been empirically measured for this specific use case.
-- **Phase 4 (Live data migration):** The exact MCP response shape for `query_resource_data` on the CNAM datasets needs inspection before writing the `normalizeATRow()` adapter. The resource IDs for the ameli.fr AT/MP/Trajet datasets on data.gouv.fr need to be confirmed (they may not exist, meaning the MCP cannot serve them at all).
+Phases avec patterns bien documentés (pas de recherche additionnelle nécessaire):
+- **Phase 1:** pdfplumber 0.11.9, patterns multi-lignes documentés dans les issues GitHub officielles
+- **Phase 2:** Pattern SVG inline choroplèthe, viewBox responsive, standard DOM
+- **Phase 3:** Interpolation couleur vanilla JS, patterns tooltip SVG, palettes ColorBrewer
+- **Phase 4:** Pattern `switchView` existant documenté dans ARCHITECTURE.md
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1 (Polish):** All changes are in the existing codebase; patterns (ARIA, skip link, OG tags) are well-documented standards.
-- **Phase 2 (RGAA):** RGAA 4.1 criteria are published and deterministic; no novel integration needed.
-- **Phase 5 (v2 features):** Defer until Phase 4 is stable; no research needed now.
+Aucune phase ne nécessite `/gsd:research-phase` avant planification. La recherche couvre l'ensemble du domaine avec des sources de confiance élevée.
 
 ## Confidence Assessment
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH | Core findings verified with live curl: MCP no CORS confirmed, datagouv REST API CORS confirmed, Cloudflare limits from official docs |
-| Features | MEDIUM | RGAA requirements from official sources (HIGH); dashboard UX patterns from multiple credible sources (MEDIUM); feature gaps from direct code inspection (HIGH) |
-| Architecture | HIGH | Cloudflare Workers Cache API and CORS proxy verified against official docs; MCP transport confirmed via GitHub repo and live request |
-| Pitfalls | HIGH | CPU limit from official Cloudflare docs; encoding bug confirmed on official datagouv forum (open issue, February 2026); schema rupture documented in datagouv GitHub issue |
+| Domaine | Confiance | Notes |
+|---------|-----------|-------|
+| Stack | HIGH | Inspection directe du codebase existant. pdfplumber 0.11.9 vérifié sur PyPI (janvier 2026). SVG vanilla JS pattern standard, zero dépendance justifiée. |
+| Features | MEDIUM | Patterns choroplèthe vérifiés via Datawrapper Academy et Leaflet docs officiels. Comportement touch basé sur littérature 2025 et sources communautaires. Inspection directe du codebase pour les points d'intégration (HIGH). |
+| Architecture | HIGH | Inspection directe des fichiers `app.js`, `state.js`, `nav.js`, `data.js`, `parse_pdf.py`, `refresh_data.py`, `index.html`. Pas d'hypothèses spéculatives. Patterns de module ES vérifiés sur le code réel. |
+| Pitfalls | HIGH | Sources officielles: pdfplumber GitHub issues, MDN, Datawrapper, CSS-Tricks, Smashing Magazine. Mapping caisse-région vérifié sur sources territoriales officielles CARSAT. |
 
-**Overall confidence:** HIGH
+**Confiance globale: HIGH**
 
 ### Gaps to Address
 
-- **Data availability on datagouv:** The ameli.fr AT/MP/Trajet Excel files may not be indexed as queryable resources on data.gouv.fr. If they are not, the MCP `query_resource_data` tool cannot serve them, and the live data path must use `download_and_parse_resource` or remain on the GitHub Actions pre-build pipeline. This must be confirmed by inspecting the actual dataset resources on data.gouv.fr before Phase 3 begins.
+- **Numéros de page exacts dans le rapport annuel:** Le Tableau 9 est attendu vers p.24 et le Tableau 17 vers p.37, mais ces numéros varient selon l'édition. La Phase 1 doit commencer par `page.debug_tablefinder()` pour localiser les tableaux avant de coder l'extraction.
 
-- **MCP response shape:** The shape of a `query_resource_data` response for the CNAM AT dataset is unknown. The `normalizeATRow()` adapter cannot be written until the raw response is inspected. Plan for an exploratory step at the start of Phase 4.
+- **Nombre exact de lignes par édition:** Le rapport peut contenir entre 20 et 22 lignes de caisses selon l'année (Mayotte apparait à partir d'une certaine édition). L'assertion de validation doit accepter une fourchette, pas un nombre fixe.
 
-- **Cloudflare Worker CPU budget empirical validation:** The 10 ms CPU limit is confirmed from docs but the actual CPU cost of one MCP round-trip (JSON-RPC serialize + fetch + JSON-RPC deserialize + CORS headers) has not been measured. This is the single biggest technical unknown in the project.
+- **Format des valeurs numériques dans le PDF:** Les comptages peuvent utiliser des espaces insécables comme séparateurs de milliers ("12 345" au lieu de "12345"). La normalisation `cell.replace('\xa0', '').replace(' ', '')` avant `int()` doit être prévue mais n'est pas confirmée sans test sur le vrai PDF.
+
+- **Temps d'adaptation du SVG Wikimedia Commons:** La source recommandée nécessite une adaptation manuelle pour regrouper les départements par caisse. Le temps dépend de la qualité des paths dans le fichier source. Prévoir une alternative si les paths sont trop complexes à regrouper manuellement dans Inkscape.
 
 ## Sources
 
-### Primary (HIGH confidence)
-- Live API verification: `curl -D -` on `mcp.data.gouv.fr/mcp` — confirmed Streamable HTTP, no CORS, MCP v1.26.0
-- Live API verification: `curl -D -` on `www.data.gouv.fr/api/1/datasets/` — confirmed CORS enabled
-- [Cloudflare Workers Limits](https://developers.cloudflare.com/workers/platform/limits/) — 10 ms CPU, 100k req/day, 50 subrequests
-- [Cloudflare Workers Cache API](https://developers.cloudflare.com/workers/runtime-apis/cache/) — edge caching patterns
-- [Cloudflare Workers CORS proxy example](https://developers.cloudflare.com/workers/examples/cors-header-proxy/) — confirmed proxy pattern
-- [datagouv/datagouv-mcp GitHub](https://github.com/datagouv/datagouv-mcp) — Streamable HTTP only, no auth, 11 tools
-- [RGAA 4.1 — accessibilite.numerique.gouv.fr](https://accessibilite.numerique.gouv.fr/) — official French accessibility standard
-- `.planning/codebase/QUALITY.md` — direct code inspection, 12 accent issues, missing ARIA
+### Primaires (confiance HIGH)
+- Inspection directe des fichiers source JS et Python du projet existant (`app.js`, `state.js`, `nav.js`, `data.js`, `parse_pdf.py`, `refresh_data.py`, `index.html`)
+- [pdfplumber PyPI 0.11.9](https://pypi.org/project/pdfplumber/) — version courante, paramètres `table_settings` vérifiés
+- [pdfplumber GitHub issues #768, #84, #719, #1071](https://github.com/jsvine/pdfplumber) — comportement multi-lignes, merged cells, valeurs None, snap_tolerance
+- [Wikimedia Commons: France administrative divisions 2016 SVG (+overseas)](https://commons.wikimedia.org/wiki/File:France,_administrative_divisions_-_en_(%2Boverseas)_-_colored_2016.svg) — licence CC BY-SA 3.0, DOM-TOM inclus
+- [Datawrapper Academy — What to consider when creating choropleth maps](https://academy.datawrapper.de/article/134-what-to-consider-when-creating-choropleth-maps) — palettes, légende, intervalles
+- [Smashing Magazine — SVG Interaction with Pointer Events](https://www.smashingmagazine.com/2018/05/svg-interaction-pointer-events-property/) — pointer-events sur SVG
+- [CSS-Tricks — 6 Common SVG Fails](https://css-tricks.com/6-common-svg-fails-and-how-to-fix-them/) — conflits CSS SVG inline
+- [Mathisonian — Easy responsive SVGs with ViewBox](https://mathisonian.com/writing/easy-responsive-svgs-with-viewbox) — viewBox et responsive
 
-### Secondary (MEDIUM confidence)
-- [datagouv/api-tabular GitHub](https://github.com/datagouv/api-tabular) — pagination 50 rows, disabled aggregations
-- [datagouv/data.gouv.fr issue #1861](https://github.com/datagouv/data.gouv.fr/issues/1861) — schema rupture documentation
-- [Forum data.gouv.fr — encoding bug](https://forum.data.gouv.fr/t/erreur-de-gestion-de-lencodage-dans-tabular-api-data-gouv-fr-et-explore-data-gouv-fr/338) — open bug confirmed February 2026
-- [MCP Transports spec 2025-06-18](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports) — Streamable HTTP protocol
-- [Level Access — France Digital Accessibility Laws](https://www.levelaccess.com/wp-content/uploads/2025/02/France-Digital-Accessibility-Laws.pdf) — RGAA penalties up to EUR 50,000
-- [Smashing Magazine — UX strategies for real-time dashboards](https://www.smashingmagazine.com/2025/09/ux-strategies-real-time-dashboards/) — loading state UX patterns
-- [Dashboard UX Patterns — Pencil & Paper](https://www.pencilandpaper.io/articles/ux-pattern-analysis-data-dashboards) — export, error states, accessibility
+### Secondaires (confiance MEDIUM)
+- [Datawrapper Blog — color palettes for choropleth maps](https://www.datawrapper.de/blog/how-to-choose-a-color-palette-for-choropleth-maps) — daltonisme, ColorBrewer
+- [Leaflet Interactive Choropleth example](https://leafletjs.com/examples/choropleth/) — patterns hover/tooltip/légende (source officielle)
+- [Research 2025 — Mobile thematic map design](https://www.tandfonline.com/doi/full/10.1080/15230406.2025.2484210) — touch vs hover sur cartes thématiques
+- [ESSPACE — Organisation territoriale CARSAT](https://esspace.fr/carsat-organisation-territoriale-regions-3/) — structure des caisses régionales, mapping
 
-### Tertiary (LOW confidence)
-- [CNAM Sinistralité par secteur](https://www.assurance-maladie.ameli.fr/etudes-et-donnees/sinistralite-atmp-secteur-activite-ctn) — inspected directly; resource IDs on data.gouv.fr not confirmed
+### Tertiaires (confiance LOW)
+- [Making SVG Maps Responsive for Mobile](https://www.worldindots.com/blog/making-svg-maps-responsive-for-mobile-devices) — patterns responsive SVG mobile (source secondaire non officielle)
+- [simplemaps.com France SVG](https://simplemaps.com/svg/country/fr) — vérifié: mappe les 13 régions post-2016, pas les caisses (source négative, usage de référence)
 
 ---
-*Research completed: 2026-02-27*
+*Research completed: 2026-02-28*
 *Ready for roadmap: yes*

@@ -1,342 +1,437 @@
 # Architecture Research
 
-**Domain:** Static vanilla JS dashboard with thin backend proxy for live API queries
-**Researched:** 2026-02-27
-**Confidence:** HIGH (Cloudflare Workers docs verified; datagouv MCP transport verified via GitHub)
+**Domain:** Regional map integration into existing vanilla JS ES module dashboard
+**Researched:** 2026-02-28
+**Confidence:** HIGH (direct inspection of existing source files; no speculative assumptions)
 
 ## Standard Architecture
 
 ### System Overview
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                     Browser (GitHub Pages)                    │
-│                                                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │  index.html  │  │   js/*.js   │  │  Browser Cache      │  │
-│  │  (entry)    │  │  (SPA logic)│  │  (Cache-Control)    │  │
-│  └──────┬──────┘  └──────┬──────┘  └─────────────────────┘  │
-│         │                │                                   │
-└─────────┼────────────────┼───────────────────────────────────┘
-          │                │  fetch('/api/query?tool=X&args=Y')
-          │                ▼
-┌──────────────────────────────────────────────────────────────┐
-│              Cloudflare Worker (workers.dev)                  │
-│                                                              │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │  1. CORS preflight handler (OPTIONS)                    │ │
-│  │  2. Request parser (tool name + args from query/body)   │ │
-│  │  3. Edge cache lookup (caches.default.match)            │ │
-│  │  4. MCP JSON-RPC call (POST /mcp upstream)              │ │
-│  │  5. Response normaliser (extract .result from JSON-RPC) │ │
-│  │  6. Cache write + plain JSON response                   │ │
-│  └─────────────────────────────────────────────────────────┘ │
-│                                                              │
-└─────────────────────────┬────────────────────────────────────┘
-                          │  POST /mcp  (JSON-RPC 2.0)
-                          │  {"jsonrpc":"2.0","method":"tools/call",
-                          │   "params":{"name":"query_resource_data",...}}
-                          ▼
-┌──────────────────────────────────────────────────────────────┐
-│            datagouv MCP Server (mcp.data.gouv.fr)            │
-│                                                              │
-│  Streamable HTTP transport — single POST /mcp endpoint       │
-│  No authentication required (read-only, public)             │
-│  Tools: search_datasets, query_resource_data, etc.          │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Python Pipeline (data/pipeline/)             │
+│                                                                     │
+│  ┌────────────────────┐    ┌───────────────────────────────────┐    │
+│  │  parse_regional.py │    │  refresh_data.py (existing)       │    │
+│  │  (new)             │    │  parse_pdf.py (existing)          │    │
+│  │  Input: PDF        │    │  Input: ameli.fr XLSX             │    │
+│  │  Output: regional  │    │  Output: at/mp/trajet-data.json   │    │
+│  │  -data.json        │    │                                   │    │
+│  └─────────┬──────────┘    └───────────────────────────────────┘    │
+│            │                                                        │
+└────────────┼────────────────────────────────────────────────────────┘
+             │ writes
+             v
+┌─────────────────────────────────────────────────────────────────────┐
+│                        data/ (static JSON)                          │
+│                                                                     │
+│  at-data.json    mp-data.json    trajet-data.json    regional-data.json (new) │
+└─────────────────────────┬───────────────────────────────────────────┘
+                          │ fetch() on boot
+                          v
+┌─────────────────────────────────────────────────────────────────────┐
+│                     Browser (GitHub Pages)                          │
+│                                                                     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐            │
+│  │  data.js  │  │ state.js  │  │  nav.js   │  │  app.js   │            │
+│  │ +loadReg  │  │ +map view │  │ +switchView│  │ +init map │            │
+│  └─────┬─────┘  └──────────┘  └──────────┘  └──────────┘            │
+│        │                                                            │
+│        v                                                            │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  map.js  (new)                                               │   │
+│  │  - renderMap(viewId, metric)                                 │   │
+│  │  - updateChoropleth(data, metric)                            │   │
+│  │  - showTooltip(region, stats)                                │   │
+│  │  - clearMap()                                                │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│        |                                                            │
+│        v                                                            │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  index.html                                                  │   │
+│  │  - #view-map div (new view container)                        │   │
+│  │  - Inline SVG of France by caisse regionale (new)            │   │
+│  │  - Map nav-item button in nav rail (new)                     │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Component Responsibilities
 
 | Component | Responsibility | Communicates With |
 |-----------|---------------|-------------------|
-| `index.html` + `js/*.js` (Browser SPA) | Render charts, handle user input, manage state | Cloudflare Worker (fetch) |
-| `js/data.js` (Data Layer) | Issue fetch calls to Worker, cache responses in module memory | Browser SPA modules, Cloudflare Worker |
-| Cloudflare Worker (`worker.js`) | CORS, edge caching, JSON-RPC translation, response normalisation | Browser SPA (inbound), datagouv MCP server (outbound) |
-| datagouv MCP Server (`mcp.data.gouv.fr/mcp`) | Execute dataset queries against live French open data | Cloudflare Worker only |
-| Browser Cache (HTTP headers) | Avoid redundant Worker fetches for repeated user queries | Controlled by `Cache-Control` headers from Worker |
+| `parse_regional.py` (new) | Parse rapport annuel PDF tables 9 and 17, emit `regional-data.json` | Called from `refresh_data.py` or standalone |
+| `data/regional-data.json` (new) | Static JSON: 21 caisses, AT + Trajet counts 2020-2024 | Loaded by `data.js` |
+| `data.js` (modified) | Load `regional-data.json` alongside existing datasets | `app.js`, `map.js` |
+| `state.js` (modified) | Track active metric (`at` or `trajet`), selected region | `map.js`, `nav.js`, `app.js` |
+| `nav.js` (modified) | Handle `switchView('map')` — update header, footer, nav rail active state | `app.js`, `state.js` |
+| `map.js` (new) | Render SVG choropleth, handle hover/click, show tooltips | `data.js`, `state.js`, DOM (inline SVG) |
+| `index.html` (modified) | Add `#view-map` container, inline SVG of France, nav rail button for map | All JS modules |
+| `styles/map.css` (new) | Choropleth fill colors, tooltip positioning, legend, hover transitions | None |
 
 ## Recommended Project Structure
 
 ```
 /
 ├── js/
-│   ├── data.js          # Modified: calls Worker instead of loading JSON
-│   ├── app.js           # Unchanged: render orchestration
-│   ├── state.js         # Unchanged: mutable singleton
-│   ├── search.js        # Unchanged: autocomplete, code selection
-│   ├── kpi.js           # Unchanged: KPI card rendering
-│   ├── charts.js        # Unchanged: Chart.js wrappers
-│   ├── insights.js      # Unchanged: insights drawer
-│   ├── nav.js           # Unchanged: nav rail, theme
-│   └── utils.js         # Unchanged: helpers
-├── worker/
-│   └── worker.js        # New: Cloudflare Worker (single file)
-├── data/                # Kept temporarily as fallback during migration
-│   ├── at-data.json
-│   ├── mp-data.json
-│   └── trajet-data.json
+│   ├── app.js          # Modified: init map on boot, add map to loadFromHash
+│   ├── data.js         # Modified: add loadDataset('regional'), getRegionalData()
+│   ├── state.js        # Modified: add 'map' to activeView options, add map state
+│   ├── nav.js          # Modified: switchView handles 'map' (no sector state carry-over)
+│   ├── map.js          # New: SVG choropleth render, tooltip, metric toggle
+│   ├── search.js       # Unchanged
+│   ├── kpi.js          # Unchanged
+│   ├── charts.js       # Unchanged
+│   ├── insights.js     # Unchanged
+│   └── utils.js        # Unchanged
 ├── styles/
-│   └── base.css
-├── index.html
-└── wrangler.toml        # New: Cloudflare deployment config
+│   ├── base.css        # Unchanged
+│   ├── nav.css         # Minor: add map nav-item styles if needed
+│   ├── map.css         # New: choropleth, tooltip, legend, metric toggle
+│   ├── search.css      # Unchanged
+│   ├── kpi.css         # Unchanged
+│   ├── charts.css      # Unchanged
+│   └── drawers.css     # Unchanged
+├── data/
+│   ├── at-data.json        # Unchanged
+│   ├── mp-data.json        # Unchanged
+│   ├── trajet-data.json    # Unchanged
+│   ├── regional-data.json  # New
+│   └── pipeline/
+│       ├── refresh_data.py     # Modified: optionally call parse_regional.py
+│       ├── parse_pdf.py        # Unchanged
+│       ├── parse_regional.py   # New
+│       └── requirements.txt    # Unchanged (pdfplumber already present)
+└── index.html          # Modified: view-map, inline SVG, nav button
 ```
 
 ### Structure Rationale
 
-- **`worker/`**: Isolated from frontend. Single file is intentional — the Worker is a thin proxy, not a framework. No dependencies, no build step.
-- **`data/` kept**: Serves as fallback while migration is tested. Removed in a later phase once Worker is stable.
-- **`wrangler.toml`**: Required for `wrangler deploy`. Lives at repo root alongside the SPA.
+- **`map.js` as a sibling module:** Follows the exact pattern of `kpi.js`, `charts.js`, `insights.js`. Each render concern is its own module. `app.js` imports and calls it.
+- **`map.css` as separate stylesheet:** Follows the CSS split-by-component pattern already established. Isolates map-specific styles (fill colors, tooltip, legend) from the rest.
+- **Inline SVG in `index.html`:** Inline SVG is the correct choice for choropleth maps in vanilla JS without a build step. It allows direct DOM manipulation of `<path>` elements via `document.getElementById()`, which is simpler and faster than embedded SVG fetched separately. An external SVG loaded via `<img>` or CSS `background` cannot be styled or manipulated from JavaScript.
+- **`regional-data.json` in `data/`:** Follows the existing convention (`at-data.json`, `mp-data.json`, `trajet-data.json`). Loaded at boot via the same `loadDataset()` pattern.
+- **`parse_regional.py` as a standalone script:** Mirrors the relationship between `parse_pdf.py` and `refresh_data.py`. The regional parser handles one PDF source (rapport annuel) independently. `refresh_data.py` can call it or it can be run standalone.
 
 ## Architectural Patterns
 
-### Pattern 1: REST-over-MCP Adapter
+### Pattern 1: Inline SVG with Direct DOM Manipulation
 
-**What:** The Worker exposes a simple REST interface to the browser (`GET /api/query?tool=query_resource_data&dataset=xxx`) and translates it into JSON-RPC 2.0 calls to the datagouv MCP server. The browser never speaks JSON-RPC directly.
+**What:** The SVG map of France (one `<path>` per caisse regionale) is embedded inline in `index.html`. Each `<path>` has an `id` matching the caisse code (e.g. `id="caisse-75"`). `map.js` fills paths using `el.style.fill = colorScale(value)` and attaches `mouseenter`/`mouseleave` events for tooltips.
 
-**When to use:** When the upstream protocol (MCP JSON-RPC) is not browser-friendly and the frontend is a static SPA that expects plain JSON responses.
-
-**Why:** The datagouv MCP server uses Streamable HTTP transport with JSON-RPC 2.0 (POST /mcp, Content-Type: application/json). Browsers can technically POST JSON-RPC, but this requires the frontend to understand MCP session management, tool schemas, and error formats. Wrapping it in a Worker means the SPA sees a simple REST endpoint and the MCP complexity stays in one place.
-
-**Example:**
-
-```javascript
-// worker/worker.js — inbound REST to outbound JSON-RPC
-
-export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-
-    // CORS preflight
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders() });
-    }
-
-    const tool = url.searchParams.get('tool');
-    const args = JSON.parse(url.searchParams.get('args') || '{}');
-
-    // Edge cache check
-    const cacheKey = new Request(request.url);
-    const cached = await caches.default.match(cacheKey);
-    if (cached) return cached;
-
-    // MCP JSON-RPC call
-    const mcpResponse = await fetch('https://mcp.data.gouv.fr/mcp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: { name: tool, arguments: args }
-      })
-    });
-
-    const mcpJson = await mcpResponse.json();
-    // Extract plain result from JSON-RPC envelope
-    const result = mcpJson.result ?? mcpJson.error;
-
-    const response = new Response(JSON.stringify(result), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, s-maxage=3600, max-age=3600',
-        ...corsHeaders()
-      }
-    });
-
-    ctx.waitUntil(caches.default.put(cacheKey, response.clone()));
-    return response;
-  }
-};
-```
-
-### Pattern 2: Two-Layer Caching (Edge + Browser)
-
-**What:** Responses are cached at two levels: at Cloudflare's edge (via `Cache API`, `s-maxage`) and in the browser (via `max-age` on the same `Cache-Control` header). The Worker sets both values identically. The browser caches the first response and avoids even hitting the Worker on repeat queries.
-
-**When to use:** When data changes infrequently (BPO data is published annually) and the priority is zero-latency repeat queries.
+**When to use:** Any time the map needs to respond to data changes without a redraw. Setting `style.fill` on a DOM element is O(1) per region and requires no library.
 
 **Trade-offs:**
-- PRO: Repeat queries for the same NAF code are served instantly from browser cache, no network.
-- PRO: Different users hitting the same Worker PoP get edge-cached responses with no upstream MCP calls.
-- CON: Stale data until TTL expires. Acceptable here because BPO data is annual.
-- CON: Cache API on `workers.dev` subdomain is local to a single PoP (no global replication). This is fine for this use case.
-
-**TTL recommendation:**
-- `s-maxage=3600` (1 hour) at edge: protects the MCP server from burst load.
-- `max-age=3600` in browser: avoids repeat Worker calls during a session.
-- Use `Cache-Control: no-cache` query param as a manual override for debugging.
-
-### Pattern 3: Module-Scope In-Memory Cache in data.js
-
-**What:** The existing `data.js` already caches loaded datasets in a module-scope `DATASETS` variable. This pattern extends to the live-data path: once a NAF query result is fetched from the Worker, it is stored in a `Map` keyed by `{view}:{code}` and served synchronously on subsequent calls within the same session.
-
-**When to use:** Always. This is the third caching layer (after edge and browser HTTP caches) and prevents redundant `fetch()` calls when the user navigates back to a previously viewed code in the same session.
+- PRO: No external library (D3, Leaflet, etc.). Zero new CDN dependencies.
+- PRO: Direct DOM access means the color update loop is trivial: `regions.forEach(r => path.style.fill = color(r.value))`.
+- PRO: SVG `<title>` elements provide accessible labels for screen readers without extra work.
+- CON: The SVG must be authored or sourced carefully. France by caisse regionale is not a standard projection; paths must match the 21 caisses exactly (including DOM-TOM treatment).
+- CON: Inline SVG adds ~15-30 KB to `index.html`. Acceptable for a single-page app; gzip reduces this significantly.
 
 **Example:**
 
 ```javascript
-// js/data.js — extend with in-memory result cache
-const QUERY_CACHE = new Map();
+// js/map.js
+import { el } from './utils.js';
 
-export async function queryLive(view, code) {
-  const key = `${view}:${code}`;
-  if (QUERY_CACHE.has(key)) return QUERY_CACHE.get(key);
+var COLOR_SCALE_AT = ['#edf8e9', '#bae4bc', '#74c476', '#31a354', '#006d2c'];
+var COLOR_SCALE_TJ = ['#eff3ff', '#bdd7e7', '#6baed6', '#3182bd', '#08519c'];
 
-  const url = `/api/query?tool=query_resource_data&args=${encodeURIComponent(
-    JSON.stringify({ dataset_id: DATASET_IDS[view], code })
-  )}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Worker error: ${res.status}`);
-  const data = await res.json();
-  QUERY_CACHE.set(key, data);
-  return data;
+export function updateChoropleth(regionalData, metric, year) {
+  var entries = Object.entries(regionalData[year] || {});
+  var values = entries.map(function(p) { return p[1][metric] || 0; });
+  var max = Math.max.apply(null, values);
+
+  entries.forEach(function(pair) {
+    var code = pair[0];
+    var val = pair[1][metric] || 0;
+    var path = document.getElementById('caisse-' + code);
+    if (!path) return;
+    var idx = max > 0 ? Math.floor((val / max) * (COLOR_SCALE_AT.length - 1)) : 0;
+    var scale = metric === 'at' ? COLOR_SCALE_AT : COLOR_SCALE_TJ;
+    path.style.fill = scale[idx];
+    path.dataset.value = val;
+    path.dataset.region = pair[1].libelle || code;
+  });
 }
 ```
 
+### Pattern 2: Map View as a Peer View (Not a Subview)
+
+**What:** The map is a fourth view (`map`) alongside `at`, `mp`, and `trajet`. It lives in `state.activeView` and is shown/hidden by the same `.view` / `.view.active` CSS mechanism already used for the three existing views. `switchView('map')` follows the same code path as `switchView('at')`.
+
+**When to use:** When the new feature has a different data domain (regional vs. sectoral) that does not share the search bar, KPI grid, or chart layout of the existing views. A peer view avoids embedding map logic into existing view render cycles.
+
+**Trade-offs:**
+- PRO: Zero changes to `render()`, `renderKPIs()`, `renderCausesChart()`, etc. The map is isolated.
+- PRO: Hash routing extends naturally: `#map` or `#map/at` activates the map view with optional metric preset.
+- PRO: Mobile bottom tab bar gets a fourth tab. The existing 3-tab layout works for 3-4 items.
+- CON: The map view does not show a sector-specific map (e.g. "which regions have the most accidents in sector 10.1?"). That feature would require a different integration (map overlaid on sector view). Out of scope for v1.1.
+
+**Example:**
+
+```javascript
+// nav.js addition — map needs no sector carry-over
+export function switchView(viewId) {
+  // existing logic unchanged for at/mp/trajet
+  if (viewId === 'map') {
+    state.activeView = 'map';
+    document.querySelectorAll('.nav-item[data-view]').forEach(function(item) {
+      item.classList.toggle('active', item.dataset.view === 'map');
+    });
+    document.querySelectorAll('.view').forEach(function(v) {
+      v.classList.toggle('active', v.id === 'view-map');
+    });
+    el('headerTitle').textContent = 'Carte Régionale';
+    el('headerSubtitle').textContent = 'AT et accidents de trajet par caisse régionale (CARSAT/CRAMIF/CGSS).';
+    el('footerSource').innerHTML = 'Source : <a href="..." target="_blank">Rapport annuel AT-MP 2023, CNAM</a>';
+    window.location.hash = 'map';
+    return;
+  }
+  // existing switch logic for at/mp/trajet follows...
+}
+```
+
+### Pattern 3: Tooltip via Floating `<div>` (not SVG `<title>`)
+
+**What:** On `mouseenter` of a region path, a positioned `<div id="map-tooltip">` is shown near the cursor using `mousemove` to track position. It is hidden on `mouseleave`. The tooltip content is rendered from `regional-data.json` for the hovered region and the currently selected year/metric.
+
+**When to use:** SVG `<title>` tooltips are browser-styled and cannot be customized. A floating `<div>` styled with `map.css` matches the dashboard's existing tooltip aesthetics (from `charts.css`).
+
+**Trade-offs:**
+- PRO: Full control over content layout (region name, AT count, Trajet count, IF if available).
+- PRO: Reuses CSS variables already defined in `base.css` (`--bg-card`, `--border`, `--card-shadow`).
+- CON: Touch devices have no `hover`. The tooltip must double as a click target (click shows tooltip, second click or outside-click dismisses). This needs explicit handling.
+- CON: Tooltip must stay within viewport — add boundary clamping in the `mousemove` handler.
+
 ## Data Flow
 
-### Request Flow: User Selects a NAF Code
-
-```
-User selects code in search autocomplete
-    |
-    v
-search.js: selectCode(viewId, code, level, render)
-    |
-    v
-app.js: render(viewId, code, level)
-    |
-    v
-data.js: queryLive(viewId, code)
-    |-- QUERY_CACHE hit? --> return data immediately (no network)
-    |-- Browser cache hit? --> fetch() returns from disk (no network)
-    |-- Worker cache hit? --> Worker returns edge-cached JSON (no MCP call)
-    |-- Cache miss --> Worker calls POST /mcp, caches result, returns JSON
-    |
-    v
-data.js resolves with { kpis, causes, funnel, evolution, ... }
-    |
-    v
-app.js: calls renderKPIs(), renderCausesChart(), renderFunnelChart(), ...
-    |
-    v
-DOM updated, Chart.js instances re-created
-```
-
-### Request Flow: Boot Sequence (Live Data Mode)
+### Boot Sequence with Regional Data
 
 ```
 DOMContentLoaded
     |
     v
-data.js: loadNafIndex()  -- fetch NAF code labels (light, ~50KB)
-    |-- Worker fetches from datagouv MCP: search_datasets or static list
-    |-- Cached aggressively (s-maxage=86400, 24h) — labels never change mid-year
+data.js: loadDataset('at')
+         loadDataset('mp')
+         loadDataset('trajet')
+         loadDataset('regional')   <-- added in parallel with Promise.all
     |
     v
-search.js: builds autocomplete from naf_index array
+All datasets cached in DATASETS module variable
     |
     v
-nav.js: initNav(), theme restore, renderNationalState()
+nav.js: initNav(render)
     |
     v
-loadFromHash() -- if URL has #view/code, trigger queryLive() immediately
+map.js: initMap()   <-- called once from app.js DOMContentLoaded
+        - attaches mouseenter/mouseleave to all caisse paths
+        - renders initial choropleth (most recent year, AT metric)
+        - sets up metric toggle listeners
+    |
+    v
+loadFromHash():
+    '#map'    --> switchView('map')
+    '#map/at' --> switchView('map'), set metric = 'at'
+    '#at/...' --> existing sector flow unchanged
 ```
 
-### Key Data Flows
+### Regional Data to Map Update
 
-1. **NAF index load:** One Worker request on boot, returns flat array of `{code, libelle, level}`. Long TTL (24h). Populates autocomplete.
-2. **Sector query:** One Worker request per code+view combination. 1h TTL. Returns all data needed to render the full view (KPIs, charts, trends).
-3. **National averages:** Fetched once per view on boot as part of `renderNationalState()`, same Worker endpoint with `code=national`.
+```
+User clicks metric toggle (AT vs Trajet)
+    |
+    v
+map.js: state.map.metric = 'at' | 'trajet'
+    |
+    v
+map.js: updateChoropleth(getRegionalData(), state.map.metric, state.map.year)
+    |
+    v
+For each caisse path in SVG:
+    path.style.fill = colorScale[quantile index]
+    |
+    v
+Legend updates to reflect new color scale
+```
 
-## Scaling Considerations
+### Regional JSON Shape
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| 0-1k sessions/day | Single Worker on free plan (100k requests/day). Edge cache handles repeat queries. No changes needed. |
-| 1k-50k sessions/day | Free plan suffices if cache hit rate is high (expected >90% because NAF codes are bounded, ~1430 total). Monitor usage. |
-| 50k+ sessions/day | Upgrade to Workers Paid ($5/month, 10M requests/month). Consider Cloudflare KV for persistent cross-PoP cache if workers.dev PoP-local cache becomes a bottleneck. |
+```json
+{
+  "meta": {
+    "source": "Rapport annuel AT-MP CNAM 2023",
+    "caisses": ["01","02",...,"97"],
+    "years": ["2020","2021","2022","2023","2024"]
+  },
+  "by_year": {
+    "2023": {
+      "01": { "libelle": "CARSAT Alsace-Moselle", "at": 12345, "trajet": 987 },
+      "02": { "libelle": "CARSAT Aquitaine", "at": 8901, "trajet": 654 },
+      ...
+    }
+  }
+}
+```
 
-### Scaling Priorities
+Key decisions:
+- Keyed by year at the top level so switching years requires no restructuring.
+- Caisse codes match the SVG path `id` attributes (must be agreed between pipeline and SVG source).
+- AT and Trajet counts are absolute event counts, not indices (the PDF tables provide raw counts; IF computation requires salariés count which may not be available at regional level).
 
-1. **First bottleneck:** MCP upstream rate limits or latency. Mitigation: aggressive edge caching (current approach). KV as persistent fallback if needed.
-2. **Second bottleneck:** Cloudflare free tier 100k/day limit. Mitigation: browser cache reduces requests by 70-80% for repeat users. Paid tier if volume grows.
+## Python Pipeline Integration
 
-## Anti-Patterns
+### parse_regional.py Responsibilities
 
-### Anti-Pattern 1: Calling MCP Directly from the Browser
+The new script handles a fundamentally different parsing challenge than `parse_pdf.py`. The rapport annuel PDF contains multi-column tables with merged row headers spanning multiple physical rows. pdfplumber's `extract_table()` returns `None` for merged cells, so the parser must handle row merging explicitly.
 
-**What people do:** POST JSON-RPC directly from `fetch()` in the SPA to `mcp.data.gouv.fr/mcp`.
+**Input:** Single PDF file (rapport annuel, downloaded manually or via pipeline). Tableau 9 (page ~24) for AT by caisse, Tableau 17 (page ~37) for Trajet by caisse.
 
-**Why it's wrong:** The MCP server does not set CORS headers, so browsers will block the request with a CORS error. Additionally, the frontend would need to implement JSON-RPC session management, error envelope parsing, and MCP tool schemas. This embeds backend protocol knowledge into the SPA and makes the data source hard to swap later.
+**Output:** `data/regional-data.json` in the shape defined above.
 
-**Do this instead:** Route all MCP calls through the Worker. The Worker handles CORS, translates REST to JSON-RPC, and returns plain JSON. The SPA stays ignorant of the upstream protocol.
+**Key parsing logic:**
 
-### Anti-Pattern 2: One Worker Request Per Chart
+```python
+def merge_multiline_rows(raw_rows):
+    """
+    pdfplumber returns None for cells that are part of a merged row header.
+    This function merges consecutive rows where the first column is None
+    into the preceding row with a non-None first column.
+    """
+    merged = []
+    for row in raw_rows:
+        if row[0] is not None:
+            merged.append(list(row))
+        elif merged:
+            # Merge numeric cells into the last row
+            for i, cell in enumerate(row):
+                if cell and merged[-1][i] is None:
+                    merged[-1][i] = cell
+    return merged
+```
 
-**What people do:** Issue separate fetch calls for KPIs, causes chart, funnel chart, and evolution charts.
+**Year column detection:** The PDF table has a header row with year labels (2020, 2021, ..., 2024). The parser identifies year columns by scanning the header row for 4-digit year patterns, then extracts values at those column indices for each caisse row.
 
-**Why it's wrong:** The MCP `query_resource_data` tool can return a full row for a NAF code with all fields in one call. Splitting into multiple requests multiplies latency (each Worker invocation has cold-start + MCP round-trip overhead) and consumes more of the free tier quota.
+**Caisse identification:** Each row starts with a numeric rank and the caisse name. The caisse code must be derived from the name (e.g. "CARSAT Alsace-Moselle" -> "01"). A lookup dict in the script maps canonical caisse names to their 2-digit codes.
 
-**Do this instead:** Fetch all data for a NAF code in one Worker call. The Worker makes one MCP request and returns a single JSON object containing all fields. The SPA destructures it into chart inputs.
+**DOM-TOM handling:** DOM-TOM caisses (Martinique, Guadeloupe, Guyane, Reunion, Mayotte) appear in a separate sub-table or at the bottom of the main table. The parser must handle both layouts.
 
-### Anti-Pattern 3: No Loading State During Fetch
+### refresh_data.py Integration
 
-**What people do:** Trigger `queryLive()` and call render functions synchronously, showing stale or empty charts while the network request is in flight.
+The simplest integration adds a `--rapport-pdf` optional argument to `refresh_data.py`, paralleling the existing `--pdf-dir` argument:
 
-**Why it's wrong:** The first cache-miss request (cold start) can take 300-800ms. The UI appears frozen or broken. This is a known quality gap in the current codebase (`fetch()` in `data.js` has no `.catch()` and no loading state).
+```
+python refresh_data.py --pdf-dir /path/to/naf-pdfs --rapport-pdf /path/to/rapport-annuel.pdf
+```
 
-**Do this instead:** Show a skeleton/spinner state before calling `queryLive()`, resolve on success, show an error message on failure. The Worker should return a proper HTTP error code (502, 504) on MCP failure so the SPA can detect and display it.
+When `--rapport-pdf` is provided, `refresh_data.py` imports and calls `parse_regional.parse_regional_pdf()` and writes the result to `data/regional-data.json`. When omitted, regional data is skipped (no silent failure, a message is printed).
 
-### Anti-Pattern 4: Replacing Static JSON Before Validating Data Shape
+Alternatively, `parse_regional.py` can be run standalone:
 
-**What people do:** Remove `at-data.json`, `mp-data.json`, `trajet-data.json` immediately and switch to live MCP queries, then discover the MCP response shape differs from the static JSON.
+```
+python data/pipeline/parse_regional.py --pdf /path/to/rapport-annuel.pdf --out data/regional-data.json
+```
 
-**Why it's wrong:** The MCP `query_resource_data` response structure may not match the pre-processed shape in the static JSON (which was built from Excel in the BPO project). Adapting the entire SPA to a new data shape while also migrating the data source is two changes at once, making debugging harder.
-
-**Do this instead:** Build the Worker and validate its response shape against the expected static JSON structure first. Run both in parallel (feature flag or dev/prod split). Only remove static JSON once the Worker output is confirmed to match what the SPA expects.
+Both modes are valid. The standalone mode is useful for development and testing without running the full pipeline.
 
 ## Integration Points
 
-### External Services
+### New Files Required
 
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| `mcp.data.gouv.fr/mcp` | POST JSON-RPC 2.0 from Worker | No auth, read-only, Streamable HTTP transport. Browser cannot call directly (CORS). |
-| Cloudflare Workers | Deploy via `wrangler deploy`, `workers.dev` subdomain | Free plan: 100k requests/day, 10ms CPU/request. Cache API works on workers.dev but is PoP-local. |
-| GitHub Pages (`ayming-france`) | Static hosting, no server-side logic | SPA fetch calls go to Worker URL. CORS headers on Worker must allow `*.github.io` origin. |
+| File | Type | Purpose |
+|------|------|---------|
+| `js/map.js` | New JS module | Choropleth render, tooltip, metric toggle |
+| `styles/map.css` | New CSS | Map-specific styles |
+| `data/regional-data.json` | New data file | Regional AT + Trajet counts by caisse and year |
+| `data/pipeline/parse_regional.py` | New Python script | PDF table parser for rapport annuel |
 
-### Internal Boundaries
+### Modified Files
+
+| File | Modification | Risk |
+|------|-------------|------|
+| `index.html` | Add `<nav-item data-view="map">`, add `<div id="view-map">`, embed inline SVG | Medium: SVG is 15-30 KB added to HTML; must not break existing view layout |
+| `js/app.js` | Import `map.js`, call `initMap()` in `DOMContentLoaded`, extend `loadFromHash()` for `#map` hash | Low: additive only |
+| `js/data.js` | Add `loadDataset('regional')` to boot `Promise.all`, add `getRegionalData()` export | Low: follows existing pattern exactly |
+| `js/state.js` | Add `map: { metric: 'at', year: '2023' }` to state object | Low: additive only |
+| `js/nav.js` | Extend `switchView()` to handle `'map'` case | Low: new `if` branch, existing branches unchanged |
+| `data/pipeline/refresh_data.py` | Add optional `--rapport-pdf` argument and call to `parse_regional.py` | Low: optional flag, no change to existing behavior |
+
+### Unchanged Files (confirmed)
+
+`search.js`, `kpi.js`, `charts.js`, `insights.js`, `utils.js`, `base.css`, `search.css`, `kpi.css`, `charts.css`, `drawers.css`, `dark.css`, `parse_pdf.py`.
+
+### Internal Module Boundaries
 
 | Boundary | Communication | Notes |
 |----------|---------------|-------|
-| SPA `js/data.js` to Worker | `fetch(WORKER_URL + '/api/query?...')` | Worker URL is a constant in `data.js`. Swappable between dev (local Wrangler) and prod (workers.dev). |
-| Worker to datagouv MCP | `fetch('https://mcp.data.gouv.fr/mcp', { method: 'POST', body: JSON-RPC })` | Outbound subrequest. Counts against Worker's 50 subrequests/invocation limit (only one per invocation here). |
-| SPA modules (unchanged) | Direct ES module imports | `app.js`, `kpi.js`, `charts.js`, `insights.js` all remain unchanged. Only `data.js` changes. |
+| `app.js` to `map.js` | `import { initMap, renderMap } from './map.js'` | `initMap()` called once on boot after data loaded; `renderMap()` not needed if map auto-renders on `initMap()` |
+| `map.js` to `data.js` | `import { getRegionalData } from './data.js'` | `getRegionalData()` returns the cached regional JSON; no async needed (data already loaded at boot) |
+| `map.js` to `state.js` | `import { state } from './state.js'` | Reads `state.map.metric` and `state.map.year`; writes on user interaction |
+| `nav.js` to `map.js` | None (nav does not call map directly) | `switchView('map')` only manipulates DOM classes. `map.js` initialises once at boot and the SVG is always present but hidden. |
+| SVG paths to `map.js` | Direct DOM: `document.getElementById('caisse-XX')` | The SVG path IDs are the contract between the SVG source and the parser's caisse code mapping. They must match. |
+
+## Anti-Patterns
+
+### Anti-Pattern 1: Loading the SVG Separately via Fetch
+
+**What people do:** Fetch the SVG file via `fetch('map.svg')`, inject it into the DOM, then query its paths.
+
+**Why it's wrong:** Async SVG injection means the paths are not in the DOM when `initMap()` runs. Requires a promise chain or MutationObserver. Also breaks the no-build-step constraint if the SVG is treated as a module. Adds one more network request on boot.
+
+**Do this instead:** Inline the SVG directly in `index.html`. It is always in the DOM when `DOMContentLoaded` fires. Path IDs are stable and queryable immediately.
+
+### Anti-Pattern 2: Integrating Map Logic into the Existing `render()` Function
+
+**What people do:** Add a `if (viewId === 'map') renderMap(...)` branch inside the existing `render()` function in `app.js`.
+
+**Why it's wrong:** The `render()` function operates on sector data (`getData(viewId)`, `getStore(viewId, level)`). The map has no sector code, no `level`, no `entry` from `getStore`. Forcing it into the same function signature creates a confusing conditional path and risks breaking existing rendering when state is inconsistent.
+
+**Do this instead:** `map.js` exports its own `initMap()` and `updateChoropleth()` functions called directly from `app.js` outside of `render()`. The map is self-contained.
+
+### Anti-Pattern 3: Using a Quantile Color Scale from a Library
+
+**What people do:** Import D3 or a color scale library to compute choropleth colors.
+
+**Why it's wrong:** This project has zero npm dependencies. D3 is 70 KB min+gzip for the full bundle. Color quantile computation for 21 regions is 5 lines of vanilla JS: sort values, split into N buckets, map each region to its bucket index, index into a color array.
+
+**Do this instead:** Compute quantile breaks manually. 21 caisses with 5 color buckets is simple enough that a linear scale or manual quintile is correct and readable.
+
+### Anti-Pattern 4: Storing the SVG Separately and Fetching It
+
+**What people do:** Keep the SVG in a `public/` or `assets/` folder and reference it with `<object data="map.svg">` or `<img src="map.svg">`.
+
+**Why it's wrong:** `<object>` and `<img>` render SVG in a separate document context. `map.js` cannot access the paths inside them via `document.getElementById()`. The SVG must be in the same DOM tree as the rest of the page.
+
+**Do this instead:** Inline. One `<svg>` element inside `<div id="view-map">`.
 
 ## Build Order
 
-The dependency chain dictates this build sequence:
+Dependencies constrain this sequence:
 
-1. **Worker scaffold and deploy** — Verify the Worker accepts requests, handles CORS, and returns a dummy JSON. Gate: curl from terminal and from the GitHub Pages domain.
-2. **MCP integration in Worker** — Wire one MCP tool call (`query_resource_data`) and validate the JSON-RPC response. Gate: response shape logged and inspected.
-3. **Data shape adapter** — Transform MCP response to match the shape expected by `app.js`/`kpi.js`/`charts.js`. Gate: render a single NAF code with live data, all charts correct.
-4. **NAF index endpoint** — Add a Worker endpoint for the NAF code list (autocomplete data). Gate: search autocomplete works with live data.
-5. **Modify `data.js`** — Replace `loadDataset()` with `queryLive()` and `loadNafIndex()`. Gate: full SPA works end-to-end with live data.
-6. **Error and loading states** — Add loading skeleton and error messages in `app.js`/`data.js`. Gate: test with Worker returning 502.
-7. **Remove static JSON** — Delete `data/*.json` files once live data is confirmed stable. Gate: all three views (AT, MP, Trajet) render correctly.
+1. **`parse_regional.py` (pipeline first):** Before any frontend work, the regional JSON must exist. Write the parser, run it against the rapport annuel PDF, validate `regional-data.json` is correct. Gate: JSON contains 21 caisses with AT and Trajet counts for each year. This unblocks all frontend work.
+
+2. **`data.js` + `state.js` extension:** Add `loadDataset('regional')` and `getRegionalData()`, extend state with `map` key. Gate: `regional-data.json` loads successfully and is accessible in browser console.
+
+3. **Inline SVG sourcing and path ID mapping:** Obtain or create the France SVG (one path per caisse), assign IDs matching the caisse codes in `regional-data.json`. Embed in `index.html` inside `<div id="view-map">`. Gate: all 21+ paths are queryable via `document.getElementById('caisse-XX')`.
+
+4. **`map.js` skeleton + `map.css`:** Implement `initMap()` with event attachment and `updateChoropleth()` with color fill. Gate: opening the page in a browser shows a colored map with correct data.
+
+5. **Tooltip implementation:** Add floating `<div id="map-tooltip">` to HTML, wire `mousemove` and `mouseleave` handlers in `map.js`. Gate: hovering a region shows the region name and AT/Trajet counts.
+
+6. **Metric toggle and year selector:** Add UI controls in `#view-map` (AT vs Trajet toggle, optional year slider). Wire to `state.map.metric` and `state.map.year`, call `updateChoropleth()` on change. Gate: switching metric updates all region colors.
+
+7. **`nav.js` + `app.js` + `index.html` navigation wiring:** Add the map nav-item button, extend `switchView()`, extend `loadFromHash()`, call `initMap()` in `DOMContentLoaded`. Gate: clicking the map nav button switches to map view; `#map` URL hash restores the view on reload.
+
+8. **`refresh_data.py` integration (optional):** Add `--rapport-pdf` argument to allow one-command pipeline refresh. Gate: `python refresh_data.py --rapport-pdf /path/to/pdf` regenerates `regional-data.json`.
 
 ## Sources
 
-- Cloudflare Workers Cache API: https://developers.cloudflare.com/workers/runtime-apis/cache/
-- Cloudflare Workers Cache API example: https://developers.cloudflare.com/workers/examples/cache-api/
-- Cloudflare Workers CORS proxy example: https://developers.cloudflare.com/workers/examples/cors-header-proxy/
-- Cloudflare Workers limits (free tier): https://developers.cloudflare.com/workers/platform/limits/
-- datagouv MCP server (official GitHub): https://github.com/datagouv/datagouv-mcp
-- MCP Streamable HTTP transport spec: https://modelcontextprotocol.io/specification/2025-03-26/basic/transports
-- Caching JSON/CORS proxy with Cloudflare Workers: https://www.conroyp.com/articles/serverless-api-caching-cloudflare-workers-json-cors-proxy
+- Existing source files inspected: `js/app.js`, `js/state.js`, `js/nav.js`, `js/data.js`, `js/insights.js`, `data/pipeline/parse_pdf.py`, `data/pipeline/refresh_data.py`, `index.html`, `styles/base.css`
+- pdfplumber table extraction (for multi-line row merging): https://github.com/jsvine/pdfplumber#extracting-tables
+- Inline SVG for interactive choropleth (no library): standard DOM pattern, no external reference needed
+- PROJECT.md milestone definition: `.planning/PROJECT.md`
 
 ---
-*Architecture research for: Sinistralité France — live data migration via Cloudflare Worker proxy*
-*Researched: 2026-02-27*
+*Architecture research for: Sinistralite France v1.1 — regional map integration*
+*Researched: 2026-02-28*

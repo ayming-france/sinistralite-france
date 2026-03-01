@@ -1,186 +1,237 @@
 # Stack Research
 
-**Domain:** Live French open data integration for a vanilla JS static dashboard
-**Researched:** 2026-02-27
-**Confidence:** HIGH (core findings verified with live API tests and official docs)
+**Domain:** SVG choropleth map + PDF table extraction for vanilla JS dashboard
+**Researched:** 2026-02-28
+**Confidence:** HIGH (core SVG approach verified; pdfplumber settings verified on PyPI 0.11.9)
 
 ## Context
 
-This is a subsequent-milestone addition to an existing vanilla JS dashboard deployed on GitHub Pages.
-The existing stack (vanilla JS ES modules, Chart.js 4.4.7, no build step, CDN dependencies) is fixed.
-This research covers only what is needed to add live datagouv queries.
+This is an additive milestone (v1.1) on an existing vanilla JS dashboard (7,091 LOC, Chart.js 4.4.7,
+no build step, GitHub Pages). The existing stack is fixed. This research covers only what is needed
+to add the regional map view: SVG rendering, color interpolation, tooltips, and PDF table extraction.
 
-The data source is **not** a datagouv dataset. It is ameli.fr Excel files downloaded directly from
-predictable URLs (pattern: `https://assurance-maladie.ameli.fr/sites/default/files/{year}_Risque-AT-CTN-x-NAF_serie%20annuelle.xlsx`).
-The datagouv MCP server provides discovery and metadata tools but the actual sinistralite data
-lives on ameli.fr, not on data.gouv.fr.
-
----
-
-## The Core Problem: Browser Cannot Call MCP Directly
-
-The datagouv MCP server at `https://mcp.data.gouv.fr/mcp` uses Streamable HTTP transport
-(verified: 200 OK with `text/event-stream` response on POST). It does NOT return CORS headers
-(verified: live OPTIONS request returned 403 with no `Access-Control-Allow-Origin`).
-A browser JavaScript client on GitHub Pages cannot call it directly.
-
-Three possible approaches:
-
-1. **Cloudflare Worker as MCP proxy** (recommended)
-2. **Call datagouv REST API directly** (CORS confirmed, no MCP needed)
-3. **Supabase Edge Function as MCP proxy** (over-engineered for this use case)
+The caisses régionales in the rapport annuel correspond to a pre-2016 administrative geography:
+15 Carsat + 4 CGSS (DOM-TOM: Martinique, Guadeloupe, Guyane, La Réunion) + 1 CSS (Mayotte) = 20
+entities. The PROJECT.md refers to "21 caisses" (likely including CRAM Île-de-France, which handles
+AT/Trajet for that region where no Carsat exists). The SVG must reflect this geography, which does
+not map 1:1 to France's post-2016 13-region administrative map.
 
 ---
 
 ## Recommended Stack
 
-### Approach: Hybrid REST + Caching
-
-Do not proxy the MCP server. Call the datagouv REST API directly from the browser (CORS confirmed),
-and serve the processed AT/MP Excel data as pre-built JSON via GitHub Actions (not live Excel parsing).
-
-This avoids a proxy entirely for the primary use case while using MCP only for discovery tasks
-that run at build time (GitHub Actions) rather than at user request time.
-
 ### Core Technologies
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| datagouv REST API | v1 (current) | Discover datasets, get metadata, search | CORS enabled, no auth required, browser-callable directly; verified live: returns `Access-Control-Allow-Origin` header |
-| datagouv Tabular API | beta (current) | Query tabular resources by filter | CORS enabled (verified 404 returns CORS headers); REST, no JSON-RPC; paginated JSON |
-| GitHub Actions | N/A | Scheduled data refresh pipeline | Runs server-side Python script from existing BPO project; outputs pre-built JSON to repo; free for public repos |
-| Cloudflare Workers | free tier | MCP proxy (only if MCP tool calls are needed from browser at runtime) | 100k requests/day free; 10ms CPU/request; workers.dev subdomain available; no custom domain needed |
-
-### When Each Approach Applies
-
-**Approach A: Direct REST (no proxy needed)**
-Use for: checking dataset metadata, discovering resource IDs, confirming update dates.
-How: `fetch('https://www.data.gouv.fr/api/1/datasets/{id}/')` from the browser.
-Status: CORS confirmed, works today.
-
-**Approach B: GitHub Actions pre-build pipeline**
-Use for: processing the 9.2 MB Excel files into JSON (requires Python + openpyxl).
-How: schedule a daily or weekly GitHub Actions workflow that runs `refresh_data.py` and commits updated JSON files to the repo.
-Status: existing `refresh_data.py` in `~/.claude/bpo/data/` already implements this.
-
-**Approach C: Cloudflare Worker MCP proxy**
-Use for: browser-side MCP tool calls (e.g., `query_resource_data` or `search_datasets` at runtime).
-How: Worker receives `fetch` from browser, adds CORS headers, proxies to `https://mcp.data.gouv.fr/mcp`.
-Status: straightforward; official CORS proxy example exists in Cloudflare Workers docs.
-
-For this milestone, Approach A + B covers all requirements. Approach C is only needed if live MCP tool calls from the browser are required for a feature that cannot be pre-built.
+| Inline SVG (handcrafted) | N/A | France map with caisse régionale boundaries | Zero dependency, inlined in HTML, coloring via JS setAttribute on `fill`, no CDN round-trip. Libraries (D3, Leaflet, amCharts) are all overkill for a static 21-region choropleth. |
+| Vanilla JS (existing) | ES2020 | Choropleth coloring, tooltip positioning, event handling | Already the project standard. SVG DOM manipulation requires no library: `path.setAttribute('fill', color)` is the entire API. |
+| pdfplumber | 0.11.9 | Python: extract AT/Trajet tables from rapport annuel PDF | Already used in parse_pdf.py for demographics. Latest version (Jan 2026). Handles line-based tables well. |
 
 ### Supporting Libraries
 
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| SheetJS (xlsx) | 0.18.5 | Parse XLSX in browser or Node.js | Only if moving Excel parsing to browser; avoid for 9.2 MB files, use Node/Python at build time instead |
-| `@modelcontextprotocol/sdk` | 1.x | Official MCP TypeScript SDK for building the Cloudflare Worker proxy | Only if implementing Approach C; not needed for Approach A+B |
+| None for color math | N/A | Linear RGB interpolation is 10 lines of JS | Use inline helper function `interpolateColor(t, hexLow, hexHigh)`. Chroma.js (58 KB) is not justified for a single two-color gradient. |
+| None for tooltips | N/A | HTML div absolutely positioned on mousemove | Use a single `<div id="map-tooltip">` with `position: fixed`, `pointer-events: none`. No library needed. |
 
 ### Development Tools
 
 | Tool | Purpose | Notes |
 |------|---------|-------|
-| Wrangler CLI | Deploy and test Cloudflare Workers | `npm install -g wrangler`; requires Cloudflare account (free); generates `wrangler.jsonc` |
-| GitHub Actions | Scheduled data refresh | YAML workflow in `.github/workflows/`; use `actions/cache` v4 for Python deps |
-| cURL | Verify CORS headers before writing code | Use `-D -` to show response headers; repeat after any API changes |
+| pdfplumber 0.11.9 | Extract Tableau 9 (p.24) and Tableau 17 (p.37) from rapport annuel | `pip install pdfplumber==0.11.9`; already in pipeline venv |
+| Inkscape (optional) | Inspect/edit SVG path structure | Only needed if the SVG source needs manual cleanup or path ID assignment |
 
 ---
 
-## Verified API Facts
+## SVG Map Source
 
-### datagouv REST API (`www.data.gouv.fr/api/1/`)
+### Recommended: Handcraft from Wikimedia Commons base
 
-- **CORS:** Enabled. Returns `Access-Control-Allow-Origin: <origin>` and `Access-Control-Allow-Credentials: true`. Verified live.
-- **Auth:** None required for read-only public data.
-- **Rate limits:** No `X-RateLimit-*` headers observed in responses. No documented public rate limit. Treat as best-effort; add exponential backoff.
-- **Response format:** JSON.
-- **Useful endpoints:**
-  - `GET /datasets/{id}/` — dataset metadata, list of resources with IDs and URLs
-  - `GET /datasets/?q={query}&page_size={n}` — full-text search
-  - `GET /organizations/{slug}/datasets/` — datasets by organization
+**Source:** [France, administrative divisions - en (+overseas) - colored 2016.svg](https://commons.wikimedia.org/wiki/File:France,_administrative_divisions_-_en_(%2Boverseas)_-_colored_2016.svg)
 
-### datagouv Tabular API (`tabular-api.data.gouv.fr/api/`)
+**License:** Creative Commons Attribution-Share Alike 3.0 — free for commercial use with attribution.
 
-- **CORS:** Enabled on 4xx responses (verified). Assumed enabled on 2xx (same nginx config).
-- **Auth:** None.
-- **Endpoints:**
-  - `GET /resources/{rid}/data/?page_size={n}&{col}__exact={val}` — paginated, filtered data
-  - `GET /resources/{rid}/profile/` — column types and stats
-- **Pagination:** Default 20 rows, max 50 per request.
-- **Filter operators:** exact, contains, notcontains, in, notin, less, greater, strictly_less, strictly_greater.
-- **Aggregations:** Disabled by default on the public instance.
-- **Note:** Only works for CSV/XLSX resources that have been indexed by datagouv. The ameli.fr Excel files are NOT on datagouv and therefore NOT accessible via the Tabular API.
+**Why this source:**
+- Includes DOM-TOM insets (Martinique, Guadeloupe, Guyane, La Réunion, Mayotte) already positioned as map insets
+- Based on the 2016 administrative reform boundaries (the ones used in the rapport annuel)
+- Available as editable SVG with named paths
 
-### datagouv MCP Server (`mcp.data.gouv.fr/mcp`)
+**Required post-processing:**
+1. Open in Inkscape or a text editor
+2. Group department paths by caisse régionale (not by post-2016 region)
+3. Assign `id` attributes matching the caisse keys in the JSON (e.g., `id="carsat-bretagne"`)
+4. Simplify paths with Inkscape "Simplify" (Ctrl+L) to reduce file size
+5. Inline the cleaned SVG into the dashboard HTML
 
-- **Protocol:** Streamable HTTP (MCP spec 2025-03-26). SSE not supported. STDIO not supported.
-- **CORS:** NOT enabled. Browser calls blocked. Verified: OPTIONS returns 403 with no CORS headers.
-- **Auth:** None required.
-- **Session:** Stateful; server returns `Mcp-Session-Id` header on initialize; must be included in subsequent requests.
-- **Version:** `data.gouv.fr MCP server v1.26.0` (verified live).
-- **Tools available:** `search_datasets`, `get_dataset_info`, `list_dataset_resources`, `get_resource_info`, `query_resource_data`, `download_and_parse_resource`, `search_dataservices`, `get_dataservice_info`, `get_dataservice_openapi_spec`, `get_metrics`.
-- **Conclusion:** Cannot be called from browser. Must use server-side code (GitHub Actions, Cloudflare Worker, or local script).
+**Alternative source:** [simplemaps.com France SVG](https://simplemaps.com/svg/country/fr) uses post-2016 13-region boundaries (FRARA, FRBFC, etc.) and does NOT include DOM-TOM. It maps to the wrong geography for this use case.
 
-### ameli.fr Excel Files
+**Why not D3 GeoJSON rendering:** D3 is 60 KB+ and requires a projection + GeoJSON dataset. For a static 21-region map that never changes, an inline SVG is simpler, faster, and zero-dependency.
 
-- **URL pattern:** `https://assurance-maladie.ameli.fr/sites/default/files/{year}_Risque-AT-CTN-x-NAF_serie%20annuelle.xlsx`
-- **CORS:** Unknown (WebFetch returned binary content; live curl not available). Assume blocked (government site, no public API).
-- **Update frequency:** Annual. 2023 data published 2024. 2024 data published November 2025.
-- **Format:** XLSX with multi-sheet structure (one sheet per CTN sector). Processed by existing `refresh_data.py`.
-- **Conclusion:** Download at build time (GitHub Actions), not at runtime (browser).
+**Why not Leaflet:** Leaflet is a tile-map library. Using it for a static choropleth requires a GeoJSON plugin and the full Leaflet CSS/JS. 100+ KB for 21 colored regions is not justified.
 
 ---
 
-## Cloudflare Workers: Free Tier Limits
+## Color Interpolation
 
-Relevant for Approach C (MCP proxy):
+### Recommendation: Inline linear RGB interpolation
 
-| Limit | Free Tier | Notes |
-|-------|-----------|-------|
-| Requests/day | 100,000 | Resets at 00:00 UTC; error 1027 when exceeded |
-| CPU time/request | 10ms | Sufficient for a simple HTTP proxy with no computation |
-| Memory | 128 MB | More than enough for a proxy |
-| Worker size (compressed) | 3 MB | MCP proxy will be well under 1 MB |
-| Workers KV reads/day | 100,000 | For caching MCP responses |
-| Workers KV writes/day | 1,000 | Sufficient for annual data |
-| Workers KV storage | 1 GB | More than enough for JSON cache |
-| Subdomain | `{name}.{account}.workers.dev` | No custom domain required |
-
-The free tier is sufficient. A public dashboard will not generate 100k MCP proxy requests/day.
-
----
-
-## Caching Strategy
-
-Data updates annually. Aggressive caching is correct.
-
-### For pre-built JSON (Approach B — recommended)
-
-The JSON files are committed to the repo and served by GitHub Pages. GitHub Pages serves static files with `Cache-Control: max-age=600` (10 minutes) by default, which cannot be overridden without a proxy. For annual data this is irrelevant: the files change once per year when a GitHub Actions run commits new JSON.
-
-**Recommendation:** Use the existing `fetch()` pattern in `js/data.js` with an in-memory cache (already implemented as `DATASETS`). Do not add localStorage caching for the full 9.2 MB JSON: it exceeds typical localStorage limits (5 MB per origin).
-
-### For REST API metadata (Approach A — dataset discovery)
-
-Cache dataset metadata in memory for the session. A `Map` keyed by dataset ID, populated on first fetch, is sufficient. No localStorage, no service worker.
-
-### For Cloudflare Workers KV (Approach C — MCP proxy)
-
-If implementing the Worker proxy, cache MCP responses in Workers KV:
-- Key: hash of the tool name + arguments
-- TTL: 7 days (data is annual; weekly refresh is generous)
-- Benefit: avoids re-calling MCP for identical queries; 100k KV reads/day free
+No library. Implement a helper in `js/map.js`:
 
 ```javascript
-// Pattern for KV-cached MCP proxy in Cloudflare Worker
-const cacheKey = `mcp:${toolName}:${JSON.stringify(args)}`;
-const cached = await env.CACHE.get(cacheKey);
-if (cached) return new Response(cached, { headers: corsHeaders });
-const result = await callMcpTool(toolName, args);
-await env.CACHE.put(cacheKey, JSON.stringify(result), { expirationTtl: 604800 }); // 7 days
-return new Response(JSON.stringify(result), { headers: corsHeaders });
+function interpolateColor(t, hexLow, hexHigh) {
+  // t: 0.0 (low) to 1.0 (high)
+  const parse = h => [
+    parseInt(h.slice(1,3), 16),
+    parseInt(h.slice(3,5), 16),
+    parseInt(h.slice(5,7), 16)
+  ];
+  const [r1,g1,b1] = parse(hexLow);
+  const [r2,g2,b2] = parse(hexHigh);
+  const r = Math.round(r1 + (r2-r1)*t);
+  const g = Math.round(g1 + (g2-g1)*t);
+  const b = Math.round(b1 + (b2-b1)*t);
+  return `rgb(${r},${g},${b})`;
+}
 ```
+
+**Color scale:** `#fee8d6` (light orange, low IF) to `#c0392b` (dark red, high IF). Matches the
+dashboard's existing risk color vocabulary (red = danger). Works in both light and dark themes.
+
+**Why not chroma.js:** 58 KB CDN dependency for a single two-color linear interpolation. The 10-line
+function above is correct and sufficient. Chroma.js is justified only if you need perceptual color
+spaces (Lab, Lch) for multi-hue scales, which this map does not require.
+
+---
+
+## Tooltip Pattern
+
+### Recommendation: HTML div with `position: fixed`, no library
+
+```javascript
+// In map.js
+const tooltip = document.getElementById('map-tooltip');
+
+svgEl.addEventListener('mousemove', e => {
+  const path = e.target.closest('[data-caisse]');
+  if (!path) { tooltip.hidden = true; return; }
+  tooltip.hidden = false;
+  tooltip.style.left = (e.clientX + 14) + 'px';
+  tooltip.style.top  = (e.clientY - 28) + 'px';
+  tooltip.innerHTML = buildTooltipHTML(path.dataset.caisse);
+});
+svgEl.addEventListener('mouseleave', () => { tooltip.hidden = true; });
+```
+
+```html
+<!-- In index.html -->
+<div id="map-tooltip" hidden aria-hidden="true"
+     style="position:fixed;pointer-events:none;z-index:100"></div>
+```
+
+**Why `position: fixed` over `position: absolute`:** SVG elements report coordinates in `clientX/Y`
+(viewport space). Fixed positioning avoids scroll offset calculations. Tooltip never overflows the
+SVG container.
+
+**Why `pointer-events: none`:** Prevents the tooltip div from triggering a `mouseleave` on the SVG
+path when the cursor moves near the tooltip boundary (flickering bug common in choropleth tooltips).
+
+---
+
+## PDF Table Extraction (pdfplumber)
+
+### Context
+
+The rapport annuel PDF contains Tableau 9 (AT by caisse régionale, ~p.24) and Tableau 17 (Trajet by
+caisse régionale, ~p.37). Both tables have multi-line rows where the caisse name wraps across two
+lines. pdfplumber version 0.11.9 (released January 5, 2026) is the current stable version.
+
+### Recommended approach
+
+```python
+import pdfplumber
+
+def extract_regional_table(page):
+    """Extract a caisse régionale table from one page."""
+    rows = page.extract_table({
+        "vertical_strategy": "lines",
+        "horizontal_strategy": "lines",
+        "snap_tolerance": 3,
+        "join_tolerance": 3,
+        "intersection_tolerance": 3,
+        "text_x_tolerance": 5,
+        "text_y_tolerance": 3,
+    })
+    return rows
+```
+
+### Multi-line row handling
+
+pdfplumber does not natively merge multi-line cells. When a caisse name wraps to a second line,
+`extract_table()` returns two consecutive rows where the second row has `None` for numeric columns.
+Post-process with a merge pass:
+
+```python
+def merge_multiline_rows(raw_rows):
+    """Merge rows where numeric columns are None (continuation of previous row)."""
+    merged = []
+    for row in raw_rows:
+        if not row:
+            continue
+        # A continuation row has None for all numeric columns (cols 1+)
+        if all(cell is None for cell in row[1:]):
+            if merged:
+                merged[-1][0] = (merged[-1][0] or '') + ' ' + (row[0] or '')
+            continue
+        merged.append(list(row))
+    return merged
+```
+
+### Alternative: `text` strategy
+
+If the table lacks explicit lines (shaded rows without borders), switch to:
+
+```python
+"vertical_strategy": "text",
+"horizontal_strategy": "text",
+"min_words_vertical": 3,
+"min_words_horizontal": 1,
+```
+
+The rapport annuel tables are well-structured with visible borders, so `"lines"` strategy is
+expected to work without adjustment. Verify by inspecting `page.debug_tablefinder()` output first.
+
+---
+
+## Regional Data JSON Format
+
+### Recommended structure
+
+```json
+{
+  "meta": {
+    "source": "Rapport annuel Assurance Maladie - Risques professionnels 2024",
+    "generated": "2026-02-28",
+    "years": [2020, 2021, 2022, 2023, 2024]
+  },
+  "caisses": [
+    {
+      "id": "carsat-bretagne",
+      "name": "Bretagne",
+      "type": "carsat",
+      "departments": ["22", "29", "35", "56"],
+      "at": { "2020": 12345, "2021": 11900, "2022": 12100, "2023": 11800, "2024": 11600 },
+      "trajet": { "2020": 2100, "2021": 2050, "2022": 2000, "2023": 1950, "2024": 1900 }
+    }
+  ]
+}
+```
+
+**Key decisions:**
+- `id` slug matches SVG `data-caisse` attribute for direct lookup (no mapping table needed)
+- `type` distinguishes Carsat (metropolitan), CGSS (DOM-TOM), and CSS (Mayotte) for map rendering
+- Numeric columns are event counts (not IF), matching what Tableau 9 and 17 provide directly
+- IF would require salarié headcount per caisse, which may not be in the same table; defer IF computation to a later pass if headcount is available
 
 ---
 
@@ -188,11 +239,13 @@ return new Response(JSON.stringify(result), { headers: corsHeaders });
 
 | Recommended | Alternative | When to Use Alternative |
 |-------------|-------------|-------------------------|
-| GitHub Actions pre-build pipeline | Live browser Excel download | Never: ameli.fr Excel files are 9+ MB and likely CORS-blocked; parsing XLSX in the browser requires SheetJS and is slow |
-| Direct datagouv REST API (CORS OK) | Cloudflare Worker proxy for REST | Only if datagouv removes CORS support (unlikely) |
-| Cloudflare Worker for MCP proxy | Supabase Edge Functions | Supabase requires a project, database, and 500k/month limit vs 100k/day Cloudflare; Cloudflare is simpler for a pure proxy |
-| Cloudflare Worker for MCP proxy | Netlify Functions | Netlify requires moving from GitHub Pages; Cloudflare is a smaller footprint addition |
-| Workers KV for MCP cache | Cloudflare R2 | R2 is for large binary objects; KV is correct for small JSON cache entries |
+| Inline SVG (handcrafted) | D3.js + GeoJSON | Only if regions change dynamically or pan/zoom is required |
+| Inline SVG (handcrafted) | Leaflet + GeoJSON | Only if tile-based maps with street context are needed |
+| Inline SVG (handcrafted) | amCharts SVG maps | Only if budget for commercial license exists and 20+ maps are needed |
+| Inline RGB interpolation | chroma.js | Only if multi-hue perceptual scale (Lab/Lch) is required |
+| pdfplumber | PyMuPDF (fitz) | PyMuPDF is faster for image/text extraction but table detection is weaker; stay with pdfplumber since it is already in use |
+| pdfplumber | camelot-py | Camelot is better for complex spanning headers but requires Ghostscript as a system dep; avoid for CI |
+| Wikimedia Commons SVG | simplemaps.com SVG | simplemaps maps post-2016 regions only; wrong geography for caisse régionale coverage |
 
 ---
 
@@ -200,35 +253,12 @@ return new Response(JSON.stringify(result), { headers: corsHeaders });
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| SheetJS in browser | Parsing 9 MB XLSX client-side blocks the UI thread; ameli.fr files likely CORS-blocked anyway | Python `openpyxl` in GitHub Actions (already works in `refresh_data.py`) |
-| Service Worker for offline cache | Adds significant complexity for a public dashboard; data is annual, not real-time | In-memory `DATASETS` object (already implemented) |
-| Supabase for proxy | Requires database project, overkill for a stateless HTTP proxy | Cloudflare Workers (stateless, free, simpler) |
-| Fetch datagouv MCP directly from browser | No CORS headers; will fail in production | Either direct REST API or Cloudflare Worker proxy |
-| `@latest` CDN tags | `lucide@latest` already flagged as risk in TECH.md; avoid for any new dependency | Pin explicit versions (e.g., `@modelcontextprotocol/sdk@1.x`) |
-| `localStorage` for 9 MB JSON | localStorage limit is 5 MB per origin; JSON files exceed this | In-memory cache only (existing pattern is correct) |
-
----
-
-## Stack Patterns by Variant
-
-**If only dataset metadata is needed at runtime (checking last update date, resource IDs):**
-- Call `https://www.data.gouv.fr/api/1/datasets/{id}/` directly from the browser
-- No proxy needed; CORS confirmed
-
-**If full sinistralite data must be live (not pre-built):**
-- Cloudflare Worker fetches ameli.fr Excel at request time (server-side, no CORS issue)
-- Worker parses with a WASM port of xlsx, caches result in Workers KV for 24h
-- Returns filtered JSON to browser
-- CPU limit (10ms/request) makes this risky; consider a pre-build approach instead
-
-**If MCP tool calls are needed at browser runtime:**
-- Deploy Cloudflare Worker that adds CORS headers and proxies to `https://mcp.data.gouv.fr/mcp`
-- Worker handles MCP session lifecycle (initialize, maintain Mcp-Session-Id, tool calls)
-- Cache responses in Workers KV with 7-day TTL
-
-**If data must update more frequently than annually:**
-- This does not apply: CNAM/ameli.fr publishes BPO data once per year
-- Annual GitHub Actions refresh is exactly the right cadence
+| D3.js | 60+ KB dependency, requires GeoJSON + projection for a static 21-polygon map; massive overkill | Inline SVG + `setAttribute('fill', color)` |
+| Leaflet | Tile-map library; no meaningful feature overlap with a static choropleth | Inline SVG |
+| chroma.js | 58 KB CDN for one linear interpolation; no perceptual benefit for a two-color scale | 10-line inline `interpolateColor()` function |
+| simplemaps.com SVG | Maps post-2016 administrative regions (13 regions); caisse régionale boundaries differ from this geography | Wikimedia Commons SVG with manual caisse grouping |
+| camelot-py | Requires system-level Ghostscript; fragile in CI environments | pdfplumber (already installed) |
+| `@svg-maps/france.regions` npm package | Requires a build step (npm); maps regions not caisses | Inline SVG sourced from Wikimedia Commons |
 
 ---
 
@@ -236,46 +266,39 @@ return new Response(JSON.stringify(result), { headers: corsHeaders });
 
 | Package | Compatible With | Notes |
 |---------|-----------------|-------|
-| MCP spec 2025-03-26 | `mcp.data.gouv.fr/mcp` v1.26.0 | Server confirmed on this protocol version |
-| Chart.js 4.4.7 | chartjs-plugin-datalabels 2.2.0 | Existing pinned versions; do not change |
-| Cloudflare Workers free | Wrangler 3.x | Wrangler 3 is current; do not use Wrangler 1 or 2 |
+| pdfplumber 0.11.9 | Python 3.10, 3.11, 3.12, 3.13 | Current as of January 5, 2026; no breaking changes from 0.11.x |
+| pdfplumber 0.11.9 | pdfminer.six (auto-installed) | pdfplumber manages this dependency; do not pin pdfminer separately |
+| Chart.js 4.4.7 | Existing choropleth view code | No conflict; map view is a separate HTML section, not a Chart.js canvas |
 
 ---
 
 ## Installation
 
-No npm packages are needed for Approach A (direct REST) or Approach B (GitHub Actions pre-build).
+No new browser-side dependencies. No CDN additions.
 
-For Approach C (Cloudflare Worker MCP proxy) only:
+For the Python pipeline only:
 
 ```bash
-# In a separate workers/ directory (not in the main project)
-npm init -y
-npm install @modelcontextprotocol/sdk@1
-npm install -D wrangler@3
-
-# Deploy
-npx wrangler deploy
+# Upgrade pdfplumber to current stable (if not already 0.11.9)
+pip install --upgrade pdfplumber==0.11.9
 ```
 
-The Cloudflare Worker is a separate deployment artifact, not part of the main static site.
+The SVG file is checked directly into the repository (under `data/` or inlined in `index.html`).
+No package installation required for the SVG.
 
 ---
 
 ## Sources
 
-- Live verification: `curl -D - https://mcp.data.gouv.fr/mcp` (POST InitializeRequest) — confirmed Streamable HTTP, no CORS headers, MCP session ID issued, server version 1.26.0
-- Live verification: `curl -D - -H "Origin: https://ayming-france.github.io" https://www.data.gouv.fr/api/1/datasets/?q=...` — confirmed CORS enabled on datagouv REST API
-- [MCP Transports specification (2025-06-18)](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports) — Streamable HTTP protocol definition, browser requirements, session management
-- [datagouv MCP GitHub (datagouv/datagouv-mcp)](https://github.com/datagouv/datagouv-mcp) — confirmed: Streamable HTTP only, no CORS, no auth required, 11 tools
-- [Cloudflare Workers limits](https://developers.cloudflare.com/workers/platform/limits/) — 100k req/day, 10ms CPU, 128 MB memory
-- [Cloudflare Workers KV limits](https://developers.cloudflare.com/kv/platform/limits/) — 100k reads/day, 1k writes/day, 1 GB storage
-- [Cloudflare Workers CORS proxy example](https://developers.cloudflare.com/workers/examples/cors-header-proxy/) — confirmed pattern for CORS proxy
-- [datagouv Tabular API (api-tabular GitHub)](https://github.com/datagouv/api-tabular) — filter operators, pagination, response format
-- [FastMCP CORS issue #840](https://github.com/jlowin/fastmcp/issues/840) — confirms browser MCP calls blocked without explicit CORS middleware
-- [bpo/data/refresh_data.py](file:///Users/encarv/.claude/bpo/data/refresh_data.py) — confirmed ameli.fr Excel URL patterns
+- [pdfplumber PyPI (0.11.9)](https://pypi.org/project/pdfplumber/) — confirmed latest version January 5, 2026; table_settings parameters verified
+- [pdfplumber GitHub jsvine/pdfplumber](https://github.com/jsvine/pdfplumber) — multi-line row behavior, merge pattern from community discussions #768, #84
+- [Wikimedia Commons: France administrative divisions 2016 SVG (+overseas)](https://commons.wikimedia.org/wiki/File:France,_administrative_divisions_-_en_(%2Boverseas)_-_colored_2016.svg) — CC BY-SA 3.0 DE, includes DOM-TOM insets
+- [simplemaps.com France SVG](https://simplemaps.com/svg/country/fr) — verified: post-2016 13-region boundaries with ISO codes (FRARA, etc.); does not match caisse régionale geography
+- [pdfplumber discussions #1071](https://github.com/jsvine/pdfplumber/discussions/1071) — snap_tolerance, join_tolerance, intersection_tolerance default values confirmed
+- Peter Collingridge SVG tooltip pattern — mousemove + `pointer-events: none` approach for flicker-free choropleth tooltips (MEDIUM confidence, community source)
+- [CARSAT territorial structure (Wikipedia FR)](https://fr.wikipedia.org/wiki/Caisse_d'assurance_retraite_et_de_sant%C3%A9_au_travail) — confirmed 15 Carsat + 4 CGSS + 1 CSS = 20 entities; Île-de-France served by CNAM Cnav directly
 
 ---
 
-*Stack research for: datagouv live data integration (sinistralite dashboard)*
-*Researched: 2026-02-27*
+*Stack research for: v1.1 carte régionale AT/Trajet (SVG choropleth + PDF pipeline)*
+*Researched: 2026-02-28*
