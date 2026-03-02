@@ -30,7 +30,8 @@
 .map-caisse {
   fill: var(--border-light);
   stroke: none;
-  transition: filter 0.2s ease;
+  cursor: pointer;
+  transition: filter 0.2s ease, opacity 0.2s ease;
 }
 
 /* Délimitations entre caisses via paths */
@@ -43,12 +44,29 @@
   transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
 
-/* Hover: mise en évidence de la caisse survolée */
-.map-caisse:hover {
+/* Linked highlight: dim all caisses, pop the active one */
+.map-svg.map-dim .map-caisse {
+  opacity: 0.35;
+  filter: saturate(0.4);
+}
+
+.map-svg.map-dim .map-caisse.map-active {
+  opacity: 1;
+  filter: brightness(1.1);
+}
+
+.map-svg.map-dim .map-caisse.map-active path {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  paint-order: fill stroke;
+}
+
+/* Direct hover fallback (no JS highlight active) */
+.map-svg:not(.map-dim) .map-caisse:hover {
   filter: brightness(1.15);
 }
 
-.map-caisse:hover path {
+.map-svg:not(.map-dim) .map-caisse:hover path {
   stroke: var(--accent);
   stroke-width: 1.5;
   paint-order: fill stroke;
@@ -178,13 +196,16 @@
   padding: 3px 8px;
   border-radius: 4px;
   cursor: default;
+  transition: background 0.15s, opacity 0.15s;
 }
 
-.ranking-item:hover {
+.ranking-item:hover,
+.ranking-item.ranking-active {
   background: var(--accent-glow);
 }
 
-.ranking-item:hover .ranking-fill {
+.ranking-item:hover .ranking-fill,
+.ranking-item.ranking-active .ranking-fill {
   opacity: 0;
 }
 

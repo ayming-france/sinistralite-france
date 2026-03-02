@@ -145,7 +145,7 @@ function renderRanking(viewType, year) {
     const t = min === max ? 0 : (c.val - min) / (max - min);
     const color = interpolateColor(MIN_COLOR, MAX_COLOR, t);
     const pct = Math.max(8, Math.round(t * 100));
-    return `<li class="ranking-item"><span class="ranking-fill" style="background:${color};width:${pct}%"></span><span class="ranking-pos">${i + 1}</span><span class="ranking-name">${c.name}</span><span class="ranking-val">${c.val.toLocaleString('fr-FR')}</span></li>`;
+    return `<li class="ranking-item" data-caisse="${c.id}"><span class="ranking-fill" style="background:${color};width:${pct}%"></span><span class="ranking-pos">${i + 1}</span><span class="ranking-name">${c.name}</span><span class="ranking-val">${c.val.toLocaleString('fr-FR')}</span></li>`;
   }).join('');
 }
 
@@ -249,6 +249,47 @@ function setupTooltip(svgId, viewType) {
 }
 
 /**
+ * Lie les survols entre carte SVG et panneau de classement.
+ * Hover sur la carte met en avant la ligne du classement (et inversement).
+ * Les autres éléments sont atténués via la classe .map-dim sur le conteneur SVG.
+ */
+function setupLinkedHighlight(svgId, viewType) {
+  const svg = document.getElementById(svgId);
+  const rankingList = document.getElementById(viewType + '-rankingList');
+  if (!svg || !rankingList) return;
+
+  function highlight(caisseId) {
+    svg.classList.add('map-dim');
+    const g = svg.querySelector(`[data-caisse="${caisseId}"]`);
+    if (g) g.classList.add('map-active');
+    const li = rankingList.querySelector(`[data-caisse="${caisseId}"]`);
+    if (li) li.classList.add('ranking-active');
+  }
+
+  function clear() {
+    svg.classList.remove('map-dim');
+    svg.querySelectorAll('.map-active').forEach(el => el.classList.remove('map-active'));
+    rankingList.querySelectorAll('.ranking-active').forEach(el => el.classList.remove('ranking-active'));
+  }
+
+  svg.addEventListener('mouseover', (e) => {
+    const g = e.target.closest('[data-caisse]');
+    if (!g) { clear(); return; }
+    clear();
+    highlight(g.dataset.caisse);
+  });
+  svg.addEventListener('mouseleave', clear);
+
+  rankingList.addEventListener('mouseover', (e) => {
+    const li = e.target.closest('[data-caisse]');
+    if (!li) { clear(); return; }
+    clear();
+    highlight(li.dataset.caisse);
+  });
+  rankingList.addEventListener('mouseleave', clear);
+}
+
+/**
  * Vérifie que chaque caisse ID a au moins un élément [data-caisse] dans le DOM.
  */
 function verifierStructureSVG() {
@@ -292,4 +333,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupYearSelector('trajet');
   setupSortButton('at');
   setupSortButton('trajet');
+  setupLinkedHighlight('france-map-at', 'at');
+  setupLinkedHighlight('france-map-trajet', 'trajet');
 });
