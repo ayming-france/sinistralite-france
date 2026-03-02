@@ -107,70 +107,91 @@
 
 /* Panneau de classement */
 .map-ranking {
-  flex: 0 0 220px;
-  max-height: 400px;
+  flex: 0 0 240px;
+  max-height: 460px;
   overflow-y: auto;
   border: 1px solid var(--border-light);
   border-radius: 8px;
-  padding: 8px;
   background: var(--bg-elevated);
+  box-shadow: var(--card-shadow);
 }
 
 .ranking-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  padding-bottom: 4px;
+  padding: 12px 14px 10px;
   border-bottom: 1px solid var(--border-light);
+  position: sticky;
+  top: 0;
+  background: var(--bg-elevated);
+  z-index: 1;
 }
 
 .ranking-title {
-  font-size: 0.75rem;
+  font-family: var(--sans);
+  font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--text-secondary);
-  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
 }
 
 .ranking-sort-btn {
   background: none;
-  border: none;
+  border: 1px solid var(--border-light);
   cursor: pointer;
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  padding: 2px 4px;
-  border-radius: 2px;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  padding: 3px 6px;
+  border-radius: 4px;
+  transition: background 0.12s, color 0.12s;
 }
 
 .ranking-sort-btn:hover {
-  background: var(--border-light);
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .ranking-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  counter-reset: ranking;
 }
 
 .ranking-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 6px 26px 1fr auto;
   align-items: center;
   gap: 8px;
-  padding: 4px 0;
+  padding: 8px 14px 8px 0;
   font-size: 0.78rem;
   border-bottom: 1px solid var(--border-light);
+  transition: background 0.12s;
+  cursor: default;
 }
 
 .ranking-item:last-child {
   border-bottom: none;
 }
 
+.ranking-item:hover {
+  background: var(--accent-glow);
+}
+
+.ranking-bar {
+  width: 6px;
+  height: 100%;
+  min-height: 20px;
+  border-radius: 0 3px 3px 0;
+}
+
 .ranking-pos {
+  font-family: var(--mono);
+  font-size: 0.72rem;
   font-weight: 600;
-  color: var(--text-secondary);
-  min-width: 20px;
+  color: var(--text-dim);
   text-align: right;
 }
 
@@ -179,11 +200,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
 }
 
 .ranking-val {
+  font-family: var(--mono);
+  font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--text);
   white-space: nowrap;
 }
 
@@ -225,6 +251,6 @@
   .map-ranking {
     flex: none;
     width: 100%;
-    max-height: 250px;
+    max-height: 280px;
   }
 }

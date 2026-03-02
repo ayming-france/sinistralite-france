@@ -131,15 +131,21 @@ function renderRanking(viewType, year) {
     return val != null ? { id, name: caisse.name || id, val } : null;
   }).filter(Boolean);
 
+  const values = metroVals.map(c => c.val);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+
   if (sortState[viewType] === 'desc') {
     metroVals.sort((a, b) => b.val - a.val);
   } else {
     metroVals.sort((a, b) => a.val - b.val);
   }
 
-  listEl.innerHTML = metroVals.map((c, i) =>
-    `<li class="ranking-item"><span class="ranking-pos">${i + 1}</span><span class="ranking-name">${c.name}</span><span class="ranking-val">${c.val.toLocaleString('fr-FR')}</span></li>`
-  ).join('');
+  listEl.innerHTML = metroVals.map((c, i) => {
+    const t = min === max ? 0 : (c.val - min) / (max - min);
+    const color = interpolateColor(MIN_COLOR, MAX_COLOR, t);
+    return `<li class="ranking-item"><span class="ranking-bar" style="background:${color}"></span><span class="ranking-pos">${i + 1}</span><span class="ranking-name">${c.name}</span><span class="ranking-val">${c.val.toLocaleString('fr-FR')}</span></li>`;
+  }).join('');
 }
 
 /**
