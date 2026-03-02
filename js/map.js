@@ -55,7 +55,7 @@ function interpolateColor(minColor, maxColor, t) {
  * @param {string} minColor - couleur hex minimale
  * @param {string} maxColor - couleur hex maximale
  */
-function renderLegende(legendElId, minVal, maxVal, minColor, maxColor) {
+function renderLegende(legendElId, minVal, maxVal, minColor, maxColor, label) {
   const el = document.getElementById(legendElId);
   if (!el) return;
 
@@ -66,7 +66,8 @@ function renderLegende(legendElId, minVal, maxVal, minColor, maxColor) {
     return `<span class="legend-swatch" style="background:${color}" title="${val.toLocaleString('fr-FR')}"></span>`;
   }).join('');
 
-  el.innerHTML = `<span class="legend-min">${minVal.toLocaleString('fr-FR')}</span><div class="legend-swatches">${swatches}</div><span class="legend-max">${maxVal.toLocaleString('fr-FR')}</span>`;
+  const labelHtml = label ? `<span class="legend-label">${label}</span>` : '';
+  el.innerHTML = `${labelHtml}<span class="legend-min">${minVal.toLocaleString('fr-FR')}</span><div class="legend-swatches">${swatches}</div><span class="legend-max">${maxVal.toLocaleString('fr-FR')}</span>`;
 }
 
 /**
@@ -106,7 +107,8 @@ export function colorierCarte(viewType, year, data) {
     el.style.fill = interpolateColor(MIN_COLOR, MAX_COLOR, t);
   });
 
-  renderLegende(legendId, min, max, MIN_COLOR, MAX_COLOR);
+  const metricLabel = viewType === 'at' ? 'Accidents du travail' : 'Accidents de trajet';
+  renderLegende(legendId, min, max, MIN_COLOR, MAX_COLOR, metricLabel);
 }
 
 /** État du tri par vue */

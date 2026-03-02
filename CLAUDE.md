@@ -38,7 +38,15 @@ Configured in `~/.claude/.mcp.json` as `datagouv`.
 - Single-page HTML apps (same pattern as BPO dashboard)
 - No build step, vanilla JS + CSS
 - Live data queries via datagouv MCP tools
-- Deploy to GitHub Pages via `xXencarvXx`
+
+## Git Remotes
+
+| Remote | Repo | Purpose |
+|--------|------|---------|
+| `origin` | `xXencarvXx/datagouv` | Private backup |
+| `deploy` | `ayming-france/sinistralite-france` | GitHub Pages (public) |
+
+**Deploy workflow:** `gh auth switch --user ayming-france` → `git push deploy main` → `gh auth switch --user xXencarvXx`
 
 ## Rules
 

@@ -3,6 +3,11 @@
 .map-section {
   margin-top: 32px;
   margin-bottom: 24px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  box-shadow: var(--card-shadow);
+  padding: 20px;
 }
 
 .map-title {
@@ -93,6 +98,15 @@
   height: 14px;
   border-radius: 2px;
   border: 1px solid var(--border-light);
+}
+
+.legend-label {
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  white-space: nowrap;
 }
 
 .legend-min,
