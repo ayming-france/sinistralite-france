@@ -29,14 +29,27 @@
 /* Remplissage explicite pour éviter l'héritage de currentColor comme fill */
 .map-caisse {
   fill: var(--border-light);
-  stroke: var(--map-stroke, rgba(255,255,255,0.55));
-  stroke-width: 1.8;
-  stroke-linejoin: round;
+  stroke: none;
 }
 
-/* Forcer l'héritage du fill sur les paths enfants */
+/* Délimitations entre caisses via paths */
 .map-caisse path {
   fill: inherit;
+  stroke: var(--map-stroke, rgba(255,255,255,0.55));
+  stroke-width: 0.8;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+}
+
+/* Hover: mise en évidence de la caisse survolée */
+.map-caisse:hover {
+  filter: brightness(1.15);
+}
+
+.map-caisse:hover path {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  paint-order: fill stroke;
 }
 
 /* Légende choroplèthe */
