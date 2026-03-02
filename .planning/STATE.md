@@ -5,19 +5,19 @@
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Un utilisateur peut chercher un code NAF et voir instantanément le profil accidentel du secteur comparé aux moyennes nationales
-**Current focus:** v1.1 Carte régionale — Phase 6: Pipeline régional
+**Current focus:** v1.1 Carte régionale — Phase 7: Structure SVG
 
 ## Current Position
 
-Phase: 6 (Pipeline régional)
-Plan: 02 (complete)
-Status: Phase 6 Plan 02 terminé — regional-data.json produit (21 caisses, AT+Trajet 2020-2024), refresh_data.py intégré
-Last activity: 2026-03-02 — Plan 06-02 exécuté (extraction par coordonnées, regional-data.json, --rapport-pdf)
+Phase: 7 (Structure SVG)
+Plan: 01 (complete)
+Status: Phase 7 Plan 01 terminé — styles/map.css créé, SVG inline (16 caisses) intégré dans #view-at et #view-trajet
+Last activity: 2026-03-02 — Plan 07-01 exécuté (map.css, SVG carte régionale placeholder dans index.html)
 
 ```
-v1.1 Progress: [          ] 0/4 phases (Phase 6 in progress: 2/2 plans complets)
-Phase 6: [~] Pipeline régional (Plan 01/02 complet, Plan 02/02 complet)
-Phase 7: [ ] Structure SVG
+v1.1 Progress: [==        ] 1/4 phases (Phase 7 in progress: 1/1 plans complets)
+Phase 6: [x] Pipeline régional (Plan 01/02 complet, Plan 02/02 complet)
+Phase 7: [~] Structure SVG (Plan 01/01 complet)
 Phase 8: [ ] Choroplèthe et interactions
 Phase 9: [ ] Navigation et mobile
 ```
@@ -30,8 +30,9 @@ Phase 9: [ ] Navigation et mobile
 
 **v1.1 (in progress)**
 - 4 phases planned (6-9)
-- 2 plans complete (06-01, 06-02)
+- 3 plans complete (06-01, 06-02, 07-01)
 - 3 files modified in 06-02 (parse_regional.py, refresh_data.py, regional-data.json)
+- 2 files modified in 07-01 (styles/map.css créé, index.html +525 lignes SVG)
 
 ## Accumulated Context
 
@@ -64,10 +65,12 @@ Décisions v1.1 confirmées par la recherche:
 - Année par défaut: 2023 (correspond aux données sectorielles)
 - [Phase 06]: DEPT_MAP indexé par numéro de département remplace les clés CAISSE_MAP (format réel PDF: 'NN - NomAbrégé')
 - [Phase 06]: Extraction par coordonnées x (extract_words + seuil x) au lieu de extract_table (tableau PDF à 2 caisses par rangée visuelle)
+- [Phase 07]: Chemins SVG approximatifs (placeholders) suite à l'indisponibilité du source regisenguehard/carte-france-svg
+- [Phase 07]: Deux SVGs séparés (AT + Trajet) pour coloration indépendante en Phase 8
 
 ### Pending Todos
 
-- Inspecter les règles CSS héritées dans DevTools avant d'implémenter la coloration SVG (Phase 7)
+- Vérifier les chemins SVG approximatifs dans un navigateur et remplacer par les paths réels de regisenguehard/carte-france-svg si disponibles (Phase 8 ou avant déploiement)
 - Calculer la distribution des données réelles avant de choisir la méthode de couleur (linéaire, clamped 95e percentile, logarithmique) (Phase 8)
 
 ### Blockers/Concerns
@@ -79,6 +82,6 @@ Décisions v1.1 confirmées par la recherche:
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Phase 6 Plan 02 complet — regional-data.json produit (21 caisses, AT+Trajet 2020-2024), refresh_data.py intégré
+Stopped at: Phase 7 Plan 01 complet — styles/map.css et SVG inline (16 caisses) dans index.html
 Resume file: None
-Next action: Plan 07-01 — Structure SVG de la carte régionale
+Next action: Plan 08-01 — Choroplèthe et interactions (coloration des caisses SVG par données régionales)
