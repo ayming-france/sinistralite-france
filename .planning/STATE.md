@@ -10,15 +10,15 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 8 (Choroplèthe et interactions)
-Plan: 01 (complete)
-Status: Phase 8 Plan 01 terminé — choropleth coloring implémenté (interpolateColor, renderLegende, colorierCarte), légende 5 paliers, chargement données JSON au démarrage
-Last activity: 2026-03-02 — Plan 08-01 exécuté (coloration SVG choroplèthe + légende)
+Plan: 02 (complete)
+Status: Phase 8 complète — tooltip desktop viewport-clampé, sélecteur d'année 2020-2024, panneau de classement triable (MAP-06, MAP-08, MAP-09)
+Last activity: 2026-03-02 — Plan 08-02 exécuté (tooltip, year selector, ranking)
 
 ```
-v1.1 Progress: [===       ] 2/4 phases (Phase 8 en cours: 1/2 plans complets)
+v1.1 Progress: [====      ] 3/4 phases (Phase 8 complète: 2/2 plans)
 Phase 6: [x] Pipeline régional (Plan 01/02 complet, Plan 02/02 complet)
 Phase 7: [x] Structure SVG (Plan 01/02 complet, Plan 02/02 complet)
-Phase 8: [~] Choroplèthe et interactions (Plan 01/02 complet)
+Phase 8: [x] Choroplèthe et interactions (Plan 01/02 complet, Plan 02/02 complet)
 Phase 9: [ ] Navigation et mobile
 ```
 
@@ -74,6 +74,10 @@ Décisions v1.1 confirmées par la recherche:
 - [Phase 08-01]: renderLegende avec 5 paliers discrets (t = 0, 0.25, 0.5, 0.75, 1.0), valeurs en locale fr-FR
 - [Phase 08-01]: Coloration appliquée sur l'élément parent <g data-caisse> (paths héritent via fill:inherit, pas de sélecteur path)
 - [Phase 08-01]: DOM-TOM silencieusement ignorés (querySelector retourne null, on retourne sans console.warn)
+- [Phase 08-02]: Tooltip partagé unique (#mapTooltip) hors des sections carte (position:fixed, évite overflow clipping)
+- [Phase 08-02]: Suppression tooltip tactile via navigator.maxTouchPoints > 0 (Phase 9 gère le tap panel)
+- [Phase 08-02]: sortState module-level conserve l'ordre de tri entre changements d'année
+- [Phase 08-02]: updateMap centralise colorierCarte + renderRanking (renderLegende déjà dans colorierCarte)
 
 ### Pending Todos
 
@@ -89,6 +93,6 @@ Décisions v1.1 confirmées par la recherche:
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Phase 8 Plan 01 complet — choropleth coloring (interpolateColor, renderLegende, colorierCarte) livré avec légende 5 paliers
+Stopped at: Phase 8 Plan 02 complet — tooltip desktop, sélecteur d'année, panneau de classement triable
 Resume file: None
-Next action: Phase 8 Plan 02 — Tooltips et interactions hover/tap sur les caisses SVG
+Next action: Phase 9 — Navigation et mobile (tap panel mobile, navigation entre vues)

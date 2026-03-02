@@ -24,10 +24,10 @@ Requirements for regional map feature. Each maps to roadmap phases.
 
 ### Interaction
 
-- [ ] **MAP-06**: Desktop tooltip showing region name and stats on hover
+- [x] **MAP-06**: Desktop tooltip showing region name and stats on hover
 - [x] **MAP-07**: AT/Trajet toggle follows the current view (no separate toggle needed)
-- [ ] **MAP-08**: Discreet year selector (small, not prominent) to switch map year
-- [ ] **MAP-09**: Sortable region ranking sidebar alongside the map
+- [x] **MAP-08**: Discreet year selector (small, not prominent) to switch map year
+- [x] **MAP-09**: Sortable region ranking sidebar alongside the map
 
 ### Mobile
 
@@ -88,10 +88,10 @@ Deferred to future release. Tracked but not in current roadmap.
 | MAP-02 | Phase 8 | Complete |
 | MAP-03 | Phase 8 | Complete |
 | MAP-05 | Phase 8 | Complete |
-| MAP-06 | Phase 8 | Pending |
+| MAP-06 | Phase 8 | Complete |
 | MAP-07 | Phase 8 | Complete |
-| MAP-08 | Phase 8 | Pending |
-| MAP-09 | Phase 8 | Pending |
+| MAP-08 | Phase 8 | Complete |
+| MAP-09 | Phase 8 | Complete |
 | MAP-10 | Phase 9 | Pending |
 
 **Coverage:**
