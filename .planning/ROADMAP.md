@@ -86,7 +86,10 @@ Plans:
   1. Sur un appareil tactile, taper sur une région ouvre un panneau fixe en bas de l'écran affichant le nom de la caisse et ses statistiques. Taper en dehors du panneau le ferme
   2. La vue MP affiche un message explicatif indiquant que les données régionales ne sont pas disponibles pour les maladies professionnelles
   3. Le hash de l'URL reflète la vue active (ex. `#at`, `#trajet`) et la carte se positionne correctement lors d'un rechargement sur cette URL
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 09-01-PLAN.md — Touch tap panel, MP unavailable message, visual verification
 
 ## Progress
 
@@ -100,4 +103,4 @@ Plans:
 | 6. Pipeline régional | v1.1 | 2/2 | Complete | 2026-03-02 |
 | 7. Structure SVG | 2/2 | Complete    | 2026-03-02 | - |
 | 8. Choroplèthe et interactions | 3/3 | Complete   | 2026-03-02 | - |
-| 9. Navigation et mobile | v1.1 | 0/? | Not started | - |
+| 9. Navigation et mobile | v1.1 | 0/1 | Planned | - |
