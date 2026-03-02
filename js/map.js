@@ -112,6 +112,14 @@ export function colorierCarte(viewType, year, data) {
 /** État du tri par vue */
 const sortState = { at: 'desc', trajet: 'desc' };
 
+/** Retourne l'année active pour une vue depuis les pill buttons. */
+function getActiveYear(viewType) {
+  const container = document.getElementById(viewType + '-yearSelect');
+  if (!container) return DEFAULT_YEAR;
+  const active = container.querySelector('.year-pill.active');
+  return active ? active.dataset.year : DEFAULT_YEAR;
+}
+
 /**
  * Affiche le classement des caisses pour la vue et l'année données.
  * @param {string} viewType - 'at' ou 'trajet'
@@ -160,9 +168,7 @@ function setupSortButton(viewType) {
   btn.addEventListener('click', () => {
     sortState[viewType] = sortState[viewType] === 'desc' ? 'asc' : 'desc';
     btn.innerHTML = sortState[viewType] === 'desc' ? '\u25BC' : '\u25B2';
-    const sel = document.getElementById(viewType + '-yearSelect');
-    const year = sel ? sel.value : DEFAULT_YEAR;
-    renderRanking(viewType, year);
+    renderRanking(viewType, getActiveYear(viewType));
   });
 }
 
@@ -171,11 +177,15 @@ function setupSortButton(viewType) {
  * @param {string} viewType - 'at' ou 'trajet'
  */
 function setupYearSelector(viewType) {
-  const sel = document.getElementById(viewType + '-yearSelect');
-  if (!sel) return;
+  const container = document.getElementById(viewType + '-yearSelect');
+  if (!container) return;
 
-  sel.addEventListener('change', (e) => {
-    updateMap(viewType, e.target.value);
+  container.addEventListener('click', (e) => {
+    const pill = e.target.closest('.year-pill');
+    if (!pill) return;
+    container.querySelector('.year-pill.active')?.classList.remove('active');
+    pill.classList.add('active');
+    updateMap(viewType, pill.dataset.year);
   });
 }
 
@@ -219,8 +229,7 @@ function setupTooltip(svgId, viewType) {
       return;
     }
 
-    const sel = document.getElementById(viewType + '-yearSelect');
-    const year = sel ? sel.value : DEFAULT_YEAR;
+    const year = getActiveYear(viewType);
     const metric = viewType === 'at' ? 'at' : 'trajet';
     const val = caisse[metric] && caisse[metric][year];
 
