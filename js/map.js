@@ -301,6 +301,53 @@ function setupLinkedHighlight(svgId, viewType) {
 }
 
 /**
+ * Ferme le panneau tap mobile s'il est ouvert.
+ */
+function closeTapPanel() {
+  const panel = document.getElementById('mapTapPanel');
+  if (panel && panel.classList.contains('open')) {
+    panel.classList.remove('open');
+  }
+}
+
+/**
+ * Configure le panneau tap mobile pour une carte SVG.
+ * Activé uniquement sur les appareils tactiles (navigator.maxTouchPoints > 0).
+ * @param {string} svgId - ID de l'élément SVG
+ * @param {string} viewType - 'at' ou 'trajet'
+ */
+function setupTapPanel(svgId, viewType) {
+  if (navigator.maxTouchPoints === 0) return;
+
+  const svg = document.getElementById(svgId);
+  const panel = document.getElementById('mapTapPanel');
+  if (!svg || !panel) return;
+
+  const metricLabel = viewType === 'at' ? 'Accidents du travail' : 'Accidents de trajet';
+
+  svg.addEventListener('click', (e) => {
+    const g = e.target.closest('[data-caisse]');
+    if (!g) return;
+
+    const caisseId = g.dataset.caisse;
+    const caisses = regionalData ? regionalData.caisses || [] : [];
+    const caisse = caisses.find(c => c.id === caisseId);
+    if (!caisse) return;
+
+    const year = getActiveYear(viewType);
+    const metric = viewType === 'at' ? 'at' : 'trajet';
+    const val = caisse[metric] && caisse[metric][year];
+    if (val == null) return;
+
+    panel.querySelector('.tap-panel-name').textContent = caisse.name || caisseId;
+    panel.querySelector('.tap-panel-metric').textContent = metricLabel;
+    panel.querySelector('.tap-panel-val').textContent = `${val.toLocaleString('fr-FR')} (${year})`;
+    panel.classList.add('open');
+    e.stopPropagation();
+  });
+}
+
+/**
  * Vérifie que chaque caisse ID a au moins un élément [data-caisse] dans le DOM.
  */
 function verifierStructureSVG() {
@@ -346,4 +393,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupSortButton('trajet');
   setupLinkedHighlight('france-map-at', 'at');
   setupLinkedHighlight('france-map-trajet', 'trajet');
+  setupTapPanel('france-map-at', 'at');
+  setupTapPanel('france-map-trajet', 'trajet');
+
+  const closeBtn = document.querySelector('#mapTapPanel .tap-panel-close');
+  if (closeBtn) closeBtn.addEventListener('click', () => closeTapPanel());
+
+  document.addEventListener('click', (e) => {
+    const panel = document.getElementById('mapTapPanel');
+    if (panel && panel.classList.contains('open') && !panel.contains(e.target)) {
+      panel.classList.remove('open');
+    }
+  });
+
+  window.addEventListener('hashchange', () => closeTapPanel());
 });
