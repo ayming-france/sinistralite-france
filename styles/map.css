@@ -68,8 +68,163 @@
   white-space: nowrap;
 }
 
+/* Contrôles (année) */
+.map-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.year-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.year-select {
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* Corps flex: carte + classement côte à côte */
+.map-body {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.map-body .map-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Panneau de classement */
+.map-ranking {
+  flex: 0 0 220px;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--bg-elevated);
+}
+
+.ranking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.ranking-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.ranking-sort-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.ranking-sort-btn:hover {
+  background: var(--border-light);
+}
+
+.ranking-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: ranking;
+}
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 0.78rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.ranking-item:last-child {
+  border-bottom: none;
+}
+
+.ranking-pos {
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 20px;
+  text-align: right;
+}
+
+.ranking-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Tooltip */
+.map-tooltip {
+  position: fixed;
+  display: none;
+  padding: 8px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  pointer-events: none;
+  z-index: 1000;
+  max-width: 220px;
+  line-height: 1.4;
+}
+
+.tooltip-name {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.tooltip-val {
+  display: block;
+  color: var(--text-secondary);
+}
+
 @media (max-width: 768px) {
   .map-section {
     margin-top: 24px;
+  }
+  .map-body {
+    flex-direction: column;
+  }
+  .map-ranking {
+    flex: none;
+    width: 100%;
+    max-height: 250px;
   }
 }
