@@ -41,6 +41,8 @@ export function setupSearch(viewId, renderFn) {
         vs.code = null;
         viewEl(viewId, 'results').classList.remove('visible');
         viewEl(viewId, 'emptyState').style.display = '';
+        var mapSec = viewEl(viewId, 'mapSection');
+        if (mapSec) mapSec.style.display = '';
         window.location.hash = viewId;
         searchInput.blur();
       } else if (items.length > 0) {

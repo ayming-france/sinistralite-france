@@ -48,6 +48,8 @@ function render(viewId, code, level) {
 
   viewEl(viewId, 'emptyState').style.display = 'none';
   viewEl(viewId, 'results').classList.add('visible');
+  var mapSec = viewEl(viewId, 'mapSection');
+  if (mapSec) mapSec.style.display = 'none';
 
   var s = entry.stats;
   var nat = data.meta.national;
