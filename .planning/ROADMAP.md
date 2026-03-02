@@ -53,7 +53,11 @@ Plans:
   2. Chaque zone de la carte peut être ciblée individuellement via un attribut `data-caisse` dont la valeur correspond exactement à une clé du JSON régional
   3. La carte s'affiche sans barre de défilement horizontale sur un écran de 375px de large (iPhone SE)
   4. Aucune règle CSS existante du tableau de bord ne colore ou ne masque les paths SVG de la carte
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Construire le SVG groupé par caisse et le CSS responsive (map.css)
+- [ ] 07-02-PLAN.md — Créer js/map.js stub et valider visuellement la carte dans le navigateur
 
 ### Phase 8: Choroplèthe et interactions
 
@@ -88,7 +92,7 @@ Plans:
 | 3. Accessibilité | v1.0 | 1/1 | Complete | 2026-02-27 |
 | 4. Export CSV | v1.0 | 1/1 | Complete | 2026-02-28 |
 | 5. Pipeline de données | v1.0 | 2/2 | Complete | 2026-02-28 |
-| 6. Pipeline régional | 2/2 | Complete    | 2026-03-02 | - |
-| 7. Structure SVG | v1.1 | 0/? | Not started | - |
+| 6. Pipeline régional | v1.1 | 2/2 | Complete | 2026-03-02 |
+| 7. Structure SVG | v1.1 | 0/2 | Not started | - |
 | 8. Choroplèthe et interactions | v1.1 | 0/? | Not started | - |
 | 9. Navigation et mobile | v1.1 | 0/? | Not started | - |
