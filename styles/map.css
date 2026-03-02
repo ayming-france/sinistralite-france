@@ -107,25 +107,20 @@
 
 /* Panneau de classement */
 .map-ranking {
-  flex: 0 0 240px;
-  max-height: 460px;
-  overflow-y: auto;
+  flex: 0 0 280px;
   border: 1px solid var(--border-light);
   border-radius: 8px;
   background: var(--bg-elevated);
   box-shadow: var(--card-shadow);
+  overflow: hidden;
 }
 
 .ranking-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 14px 10px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border-light);
-  position: sticky;
-  top: 0;
-  background: var(--bg-elevated);
-  z-index: 1;
 }
 
 .ranking-title {
@@ -157,56 +152,60 @@
 .ranking-list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 4px 10px;
 }
 
 .ranking-item {
-  display: grid;
-  grid-template-columns: 6px 26px 1fr auto;
+  position: relative;
+  display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px 8px 0;
-  font-size: 0.78rem;
-  border-bottom: 1px solid var(--border-light);
-  transition: background 0.12s;
+  padding: 3px 8px;
+  border-radius: 4px;
   cursor: default;
-}
-
-.ranking-item:last-child {
-  border-bottom: none;
 }
 
 .ranking-item:hover {
   background: var(--accent-glow);
 }
 
-.ranking-bar {
-  width: 6px;
-  height: 100%;
-  min-height: 20px;
-  border-radius: 0 3px 3px 0;
+.ranking-item:hover .ranking-fill {
+  opacity: 0;
+}
+
+.ranking-fill {
+  position: absolute;
+  inset: 1px;
+  border-radius: 3px;
+  opacity: 0.12;
+  pointer-events: none;
+  transition: opacity 0.15s;
 }
 
 .ranking-pos {
+  position: relative;
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 600;
   color: var(--text-dim);
+  min-width: 18px;
   text-align: right;
 }
 
 .ranking-name {
+  position: relative;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
 }
 
 .ranking-val {
+  position: relative;
   font-family: var(--mono);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: var(--text);
@@ -251,6 +250,5 @@
   .map-ranking {
     flex: none;
     width: 100%;
-    max-height: 280px;
   }
 }

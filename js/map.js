@@ -144,7 +144,8 @@ function renderRanking(viewType, year) {
   listEl.innerHTML = metroVals.map((c, i) => {
     const t = min === max ? 0 : (c.val - min) / (max - min);
     const color = interpolateColor(MIN_COLOR, MAX_COLOR, t);
-    return `<li class="ranking-item"><span class="ranking-bar" style="background:${color}"></span><span class="ranking-pos">${i + 1}</span><span class="ranking-name">${c.name}</span><span class="ranking-val">${c.val.toLocaleString('fr-FR')}</span></li>`;
+    const pct = Math.max(8, Math.round(t * 100));
+    return `<li class="ranking-item"><span class="ranking-fill" style="background:${color};width:${pct}%"></span><span class="ranking-pos">${i + 1}</span><span class="ranking-name">${c.name}</span><span class="ranking-val">${c.val.toLocaleString('fr-FR')}</span></li>`;
   }).join('');
 }
 
