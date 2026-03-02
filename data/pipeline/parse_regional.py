@@ -15,29 +15,51 @@ import json
 import re
 import sys
 import unicodedata
+from collections import defaultdict
 from datetime import date
 from pathlib import Path
 
 import pdfplumber
 
 
-# Paramètres d'extraction de tableau (stratégie "lines" pour tableaux à bordures)
-TABLE_SETTINGS = {
-    "vertical_strategy": "lines",
-    "horizontal_strategy": "lines",
-    "snap_tolerance": 3,
-    "join_tolerance": 3,
-    "intersection_tolerance": 3,
-    "text_x_tolerance": 5,
-    "text_y_tolerance": 3,
-}
-
 # Années couvertes par le rapport annuel
 YEARS = ["2020", "2021", "2022", "2023", "2024"]
 
-# Noms canoniques des caisses tels qu'ils apparaissent dans le rapport annuel Ameli.
-# 16 caisses métropolitaines (1 CRAMIF + 15 Carsat) + 5 DOM-TOM (4 CGSS + 1 CSS Mayotte)
-# Valeur: (identifiant stable, type)
+# Correspondance département -> (identifiant stable, nom canonique, type)
+# Format des noms dans le PDF: "NN – NomAbrégé" (numéro de département + tiret + nom court)
+# Les numéros DOM-TOM (971-976 pour AT, 71-76 pour Trajet) correspondent aux CGSS/CSS.
+DEPT_MAP = {
+    "13": ("sud-est", "Carsat Sud-Est", "carsat"),
+    "21": ("bourgogne-franche-comte", "Carsat Bourgogne-Franche-Comté", "carsat"),
+    "31": ("midi-pyrenees", "Carsat Midi-Pyrénées", "carsat"),
+    "33": ("aquitaine", "Carsat Aquitaine", "carsat"),
+    "34": ("languedoc-roussillon", "Carsat Languedoc-Roussillon", "carsat"),
+    "35": ("bretagne", "Carsat Bretagne", "carsat"),
+    "44": ("pays-de-la-loire", "Carsat Pays de la Loire", "carsat"),
+    "45": ("centre-val-de-loire", "Carsat Centre-Val de Loire", "carsat"),
+    "54": ("nord-est", "Carsat Nord-Est", "carsat"),
+    "59": ("nord-picardie", "Carsat Nord-Picardie", "carsat"),
+    "63": ("auvergne", "Carsat Auvergne", "carsat"),
+    "67": ("alsace-moselle", "Carsat Alsace-Moselle", "carsat"),
+    "69": ("rhone-alpes", "Carsat Rhône-Alpes", "carsat"),
+    "75": ("cramif", "CRAMIF", "cramif"),
+    "76": ("normandie", "Carsat Normandie", "carsat"),
+    "87": ("centre-ouest", "Carsat Centre-Ouest", "carsat"),
+    # DOM-TOM: Tableau 9 utilise 971-976, Tableau 17 utilise 71-76.
+    "71": ("cgss-guadeloupe", "CGSS Guadeloupe", "cgss"),
+    "72": ("cgss-martinique", "CGSS Martinique", "cgss"),
+    "73": ("cgss-guyane", "CGSS Guyane", "cgss"),
+    "74": ("cgss-reunion", "CGSS La Réunion", "cgss"),
+    "25": ("css-mayotte", "CSS Mayotte", "css"),
+    "971": ("cgss-guadeloupe", "CGSS Guadeloupe", "cgss"),
+    "972": ("cgss-martinique", "CGSS Martinique", "cgss"),
+    "973": ("cgss-guyane", "CGSS Guyane", "cgss"),
+    "974": ("cgss-reunion", "CGSS La Réunion", "cgss"),
+    "976": ("css-mayotte", "CSS Mayotte", "css"),
+}
+
+# CAISSE_MAP conservé pour la compatibilité avec les tests unitaires existants.
+# Clés: noms canoniques. Valeur: (identifiant stable, type).
 CAISSE_MAP = {
     "CRAMIF": ("cramif", "cramif"),
     "Carsat Normandie": ("normandie", "carsat"),
@@ -66,6 +88,9 @@ CAISSE_MAP = {
 # Mots-clés de lignes à exclure (totaux, agrégats nationaux)
 EXCLUDE_NAMES = {"total", "ensemble", "france", "france entiere", "france entière",
                  "france metropolitaine", "france métropolitaine"}
+
+# Pattern de numéro de département en début de ligne (2 ou 3 chiffres)
+_DEPT_RE = re.compile(r"^\d{2,3}$")
 
 
 def find_tableau_page(pdf: pdfplumber.PDF, label: str) -> tuple[int, object]:
@@ -212,112 +237,285 @@ def _detect_salary_column(rows: list) -> int | None:
     return None
 
 
-def extract_regional_table(page: object, has_salaries: bool) -> list[dict]:
-    """Extrait les données d'un tableau régional depuis une page PDF.
-
-    Gère les caisses métropolitaines et DOM-TOM. Les lignes de totaux et d'agrégats
-    sont exclues. Les noms non reconnus dans CAISSE_MAP génèrent un avertissement.
+def _words_by_row(page: object, y_tolerance: int = 8) -> dict[int, list]:
+    """Regroupe les mots pdfplumber par ligne (coordonnée y).
 
     Args:
         page: objet page pdfplumber
-        has_salaries: True pour Tableau 9 (inclut effectifs salariés), False pour Tableau 17
+        y_tolerance: fenêtre (en points) pour regrouper les mots sur la même ligne
 
     Returns:
-        Liste de dicts avec la structure:
-        [{"id": str, "name": str, "type": str, "values": {annee: count}, "salaries": {annee: count} | None}]
+        Dict {y_bin: [mots triés par x]}
     """
-    raw_rows = page.extract_table(TABLE_SETTINGS)
-    if not raw_rows:
-        print("  AVERTISSEMENT: extract_table() a retourné None ou vide", file=sys.stderr)
+    words = page.extract_words(x_tolerance=3, y_tolerance=3)
+    rows = defaultdict(list)
+    for w in words:
+        y_bin = round(w["top"] / y_tolerance) * y_tolerance
+        rows[y_bin].append(w)
+    return {y: sorted(ws, key=lambda w: w["x0"]) for y, ws in rows.items()}
+
+
+def _detect_col_centers(rows_by_y: dict) -> list[float]:
+    """Détecte les centres x des colonnes de données depuis la ligne d'en-tête.
+
+    Recherche les mots "Salariés*", "AT**" ou "Trajet**" dans les premières lignes.
+
+    Args:
+        rows_by_y: dict {y_bin: [mots]}
+
+    Returns:
+        Liste ordonnée des centres x des colonnes de données (10 colonnes pour 5 années).
+    """
+    col_centers = []
+    for y in sorted(rows_by_y.keys()):
+        words = rows_by_y[y]
+        texts = [w["text"] for w in words]
+        if any(t in ("Salariés*", "AT**", "Trajet**") for t in texts):
+            for w in words:
+                if w["text"] in ("Salariés*", "AT**", "Trajet**"):
+                    col_centers.append((w["x0"] + w["x1"]) / 2)
+            if len(col_centers) >= 8:
+                break
+    return col_centers
+
+
+def _nearest_col(cx: float, col_centers: list[float]) -> int:
+    """Trouve l'indice de la colonne la plus proche d'un centre x.
+
+    Args:
+        cx: centre x du mot à assigner
+        col_centers: liste des centres x de chaque colonne
+
+    Returns:
+        Indice de colonne (0-based).
+    """
+    if not col_centers:
+        return -1
+    return min(range(len(col_centers)), key=lambda i: abs(col_centers[i] - cx))
+
+
+def _is_data_token(text: str) -> bool:
+    """Vérifie si un token est une valeur numérique ou un tiret de valeur absente."""
+    return bool(re.match(r"^\d+$", text.replace("\xa0", "").replace("\u00a0", ""))) or text in ("-", "–")
+
+
+def extract_regional_table_by_coords(
+    page: object, label: str, has_salaries: bool
+) -> list[dict]:
+    """Extrait les données d'un tableau régional via les coordonnées de mots.
+
+    Le tableau du rapport annuel présente deux caisses côte à côte par rangée visuelle,
+    ce qui fausse l'extraction par extract_table(). Cette fonction utilise extract_words()
+    avec les coordonnées x pour assigner chaque token numérique à la bonne colonne.
+
+    Chaque caisse occupe une ou plusieurs lignes ayant le même bloc de données numériques.
+    Le numéro de département en début de ligne identifie le début d'une nouvelle caisse.
+
+    Args:
+        page: objet page pdfplumber
+        label: label du tableau (ex. "Tableau 9") pour ancrer la recherche de l'en-tête
+        has_salaries: True pour Tableau 9 (colonnes alternent Salariés/AT),
+                      False pour Tableau 17 (colonnes alternent Salariés/Trajet)
+
+    Returns:
+        Liste de dicts {"id": str, "name": str, "type": str, "values": dict, "salaries": dict|None}
+    """
+    rows_by_y = _words_by_row(page)
+    col_centers = _detect_col_centers(rows_by_y)
+
+    if not col_centers:
+        print(f"  AVERTISSEMENT: colonnes non détectées pour {label}", file=sys.stderr)
         return []
 
-    rows = merge_multiline_rows(raw_rows)
+    # Vérifier que le label est bien présent sur la page
+    page_text = page.extract_text() or ""
+    if label not in page_text:
+        print(f"  AVERTISSEMENT: label '{label}' introuvable sur la page", file=sys.stderr)
+        return []
 
-    # Détecter les colonnes d'années et de salariés depuis les en-têtes
-    year_cols = _detect_year_columns(rows)
-    salary_col = _detect_salary_column(rows) if has_salaries else None
+    # Trouver la y-position minimale du label pour ignorer le texte au-dessus
+    label_y = None
+    for y in sorted(rows_by_y.keys()):
+        texts = [w["text"] for w in rows_by_y[y]]
+        # Le label est souvent sur une ligne contenant "Tableau" + numéro
+        combined = " ".join(texts)
+        if label in combined:
+            label_y = y
+            break
 
-    if not year_cols:
-        print("  AVERTISSEMENT: aucune colonne d'année détectée dans l'en-tête", file=sys.stderr)
-
+    # Accumuler les tokens numériques par colonne pour la caisse en cours
+    current_dept = None
+    col_buffers: dict[int, list[str]] = defaultdict(list)
     results = []
 
-    for row in rows:
-        # Ignorer les lignes d'en-tête
-        if _is_header_row(row):
+    def flush() -> None:
+        nonlocal current_dept, col_buffers
+        if current_dept is None:
+            return
+        # Reconstruire les 10 valeurs depuis les buffers de colonnes
+        numbers: list[int | None] = []
+        for col_idx in range(10):
+            tokens = col_buffers.get(col_idx, [])
+            if not tokens:
+                numbers.append(None)
+            elif None in tokens:
+                numbers.append(None)
+            else:
+                # Concaténer les chaînes brutes (préserve les zéros initiaux comme dans "034")
+                combined = "".join(tokens)
+                try:
+                    numbers.append(int(combined))
+                except ValueError:
+                    numbers.append(None)
+        results.append({
+            "dept": current_dept,
+            "numbers": numbers,
+        })
+        current_dept = None
+        col_buffers = defaultdict(list)
+
+    for y in sorted(rows_by_y.keys()):
+        if label_y is not None and y <= label_y:
+            continue  # ignorer les lignes avant et sur le label
+
+        words = rows_by_y[y]
+        texts = [w["text"] for w in words]
+
+        # Fin du tableau
+        if texts and texts[0].lower() == "total":
+            break
+
+        # Ignorer les lignes d'en-tête et les lignes non-données
+        if any(t in ("Salariés*", "AT**", "Trajet**", "Tableau") for t in texts):
             continue
 
-        # La première colonne doit contenir un nom de caisse
-        raw_name = row[0] if row else None
-        if not raw_name:
-            continue
+        # Détecter début de nouvelle caisse: premier token = numéro de département
+        first_tok = texts[0] if texts else ""
+        if _DEPT_RE.match(first_tok):
+            flush()
+            current_dept = first_tok
 
-        name = normalize_caisse_name(raw_name)
-        if not name:
-            continue
+        # Traiter les tokens numériques de cette ligne.
+        # Si la ligne commence par un numéro de département, les 3 premiers tokens
+        # (dept, tiret, début du nom) sont ignorés. Tous les tokens numériques
+        # qui suivent le nom de la caisse sont assignés à leurs colonnes de données.
+        #
+        # Stratégie: parcourir les tokens en deux passes:
+        #   1. Identifier où commence la zone numérique (après le nom)
+        #   2. Assigner chaque token numérique à la colonne la plus proche
+        if _DEPT_RE.match(first_tok):
+            # Ligne de caisse: sauter dept + tiret + nom, puis collecter les données.
+            # Le nom se termine au premier token dont l'x-position dépasse le début
+            # de la zone de données (> x du premier centre de colonne - marge).
+            # On utilise la position x pour distinguer le nom (gauche) des données (droite).
+            data_x_threshold = col_centers[0] - 30 if col_centers else 130
+            skip_dept = True  # ignorer le premier token (numéro de département)
+            skip_dash = True  # ignorer le tiret séparateur
+            for w in words:
+                tok = w["text"]
+                tok_clean = tok.replace("\xa0", "").replace("\u00a0", "")
+                cx = (w["x0"] + w["x1"]) / 2
 
-        # Exclure les lignes de totaux et agrégats
-        name_lower = name.lower()
-        if name_lower in EXCLUDE_NAMES:
-            continue
-        # Exclure aussi les lignes qui commencent par ces mots-clés
-        if any(name_lower.startswith(excl) for excl in EXCLUDE_NAMES):
-            continue
+                if skip_dept:
+                    skip_dept = False
+                    continue  # sauter le numéro de département (ex. "21")
+                if skip_dash and tok == "–":
+                    skip_dash = False
+                    continue  # sauter le tiret séparateur
 
-        # Lookup dans CAISSE_MAP
-        if name not in CAISSE_MAP:
+                # Un token est dans la zone données si son centre x dépasse le seuil
+                if cx >= data_x_threshold:
+                    if current_dept is not None:
+                        if tok in ("-", "–"):
+                            col = _nearest_col(cx, col_centers)
+                            col_buffers[col].append(None)  # type: ignore[arg-type]
+                        elif re.match(r"^\d+$", tok_clean):
+                            col = _nearest_col(cx, col_centers)
+                            col_buffers[col].append(tok_clean)
+                # else: partie du nom (à gauche du seuil), ignorer
+        else:
+            # Ligne de continuation (suite du nom, ou données pures, ou nom+données).
+            # Utiliser la position x pour distinguer nom (gauche) et données (droite).
+            # Tout token dont le centre x dépasse le seuil est une donnée.
+            if current_dept is not None:
+                data_x_threshold = col_centers[0] - 30 if col_centers else 130
+                for w in words:
+                    tok = w["text"]
+                    tok_clean = tok.replace("\xa0", "").replace("\u00a0", "")
+                    cx = (w["x0"] + w["x1"]) / 2
+                    if cx >= data_x_threshold:
+                        if tok in ("-", "–"):
+                            col = _nearest_col(cx, col_centers)
+                            col_buffers[col].append(None)  # type: ignore[arg-type]
+                        elif re.match(r"^\d+$", tok_clean):
+                            col = _nearest_col(cx, col_centers)
+                            col_buffers[col].append(tok_clean)
+                    # else: partie du nom à gauche du seuil, ignorer
+
+    flush()
+
+    # Convertir les résultats bruts en entrées de caisse
+    entries = []
+    for row in results:
+        dept = row["dept"]
+        numbers = row["numbers"]
+
+        if dept not in DEPT_MAP:
             print(
-                f"  AVERTISSEMENT: caisse non reconnue: '{name}' (non présente dans CAISSE_MAP)",
+                f"  AVERTISSEMENT: département non reconnu: '{dept}' (non présent dans DEPT_MAP)",
                 file=sys.stderr,
             )
             continue
 
-        caisse_id, caisse_type = CAISSE_MAP[name]
+        caisse_id, canonical_name, caisse_type = DEPT_MAP[dept]
 
-        # Extraire les valeurs par année
-        values = {}
-        if year_cols:
-            for year, col_idx in year_cols.items():
-                if year in YEARS and col_idx < len(row):
-                    val = parse_fr_number(row[col_idx])
-                    if val is not None:
-                        values[year] = val
-                    else:
-                        print(
-                            f"  AVERTISSEMENT: valeur None pour {name} année {year} col {col_idx}",
-                            file=sys.stderr,
-                        )
-        else:
-            # Fallback: utiliser les colonnes 1..N comme années consécutives
-            for i, year in enumerate(YEARS):
-                col_idx = i + 1
-                if col_idx < len(row):
-                    val = parse_fr_number(row[col_idx])
-                    if val is not None:
-                        values[year] = val
+        # Les 10 nombres alternent: Salariés_yr0, DATA_yr0, Salariés_yr1, DATA_yr1, ...
+        values: dict[str, int] = {}
+        salaries: dict[str, int] = {}
 
-        # Extraire les effectifs salariés (Tableau 9 uniquement)
-        salaries = None
-        if has_salaries and salary_col is not None:
-            # La colonne salariés peut précéder les colonnes d'années
-            # Elle contient une seule valeur (non répétée par année dans Tableau 9)
-            if salary_col < len(row):
-                sal_val = parse_fr_number(row[salary_col])
-                if sal_val is not None:
-                    # On associe la même valeur à toutes les années disponibles
-                    # (le rapport peut fournir une valeur unique ou par année)
-                    salaries = {year: sal_val for year in values.keys()}
+        for i, year in enumerate(YEARS):
+            sal_idx = i * 2
+            data_idx = i * 2 + 1
+            if sal_idx < len(numbers):
+                sal = numbers[sal_idx]
+                if sal is not None and has_salaries:
+                    salaries[year] = sal
+            if data_idx < len(numbers):
+                val = numbers[data_idx]
+                if val is not None:
+                    values[year] = val
+                else:
+                    print(
+                        f"  AVERTISSEMENT: valeur absente pour dept {dept} ({canonical_name}) "
+                        f"année {year}",
+                        file=sys.stderr,
+                    )
 
         entry = {
             "id": caisse_id,
-            "name": name,
+            "name": canonical_name,
             "type": caisse_type,
             "values": values,
-            "salaries": salaries,
+            "salaries": salaries if (has_salaries and salaries) else None,
         }
-        results.append(entry)
+        entries.append(entry)
 
-    return results
+    return entries
+
+
+# Alias pour la compatibilité avec l'API historique utilisée dans parse_regional_pdf().
+def extract_regional_table(page: object, has_salaries: bool, label: str = "") -> list[dict]:
+    """Interface de compatibilité pour extract_regional_table_by_coords().
+
+    Args:
+        page: objet page pdfplumber
+        has_salaries: True pour Tableau 9 (avec effectifs salariés)
+        label: label du tableau à passer à la fonction de base
+
+    Returns:
+        Résultat de extract_regional_table_by_coords().
+    """
+    return extract_regional_table_by_coords(page, label=label, has_salaries=has_salaries)
 
 
 def validate_output(caisses: list) -> None:
@@ -387,12 +585,12 @@ def parse_regional_pdf(pdf_path: Path) -> dict:
 
         # Extraire les données AT (avec salariés)
         print("Extraction des données AT (Tableau 9)...", file=sys.stderr)
-        at_rows = extract_regional_table(page_t9, has_salaries=True)
+        at_rows = extract_regional_table(page_t9, has_salaries=True, label="Tableau 9")
         print(f"  {len(at_rows)} entrées AT extraites", file=sys.stderr)
 
         # Extraire les données Trajet (sans salariés)
         print("Extraction des données Trajet (Tableau 17)...", file=sys.stderr)
-        trajet_rows = extract_regional_table(page_t17, has_salaries=False)
+        trajet_rows = extract_regional_table(page_t17, has_salaries=False, label="Tableau 17")
         print(f"  {len(trajet_rows)} entrées Trajet extraites", file=sys.stderr)
 
     # Indexer par identifiant caisse
@@ -469,8 +667,8 @@ def main() -> None:
         "--dry-run",
         action="store_true",
         help=(
-            "Mode diagnostic: affiche les noms de caisses extraits sans écrire le JSON. "
-            "Utile pour ajuster CAISSE_MAP avant une extraction complète."
+            "Mode diagnostic: affiche les noms de caisses et valeurs extraits sans écrire le JSON. "
+            "Utile pour vérifier DEPT_MAP avant une extraction complète."
         ),
     )
     args = parser.parse_args()
@@ -488,31 +686,33 @@ def main() -> None:
         out_path = Path(args.out)
 
     if args.dry_run:
-        # Mode diagnostic: afficher les noms sans valider ni écrire
-        print("Mode --dry-run: extraction des noms de caisses uniquement.", file=sys.stderr)
+        # Mode diagnostic: afficher les départements et valeurs sans valider ni écrire
+        print("Mode --dry-run: extraction diagnostique uniquement.", file=sys.stderr)
         print(f"Ouverture du PDF: {pdf_path}", file=sys.stderr)
         with pdfplumber.open(pdf_path) as pdf:
             _, page_t9 = find_tableau_page(pdf, "Tableau 9")
             _, page_t17 = find_tableau_page(pdf, "Tableau 17")
 
-            raw_t9 = page_t9.extract_table(TABLE_SETTINGS) or []
-            rows_t9 = merge_multiline_rows(raw_t9)
-            raw_t17 = page_t17.extract_table(TABLE_SETTINGS) or []
-            rows_t17 = merge_multiline_rows(raw_t17)
+            rows_t9 = extract_regional_table_by_coords(page_t9, "Tableau 9", has_salaries=True)
+            rows_t17 = extract_regional_table_by_coords(page_t17, "Tableau 17", has_salaries=False)
 
-        print("\n=== Noms extraits du Tableau 9 (AT) ===")
-        for row in rows_t9:
-            if row and row[0] and not _is_header_row(row):
-                name = normalize_caisse_name(row[0])
-                status = "OK" if name in CAISSE_MAP else "INCONNU"
-                print(f"  [{status}] '{name}'")
+        print("\n=== Données extraites du Tableau 9 (AT) ===")
+        for entry in rows_t9:
+            caisse_id = entry["id"]
+            name = entry["name"]
+            status = "OK" if caisse_id else "INCONNU"
+            print(f"  [{status}] {caisse_id} ({name})")
+            print(f"    AT:       {entry['values']}")
+            if entry.get("salaries"):
+                print(f"    Salariés: {entry['salaries']}")
 
-        print("\n=== Noms extraits du Tableau 17 (Trajet) ===")
-        for row in rows_t17:
-            if row and row[0] and not _is_header_row(row):
-                name = normalize_caisse_name(row[0])
-                status = "OK" if name in CAISSE_MAP else "INCONNU"
-                print(f"  [{status}] '{name}'")
+        print("\n=== Données extraites du Tableau 17 (Trajet) ===")
+        for entry in rows_t17:
+            caisse_id = entry["id"]
+            name = entry["name"]
+            status = "OK" if caisse_id else "INCONNU"
+            print(f"  [{status}] {caisse_id} ({name})")
+            print(f"    Trajet:   {entry['values']}")
         return
 
     # Extraction complète
