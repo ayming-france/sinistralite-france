@@ -20,7 +20,7 @@
 
 ### v1.1 Carte régionale
 
-- [ ] **Phase 6: Pipeline régional** - Parser PDF + JSON validé (21 caisses, AT + Trajet, 2020-2024)
+- [x] **Phase 6: Pipeline régional** - Parser PDF + JSON validé (21 caisses, AT + Trajet, 2020-2024) (completed 2026-03-02)
 - [ ] **Phase 7: Structure SVG** - Carte France inline dans le DOM, identifiée par caisse, responsive
 - [ ] **Phase 8: Choroplèthe et interactions** - Coloration, légende, tooltip desktop, sélecteur d'année, classement
 - [ ] **Phase 9: Navigation et mobile** - Intégration vues AT/Trajet, panneau tactile, hash routing
@@ -37,7 +37,7 @@
   2. Le parser traite correctement les noms de caisses qui s'étendent sur plusieurs lignes dans le PDF (ex. "Bourgogne-Franche-Comté") sans les tronquer ni les dupliquer
   3. Les lignes "Total" / "Ensemble" et les cellules fusionnées sont exclues du JSON final
   4. Le JSON inclut les effectifs salariés (champ `salaries`) pour chaque caisse et chaque année, permettant un calcul de taux futur
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 06-01-PLAN.md — Create parse_regional.py standalone script with unit tests
@@ -88,7 +88,7 @@ Plans:
 | 3. Accessibilité | v1.0 | 1/1 | Complete | 2026-02-27 |
 | 4. Export CSV | v1.0 | 1/1 | Complete | 2026-02-28 |
 | 5. Pipeline de données | v1.0 | 2/2 | Complete | 2026-02-28 |
-| 6. Pipeline régional | 1/2 | In Progress|  | - |
+| 6. Pipeline régional | 2/2 | Complete   | 2026-03-02 | - |
 | 7. Structure SVG | v1.1 | 0/? | Not started | - |
 | 8. Choroplèthe et interactions | v1.1 | 0/? | Not started | - |
 | 9. Navigation et mobile | v1.1 | 0/? | Not started | - |
