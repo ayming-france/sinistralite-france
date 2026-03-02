@@ -37,7 +37,11 @@
   2. Le parser traite correctement les noms de caisses qui s'étendent sur plusieurs lignes dans le PDF (ex. "Bourgogne-Franche-Comté") sans les tronquer ni les dupliquer
   3. Les lignes "Total" / "Ensemble" et les cellules fusionnées sont exclues du JSON final
   4. Le JSON inclut les effectifs salariés (champ `salaries`) pour chaque caisse et chaque année, permettant un calcul de taux futur
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Create parse_regional.py standalone script with unit tests
+- [ ] 06-02-PLAN.md — Run against real PDF, fix issues, integrate into refresh_data.py
 
 ### Phase 7: Structure SVG
 
@@ -84,7 +88,7 @@
 | 3. Accessibilité | v1.0 | 1/1 | Complete | 2026-02-27 |
 | 4. Export CSV | v1.0 | 1/1 | Complete | 2026-02-28 |
 | 5. Pipeline de données | v1.0 | 2/2 | Complete | 2026-02-28 |
-| 6. Pipeline régional | v1.1 | 0/? | Not started | - |
+| 6. Pipeline régional | v1.1 | 0/2 | Planned | - |
 | 7. Structure SVG | v1.1 | 0/? | Not started | - |
 | 8. Choroplèthe et interactions | v1.1 | 0/? | Not started | - |
 | 9. Navigation et mobile | v1.1 | 0/? | Not started | - |
