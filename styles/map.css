@@ -39,6 +39,35 @@
   fill: inherit;
 }
 
+/* Légende choroplèthe */
+.map-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.legend-swatches {
+  display: flex;
+  gap: 2px;
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 28px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid var(--border-light);
+}
+
+.legend-min,
+.legend-max {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
   .map-section {
     margin-top: 24px;
