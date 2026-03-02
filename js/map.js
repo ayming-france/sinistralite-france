@@ -249,7 +249,9 @@ function setupTooltip(svgId, viewType) {
     const tw = tooltip.offsetWidth;
     const th = tooltip.offsetHeight;
     if (left + tw > window.innerWidth - 8) left = e.clientX - tw - 12;
+    if (left < 8) left = 8;
     if (top + th > window.innerHeight - 8) top = e.clientY - th - 12;
+    if (top < 8) top = 8;
     tooltip.style.left = left + 'px';
     tooltip.style.top = top + 'px';
   });

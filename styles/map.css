@@ -313,6 +313,10 @@
   color: var(--text-secondary);
 }
 
+@media (pointer: coarse) {
+  .map-tooltip { display: none !important; }
+}
+
 @media (max-width: 768px) {
   .map-section {
     margin-top: 24px;
@@ -385,6 +389,9 @@
 }
 
 /* --- Vue MP: message données régionales non disponibles --- */
+#mp-mapSection .map-title {
+  text-align: center;
+}
 .mp-map-unavailable {
   padding: 24px 16px;
   text-align: center;
