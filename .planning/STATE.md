@@ -9,17 +9,17 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 8 (Choroplèthe et interactions)
-Plan: 03 (complete)
-Status: Phase 8 validée humainement (03/03 plans complets) — vérification visuelle approuvée, 5 améliorations UX in-situ (barres horizontales, paint-order, transitions 200ms, linked highlight, carte cachée lors NAF)
-Last activity: 2026-03-02 — Plan 08-03 exécuté (vérification visuelle humaine + améliorations UX)
+Phase: 9 (Navigation et mobile)
+Plan: 01 (complete)
+Status: Phase 9 plan 01 validée humainement (01/01 plans connus complets) — panneau tap mobile, message MP indisponible, routage hash verifié
+Last activity: 2026-03-02 — Plan 09-01 exécuté (tap panel mobile + vérification visuelle humaine approuvée)
 
 ```
-v1.1 Progress: [====      ] 3/4 phases (Phase 8 complète: 3/3 plans)
+v1.1 Progress: [==========] 4/4 phases (Phase 9 Plan 01 complet)
 Phase 6: [x] Pipeline régional (Plan 01/02 complet, Plan 02/02 complet)
 Phase 7: [x] Structure SVG (Plan 01/02 complet, Plan 02/02 complet)
 Phase 8: [x] Choroplèthe et interactions (Plan 01/03 complet, Plan 02/03 complet, Plan 03/03 complet)
-Phase 9: [ ] Navigation et mobile
+Phase 9: [x] Navigation et mobile (Plan 01/01 complet)
 ```
 
 ## Performance Metrics
@@ -83,6 +83,10 @@ Décisions v1.1 confirmées par la recherche:
 - [Phase 08-03]: Transitions CSS 200ms ease sur brightness et stroke-width (hover fluide sans JS)
 - [Phase 08-03]: Linked highlight bidirectionnel: pointerover [data-caisse] -> .active sur ligne classement correspondante
 - [Phase 08-03]: Carte cachée (display:none) quand résultats NAF affichés pour éviter confusion visuelle
+- [Phase 09-01]: Panneau tap mobile (bottom sheet position:fixed) remplace tooltip hover sur appareils tactiles (navigator.maxTouchPoints gate)
+- [Phase 09-01]: hashchange listener dans map.js ferme le panneau sur changement de vue (evite couplage cross-module avec nav.js)
+- [Phase 09-01]: z-index 200 pour tap panel (au-dessus de bottom-nav z-index 100); env(safe-area-inset-bottom) pour iPhone notch
+- [Phase 09-01]: MP regional data message explicatif dans #mp-mapSection (CNAM ne publie pas de ventilation par caisse pour MP)
 
 ### Pending Todos
 
@@ -98,6 +102,6 @@ Décisions v1.1 confirmées par la recherche:
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Phase 8 Plan 03 complet — vérification visuelle humaine approuvée avec 5 améliorations UX in-situ
+Stopped at: Phase 9 Plan 01 complet — panneau tap mobile implementé, message MP indisponible, vérification visuelle humaine approuvée, MAP-10 satisfait
 Resume file: None
-Next action: Phase 9 — Navigation et mobile (tap panel mobile, navigation entre vues)
+Next action: Déploiement ou nouvelles fonctionnalités (Phase 9 Plan 02 si prévu)

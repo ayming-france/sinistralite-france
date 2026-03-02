@@ -31,7 +31,7 @@ Requirements for regional map feature. Each maps to roadmap phases.
 
 ### Mobile
 
-- [ ] **MAP-10**: Fixed info panel on tap replaces hover tooltip on touch devices
+- [x] **MAP-10**: Fixed info panel on tap replaces hover tooltip on touch devices
 - [x] **MAP-11**: SVG scales responsively without horizontal scroll
 
 ## v2 Requirements
@@ -92,7 +92,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | MAP-07 | Phase 8 | Complete |
 | MAP-08 | Phase 8 | Complete |
 | MAP-09 | Phase 8 | Complete |
-| MAP-10 | Phase 9 | Pending |
+| MAP-10 | Phase 9 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 15 total
