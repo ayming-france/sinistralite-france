@@ -30,6 +30,7 @@
 .map-caisse {
   fill: var(--border-light);
   stroke: none;
+  transition: filter 0.2s ease;
 }
 
 /* Délimitations entre caisses via paths */
@@ -39,6 +40,7 @@
   stroke-width: 0.8;
   stroke-linejoin: round;
   paint-order: stroke fill;
+  transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
 
 /* Hover: mise en évidence de la caisse survolée */
