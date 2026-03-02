@@ -10,15 +10,15 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 8 (Choroplèthe et interactions)
-Plan: 02 (complete)
-Status: Phase 8 complète — tooltip desktop viewport-clampé, sélecteur d'année 2020-2024, panneau de classement triable (MAP-06, MAP-08, MAP-09)
-Last activity: 2026-03-02 — Plan 08-02 exécuté (tooltip, year selector, ranking)
+Plan: 03 (complete)
+Status: Phase 8 validée humainement (03/03 plans complets) — vérification visuelle approuvée, 5 améliorations UX in-situ (barres horizontales, paint-order, transitions 200ms, linked highlight, carte cachée lors NAF)
+Last activity: 2026-03-02 — Plan 08-03 exécuté (vérification visuelle humaine + améliorations UX)
 
 ```
-v1.1 Progress: [====      ] 3/4 phases (Phase 8 complète: 2/2 plans)
+v1.1 Progress: [====      ] 3/4 phases (Phase 8 complète: 3/3 plans)
 Phase 6: [x] Pipeline régional (Plan 01/02 complet, Plan 02/02 complet)
 Phase 7: [x] Structure SVG (Plan 01/02 complet, Plan 02/02 complet)
-Phase 8: [x] Choroplèthe et interactions (Plan 01/02 complet, Plan 02/02 complet)
+Phase 8: [x] Choroplèthe et interactions (Plan 01/03 complet, Plan 02/03 complet, Plan 03/03 complet)
 Phase 9: [ ] Navigation et mobile
 ```
 
@@ -78,6 +78,11 @@ Décisions v1.1 confirmées par la recherche:
 - [Phase 08-02]: Suppression tooltip tactile via navigator.maxTouchPoints > 0 (Phase 9 gère le tap panel)
 - [Phase 08-02]: sortState module-level conserve l'ordre de tri entre changements d'année
 - [Phase 08-02]: updateMap centralise colorierCarte + renderRanking (renderLegende déjà dans colorierCarte)
+- [Phase 08-03]: Classement redessiné en barres horizontales proportionnelles (width = value/max * 100%) sans scrolling
+- [Phase 08-03]: paint-order: stroke fill sur les paths SVG pour boundaries nettes (contour sous le fill)
+- [Phase 08-03]: Transitions CSS 200ms ease sur brightness et stroke-width (hover fluide sans JS)
+- [Phase 08-03]: Linked highlight bidirectionnel: pointerover [data-caisse] -> .active sur ligne classement correspondante
+- [Phase 08-03]: Carte cachée (display:none) quand résultats NAF affichés pour éviter confusion visuelle
 
 ### Pending Todos
 
@@ -93,6 +98,6 @@ Décisions v1.1 confirmées par la recherche:
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Phase 8 Plan 02 complet — tooltip desktop, sélecteur d'année, panneau de classement triable
+Stopped at: Phase 8 Plan 03 complet — vérification visuelle humaine approuvée avec 5 améliorations UX in-situ
 Resume file: None
 Next action: Phase 9 — Navigation et mobile (tap panel mobile, navigation entre vues)
