@@ -109,6 +109,138 @@ export function colorierCarte(viewType, year, data) {
   renderLegende(legendId, min, max, MIN_COLOR, MAX_COLOR);
 }
 
+/** État du tri par vue */
+const sortState = { at: 'desc', trajet: 'desc' };
+
+/**
+ * Affiche le classement des caisses pour la vue et l'année données.
+ * @param {string} viewType - 'at' ou 'trajet'
+ * @param {string} year - année des données (ex: '2023')
+ */
+function renderRanking(viewType, year) {
+  const listEl = document.getElementById(viewType + '-rankingList');
+  if (!listEl || !regionalData) return;
+
+  const caisses = regionalData.caisses || [];
+  const metric = viewType === 'at' ? 'at' : 'trajet';
+
+  const metroVals = METRO_IDS.map(id => {
+    const caisse = caisses.find(c => c.id === id);
+    if (!caisse) return null;
+    const val = caisse[metric] && caisse[metric][year];
+    return val != null ? { id, name: caisse.name || id, val } : null;
+  }).filter(Boolean);
+
+  if (sortState[viewType] === 'desc') {
+    metroVals.sort((a, b) => b.val - a.val);
+  } else {
+    metroVals.sort((a, b) => a.val - b.val);
+  }
+
+  listEl.innerHTML = metroVals.map((c, i) =>
+    `<li class="ranking-item"><span class="ranking-pos">${i + 1}</span><span class="ranking-name">${c.name}</span><span class="ranking-val">${c.val.toLocaleString('fr-FR')}</span></li>`
+  ).join('');
+}
+
+/**
+ * Configure le bouton de tri pour inverser l'ordre du classement.
+ * @param {string} viewType - 'at' ou 'trajet'
+ */
+function setupSortButton(viewType) {
+  const btn = document.getElementById(viewType + '-sortBtn');
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    sortState[viewType] = sortState[viewType] === 'desc' ? 'asc' : 'desc';
+    btn.innerHTML = sortState[viewType] === 'desc' ? '\u25BC' : '\u25B2';
+    const sel = document.getElementById(viewType + '-yearSelect');
+    const year = sel ? sel.value : DEFAULT_YEAR;
+    renderRanking(viewType, year);
+  });
+}
+
+/**
+ * Configure le sélecteur d'année pour mettre à jour la carte, la légende et le classement.
+ * @param {string} viewType - 'at' ou 'trajet'
+ */
+function setupYearSelector(viewType) {
+  const sel = document.getElementById(viewType + '-yearSelect');
+  if (!sel) return;
+
+  sel.addEventListener('change', (e) => {
+    updateMap(viewType, e.target.value);
+  });
+}
+
+/**
+ * Met à jour la carte, la légende et le classement pour la vue et l'année données.
+ * @param {string} viewType - 'at' ou 'trajet'
+ * @param {string} year - année des données (ex: '2023')
+ */
+function updateMap(viewType, year) {
+  colorierCarte(viewType, year, regionalData);
+  renderRanking(viewType, year);
+}
+
+/**
+ * Configure le tooltip de survol pour une carte SVG.
+ * Désactivé sur les appareils tactiles (reporté à la Phase 9).
+ * @param {string} svgId - ID de l'élément SVG
+ * @param {string} viewType - 'at' ou 'trajet'
+ */
+function setupTooltip(svgId, viewType) {
+  if (navigator.maxTouchPoints > 0) return;
+
+  const svg = document.getElementById(svgId);
+  const tooltip = document.getElementById('mapTooltip');
+  if (!svg || !tooltip) return;
+
+  const metricLabel = viewType === 'at' ? 'Accidents du travail' : 'Accidents de trajet';
+
+  svg.addEventListener('mousemove', (e) => {
+    const g = e.target.closest('[data-caisse]');
+    if (!g) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const caisseId = g.dataset.caisse;
+    const caisses = regionalData ? regionalData.caisses || [] : [];
+    const caisse = caisses.find(c => c.id === caisseId);
+    if (!caisse) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const sel = document.getElementById(viewType + '-yearSelect');
+    const year = sel ? sel.value : DEFAULT_YEAR;
+    const metric = viewType === 'at' ? 'at' : 'trajet';
+    const val = caisse[metric] && caisse[metric][year];
+
+    if (val == null) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const name = caisse.name || caisseId;
+    tooltip.innerHTML = `<span class="tooltip-name">${name}</span><span class="tooltip-val">${metricLabel} : ${val.toLocaleString('fr-FR')} (${year})</span>`;
+    tooltip.style.display = 'block';
+
+    let left = e.clientX + 12;
+    let top = e.clientY + 12;
+    const tw = tooltip.offsetWidth;
+    const th = tooltip.offsetHeight;
+    if (left + tw > window.innerWidth - 8) left = e.clientX - tw - 12;
+    if (top + th > window.innerHeight - 8) top = e.clientY - th - 12;
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+  });
+
+  svg.addEventListener('mouseleave', () => {
+    tooltip.style.display = 'none';
+  });
+}
+
 /**
  * Vérifie que chaque caisse ID a au moins un élément [data-caisse] dans le DOM.
  */
@@ -145,4 +277,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadRegionalData();
   colorierCarte('at', DEFAULT_YEAR, regionalData);
   colorierCarte('trajet', DEFAULT_YEAR, regionalData);
+  renderRanking('at', DEFAULT_YEAR);
+  renderRanking('trajet', DEFAULT_YEAR);
+  setupTooltip('france-map-at', 'at');
+  setupTooltip('france-map-trajet', 'trajet');
+  setupYearSelector('at');
+  setupYearSelector('trajet');
+  setupSortButton('at');
+  setupSortButton('trajet');
 });
