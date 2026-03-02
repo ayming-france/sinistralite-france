@@ -70,7 +70,7 @@ Plans:
   3. Survoler une région sur desktop affiche un tooltip indiquant le nom de la caisse, la valeur du métrique et l'année, sans que le tooltip soit coupé par les bords du viewport
   4. Un sélecteur d'année (2020-2024) permet de changer l'année affichée sur la carte. L'année par défaut est 2023 au chargement de la vue
   5. Un panneau de classement adjacent à la carte liste les caisses triées par valeur décroissante du métrique actif, avec possibilité de changer l'ordre
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] 08-01-PLAN.md — Choropleth core: data loading, coloring, legend (MAP-02, MAP-03, MAP-05, MAP-07)
@@ -99,5 +99,5 @@ Plans:
 | 5. Pipeline de données | v1.0 | 2/2 | Complete | 2026-02-28 |
 | 6. Pipeline régional | v1.1 | 2/2 | Complete | 2026-03-02 |
 | 7. Structure SVG | 2/2 | Complete    | 2026-03-02 | - |
-| 8. Choroplèthe et interactions | v1.1 | 0/3 | Planned | - |
+| 8. Choroplèthe et interactions | 1/3 | In Progress|  | - |
 | 9. Navigation et mobile | v1.1 | 0/? | Not started | - |

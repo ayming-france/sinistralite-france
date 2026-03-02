@@ -17,15 +17,15 @@ Requirements for regional map feature. Each maps to roadmap phases.
 ### Map Rendering
 
 - [x] **MAP-01**: Inline SVG map of France with identifiable paths per caisse régionale
-- [ ] **MAP-02**: Choropleth coloring using sequential color scale based on selected metric
-- [ ] **MAP-03**: Color legend showing scale range and units
+- [x] **MAP-02**: Choropleth coloring using sequential color scale based on selected metric
+- [x] **MAP-03**: Color legend showing scale range and units
 - [x] **MAP-04**: Map appears as a section within AT and Trajet views (not a 4th nav tab)
-- [ ] **MAP-05**: Default year is 2023 (matches sector data)
+- [x] **MAP-05**: Default year is 2023 (matches sector data)
 
 ### Interaction
 
 - [ ] **MAP-06**: Desktop tooltip showing region name and stats on hover
-- [ ] **MAP-07**: AT/Trajet toggle follows the current view (no separate toggle needed)
+- [x] **MAP-07**: AT/Trajet toggle follows the current view (no separate toggle needed)
 - [ ] **MAP-08**: Discreet year selector (small, not prominent) to switch map year
 - [ ] **MAP-09**: Sortable region ranking sidebar alongside the map
 
@@ -85,11 +85,11 @@ Deferred to future release. Tracked but not in current roadmap.
 | MAP-01 | Phase 7 | Complete |
 | MAP-04 | Phase 7 | Complete |
 | MAP-11 | Phase 7 | Complete |
-| MAP-02 | Phase 8 | Pending |
-| MAP-03 | Phase 8 | Pending |
-| MAP-05 | Phase 8 | Pending |
+| MAP-02 | Phase 8 | Complete |
+| MAP-03 | Phase 8 | Complete |
+| MAP-05 | Phase 8 | Complete |
 | MAP-06 | Phase 8 | Pending |
-| MAP-07 | Phase 8 | Pending |
+| MAP-07 | Phase 8 | Complete |
 | MAP-08 | Phase 8 | Pending |
 | MAP-09 | Phase 8 | Pending |
 | MAP-10 | Phase 9 | Pending |
