@@ -1099,6 +1099,11 @@ def main():
         help="Dossier contenant les PDF NAF_*.pdf (optionnel, pour les demographics et le Trajet).",
         default=None,
     )
+    parser.add_argument(
+        "--rapport-pdf",
+        help="Chemin vers le rapport annuel PDF pour extraction des donnees regionales.",
+        default=None,
+    )
     args = parser.parse_args()
 
     pdf_dir = None
@@ -1173,6 +1178,28 @@ def main():
         validate(trajet_data, "Trajet")
     else:
         print("\n[info] Trajet non genere (necessite --pdf-dir).")
+
+    # ── Regional (optionnel) ──
+    if args.rapport_pdf:
+        print("\n=== Pipeline Regional ===")
+        rapport_pdf_path = Path(args.rapport_pdf)
+        if not rapport_pdf_path.exists():
+            print(f"[erreur] Rapport PDF introuvable : {rapport_pdf_path}", file=sys.stderr)
+        else:
+            try:
+                from parse_regional import parse_regional_pdf
+                regional_data = parse_regional_pdf(rapport_pdf_path)
+                regional_json_path = OUTPUT_DIR / "regional-data.json"
+                with open(regional_json_path, "w", encoding="utf-8") as f:
+                    json.dump(regional_data, f, ensure_ascii=False, indent=2)
+                nb_caisses = len(regional_data.get("caisses", []))
+                metro = sum(
+                    1 for c in regional_data.get("caisses", [])
+                    if c.get("type") in ("carsat", "cramif")
+                )
+                print(f"  [ok] regional-data.json : {nb_caisses} caisses ({metro} metropolitaines)")
+            except Exception as e:
+                print(f"[erreur] Extraction regionale echouee : {e}", file=sys.stderr)
 
     print("\nTermine.")
 
