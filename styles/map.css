@@ -29,8 +29,8 @@
 /* Remplissage explicite pour éviter l'héritage de currentColor comme fill */
 .map-caisse {
   fill: var(--border-light);
-  stroke: var(--bg-elevated);
-  stroke-width: 1.2;
+  stroke: var(--map-stroke, rgba(255,255,255,0.55));
+  stroke-width: 1.8;
   stroke-linejoin: round;
 }
 
