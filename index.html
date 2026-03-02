@@ -360,6 +360,14 @@
       </div>
     </div>
 
+    <div class="map-section" id="mp-mapSection">
+      <h3 class="map-title">Sinistralité par caisse régionale</h3>
+      <div class="mp-map-unavailable">
+        <p>Les données régionales ne sont pas disponibles pour les maladies professionnelles.</p>
+        <p>Le rapport annuel de la CNAM ne publie pas de ventilation par caisse régionale pour les MP.</p>
+      </div>
+    </div>
+
     <div class="results-section" id="mp-results">
       <div class="selection-header">
         <div class="breadcrumb" id="mp-breadcrumb"></div>
@@ -690,6 +698,15 @@
 </nav>
 
 <div class="map-tooltip" id="mapTooltip" aria-hidden="true"></div>
+
+<div class="map-tap-panel" id="mapTapPanel" aria-live="polite" aria-label="Informations caisse régionale">
+  <div class="tap-panel-handle" aria-hidden="true"></div>
+  <button class="tap-panel-close" aria-label="Fermer">&times;</button>
+  <span class="tap-panel-name"></span>
+  <span class="tap-panel-metric"></span>
+  <span class="tap-panel-val"></span>
+</div>
+
 <script type="module" src="js/map.js"></script>
 <script type="module" src="js/app.js"></script>
 </body>

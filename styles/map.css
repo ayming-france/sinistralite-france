@@ -325,3 +325,70 @@
     width: 100%;
   }
 }
+
+/* --- Tap panel mobile (bottom sheet) --- */
+.map-tap-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border-light);
+  border-radius: 12px 12px 0 0;
+  padding: 16px 20px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.map-tap-panel.open {
+  transform: translateY(0);
+}
+.tap-panel-handle {
+  width: 32px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-light);
+  margin: 0 auto 8px;
+}
+.tap-panel-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+.tap-panel-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+.tap-panel-metric {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tap-panel-val {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* --- Vue MP: message données régionales non disponibles --- */
+.mp-map-unavailable {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
