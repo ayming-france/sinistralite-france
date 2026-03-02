@@ -88,7 +88,7 @@ Plans:
 | 3. Accessibilité | v1.0 | 1/1 | Complete | 2026-02-27 |
 | 4. Export CSV | v1.0 | 1/1 | Complete | 2026-02-28 |
 | 5. Pipeline de données | v1.0 | 2/2 | Complete | 2026-02-28 |
-| 6. Pipeline régional | 2/2 | Complete   | 2026-03-02 | - |
+| 6. Pipeline régional | 2/2 | Complete    | 2026-03-02 | - |
 | 7. Structure SVG | v1.1 | 0/? | Not started | - |
 | 8. Choroplèthe et interactions | v1.1 | 0/? | Not started | - |
 | 9. Navigation et mobile | v1.1 | 0/? | Not started | - |
