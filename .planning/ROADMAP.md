@@ -21,7 +21,7 @@
 ### v1.1 Carte régionale
 
 - [x] **Phase 6: Pipeline régional** - Parser PDF + JSON validé (21 caisses, AT + Trajet, 2020-2024) (completed 2026-03-02)
-- [ ] **Phase 7: Structure SVG** - Carte France inline dans le DOM, identifiée par caisse, responsive
+- [x] **Phase 7: Structure SVG** - Carte France inline dans le DOM, identifiée par caisse, responsive (completed 2026-03-02)
 - [ ] **Phase 8: Choroplèthe et interactions** - Coloration, légende, tooltip desktop, sélecteur d'année, classement
 - [ ] **Phase 9: Navigation et mobile** - Intégration vues AT/Trajet, panneau tactile, hash routing
 
@@ -53,7 +53,7 @@ Plans:
   2. Chaque zone de la carte peut être ciblée individuellement via un attribut `data-caisse` dont la valeur correspond exactement à une clé du JSON régional
   3. La carte s'affiche sans barre de défilement horizontale sur un écran de 375px de large (iPhone SE)
   4. Aucune règle CSS existante du tableau de bord ne colore ou ne masque les paths SVG de la carte
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 07-01-PLAN.md — Construire le SVG groupé par caisse et le CSS responsive (map.css)
@@ -93,6 +93,6 @@ Plans:
 | 4. Export CSV | v1.0 | 1/1 | Complete | 2026-02-28 |
 | 5. Pipeline de données | v1.0 | 2/2 | Complete | 2026-02-28 |
 | 6. Pipeline régional | v1.1 | 2/2 | Complete | 2026-03-02 |
-| 7. Structure SVG | 1/2 | In Progress|  | - |
+| 7. Structure SVG | 2/2 | Complete   | 2026-03-02 | - |
 | 8. Choroplèthe et interactions | v1.1 | 0/? | Not started | - |
 | 9. Navigation et mobile | v1.1 | 0/? | Not started | - |

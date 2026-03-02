@@ -10,14 +10,14 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 7 (Structure SVG)
-Plan: 01 (complete)
-Status: Phase 7 Plan 01 terminé — styles/map.css créé, SVG inline (16 caisses) intégré dans #view-at et #view-trajet
-Last activity: 2026-03-02 — Plan 07-01 exécuté (map.css, SVG carte régionale placeholder dans index.html)
+Plan: 02 (complete)
+Status: Phase 7 Plan 02 terminé — js/map.js stub créé (verifierStructureSVG + export colorierCarte), validé visuellement (16/16 caisses, responsive 375px)
+Last activity: 2026-03-02 — Plan 07-02 exécuté (js/map.js stub, checkpoint humain approuvé)
 
 ```
-v1.1 Progress: [==        ] 1/4 phases (Phase 7 in progress: 1/1 plans complets)
+v1.1 Progress: [==        ] 1/4 phases (Phase 7 in progress: 2/2 plans complets)
 Phase 6: [x] Pipeline régional (Plan 01/02 complet, Plan 02/02 complet)
-Phase 7: [~] Structure SVG (Plan 01/01 complet)
+Phase 7: [x] Structure SVG (Plan 01/02 complet, Plan 02/02 complet)
 Phase 8: [ ] Choroplèthe et interactions
 Phase 9: [ ] Navigation et mobile
 ```
@@ -30,9 +30,10 @@ Phase 9: [ ] Navigation et mobile
 
 **v1.1 (in progress)**
 - 4 phases planned (6-9)
-- 3 plans complete (06-01, 06-02, 07-01)
+- 4 plans complete (06-01, 06-02, 07-01, 07-02)
 - 3 files modified in 06-02 (parse_regional.py, refresh_data.py, regional-data.json)
 - 2 files modified in 07-01 (styles/map.css créé, index.html +525 lignes SVG)
+- 2 files modified in 07-02 (js/map.js créé, index.html +1 ligne script)
 
 ## Accumulated Context
 
@@ -67,6 +68,8 @@ Décisions v1.1 confirmées par la recherche:
 - [Phase 06]: Extraction par coordonnées x (extract_words + seuil x) au lieu de extract_table (tableau PDF à 2 caisses par rangée visuelle)
 - [Phase 07]: Chemins SVG approximatifs (placeholders) suite à l'indisponibilité du source regisenguehard/carte-france-svg
 - [Phase 07]: Deux SVGs séparés (AT + Trajet) pour coloration indépendante en Phase 8
+- [Phase 07-02]: Signature colorierCarte(_viewType, _year, _data) fixée en Phase 7 pour que Phase 8 n'ait qu'a remplir le corps
+- [Phase 07-02]: js/map.js chargé en type=module; vérification graceful (console.warn, pas d'exception) si caisse manquante
 
 ### Pending Todos
 
@@ -82,6 +85,6 @@ Décisions v1.1 confirmées par la recherche:
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Phase 7 Plan 01 complet — styles/map.css et SVG inline (16 caisses) dans index.html
+Stopped at: Phase 7 Plan 02 complet — js/map.js stub (verifierStructureSVG + export colorierCarte) livré et validé visuellement
 Resume file: None
-Next action: Plan 08-01 — Choroplèthe et interactions (coloration des caisses SVG par données régionales)
+Next action: Phase 8 Plan 01 — Choroplèthe et interactions (coloration des caisses SVG par données régionales, Phase 8)
