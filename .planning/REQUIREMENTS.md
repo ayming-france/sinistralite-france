@@ -9,10 +9,10 @@ Requirements for regional map feature. Each maps to roadmap phases.
 
 ### Pipeline
 
-- [ ] **PIPE-05**: Parser extracts AT data by caisse régionale from rapport annuel PDF (Tableau 9), all years 2020-2024
-- [ ] **PIPE-06**: Parser extracts Trajet data by caisse régionale from rapport annuel PDF (Tableau 17), all years 2020-2024
-- [ ] **PIPE-07**: Parser handles multi-line caisse names and produces clean regional JSON
-- [ ] **PIPE-08**: Regional JSON includes effectifs salariés and AT/Trajet counts per caisse per year
+- [x] **PIPE-05**: Parser extracts AT data by caisse régionale from rapport annuel PDF (Tableau 9), all years 2020-2024
+- [x] **PIPE-06**: Parser extracts Trajet data by caisse régionale from rapport annuel PDF (Tableau 17), all years 2020-2024
+- [x] **PIPE-07**: Parser handles multi-line caisse names and produces clean regional JSON
+- [x] **PIPE-08**: Regional JSON includes effectifs salariés and AT/Trajet counts per caisse per year
 
 ### Map Rendering
 
@@ -78,10 +78,10 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PIPE-05 | Phase 6 | Pending |
-| PIPE-06 | Phase 6 | Pending |
-| PIPE-07 | Phase 6 | Pending |
-| PIPE-08 | Phase 6 | Pending |
+| PIPE-05 | Phase 6 | Complete |
+| PIPE-06 | Phase 6 | Complete |
+| PIPE-07 | Phase 6 | Complete |
+| PIPE-08 | Phase 6 | Complete |
 | MAP-01 | Phase 7 | Pending |
 | MAP-04 | Phase 7 | Pending |
 | MAP-11 | Phase 7 | Pending |

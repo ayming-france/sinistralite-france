@@ -10,13 +10,13 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 6 (Pipeline régional)
-Plan: —
-Status: Roadmap créé, prêt pour la planification de la phase 6
-Last activity: 2026-03-01 — Roadmap v1.1 créé (phases 6-9)
+Plan: 01 (complete)
+Status: Phase 6 Plan 01 terminé — parse_regional.py et tests unitaires livrés
+Last activity: 2026-03-02 — Plan 06-01 exécuté (parser PDF régional + 24 tests pytest)
 
 ```
-v1.1 Progress: [          ] 0/4 phases
-Phase 6: [ ] Pipeline régional
+v1.1 Progress: [          ] 0/4 phases (Phase 6 in progress: 1/? plans)
+Phase 6: [~] Pipeline régional (Plan 01/? complet)
 Phase 7: [ ] Structure SVG
 Phase 8: [ ] Choroplèthe et interactions
 Phase 9: [ ] Navigation et mobile
@@ -37,6 +37,13 @@ Phase 9: [ ] Navigation et mobile
 ### Decisions
 
 Decisions sont loguées dans PROJECT.md Key Decisions table.
+
+Décisions Phase 6 Plan 01 (2026-03-02):
+- Salariés extraits de Tableau 9 uniquement (absent du Tableau 17) et inclus par caisse dans le JSON
+- CAISSE_MAP utilise des tuples (id, type) pour éviter une lookup table séparée
+- validate_output() bloquant avant écriture JSON (assertion sur >= 16 caisses metro et valeurs non nulles)
+- Tous les logs/warnings vont sur stderr; le JSON va uniquement dans le fichier de sortie
+- Absence de caisses DOM-TOM génère un warning mais pas d'échec (variable selon édition PDF)
 
 Décisions v1.1 confirmées par la recherche:
 - SVG inline (pas D3, Leaflet, ou amCharts) — zéro nouvelle dépendance browser-side
@@ -63,7 +70,7 @@ Décisions v1.1 confirmées par la recherche:
 
 ## Session Continuity
 
-Last session: 2026-03-01
-Stopped at: Roadmap v1.1 créé, phases 6-9 définies
+Last session: 2026-03-02
+Stopped at: Phase 6 Plan 01 complet — parse_regional.py + test_parse_regional.py livrés
 Resume file: None
-Next action: `/gsd:plan-phase 6` — Pipeline régional
+Next action: Plan 06-02 — Exécution du parser sur le PDF réel et validation de regional-data.json
