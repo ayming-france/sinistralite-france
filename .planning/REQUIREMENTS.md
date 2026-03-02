@@ -78,27 +78,27 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PIPE-05 | — | Pending |
-| PIPE-06 | — | Pending |
-| PIPE-07 | — | Pending |
-| PIPE-08 | — | Pending |
-| MAP-01 | — | Pending |
-| MAP-02 | — | Pending |
-| MAP-03 | — | Pending |
-| MAP-04 | — | Pending |
-| MAP-05 | — | Pending |
-| MAP-06 | — | Pending |
-| MAP-07 | — | Pending |
-| MAP-08 | — | Pending |
-| MAP-09 | — | Pending |
-| MAP-10 | — | Pending |
-| MAP-11 | — | Pending |
+| PIPE-05 | Phase 6 | Pending |
+| PIPE-06 | Phase 6 | Pending |
+| PIPE-07 | Phase 6 | Pending |
+| PIPE-08 | Phase 6 | Pending |
+| MAP-01 | Phase 7 | Pending |
+| MAP-04 | Phase 7 | Pending |
+| MAP-11 | Phase 7 | Pending |
+| MAP-02 | Phase 8 | Pending |
+| MAP-03 | Phase 8 | Pending |
+| MAP-05 | Phase 8 | Pending |
+| MAP-06 | Phase 8 | Pending |
+| MAP-07 | Phase 8 | Pending |
+| MAP-08 | Phase 8 | Pending |
+| MAP-09 | Phase 8 | Pending |
+| MAP-10 | Phase 9 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15
+- Mapped to phases: 15
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-01*
-*Last updated: 2026-03-01 after initial definition*
+*Last updated: 2026-03-01 after roadmap v1.1 creation*
