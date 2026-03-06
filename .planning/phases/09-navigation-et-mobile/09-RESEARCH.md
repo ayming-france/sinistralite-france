@@ -337,12 +337,12 @@ All paths already implemented in `app.js` / `nav.js`. Phase 9 verification confi
 ## Sources
 
 ### Primary (HIGH confidence)
-- Source code analysis: `/Users/encarv/.claude/datagouv/js/map.js` - Phase 8 complete, touch gate at line 211
-- Source code analysis: `/Users/encarv/.claude/datagouv/js/app.js` - Hash routing lines 111-159, drawer dismiss pattern lines 197-206
-- Source code analysis: `/Users/encarv/.claude/datagouv/js/nav.js` - `switchView` function writes hash at line 59
-- Source code analysis: `/Users/encarv/.claude/datagouv/styles/nav.css` - `env(safe-area-inset-bottom)` pattern at line 163
-- Source code analysis: `/Users/encarv/.claude/datagouv/index.html` - Existing `#mapTooltip` and bottom nav elements
-- Source code analysis: `/Users/encarv/.claude/datagouv/styles/map.css` - All existing map CSS patterns
+- Source code analysis: `/Users/encarv/projects/sinistralite/js/map.js` - Phase 8 complete, touch gate at line 211
+- Source code analysis: `/Users/encarv/projects/sinistralite/js/app.js` - Hash routing lines 111-159, drawer dismiss pattern lines 197-206
+- Source code analysis: `/Users/encarv/projects/sinistralite/js/nav.js` - `switchView` function writes hash at line 59
+- Source code analysis: `/Users/encarv/projects/sinistralite/styles/nav.css` - `env(safe-area-inset-bottom)` pattern at line 163
+- Source code analysis: `/Users/encarv/projects/sinistralite/index.html` - Existing `#mapTooltip` and bottom nav elements
+- Source code analysis: `/Users/encarv/projects/sinistralite/styles/map.css` - All existing map CSS patterns
 
 ### Secondary (MEDIUM confidence)
 - MDN Web Docs (training knowledge): `navigator.maxTouchPoints`, `e.stopPropagation()`, `e.target.closest()` - all standard Web APIs, widely supported

@@ -168,7 +168,7 @@ js/app.js (entry)
 **Build step:** None. Files are served as-is.
 
 **Git remotes:**
-- `origin` -> `https://github.com/xXencarvXx/datagouv.git` (private backup)
+- `origin` -> `https://github.com/xXencarvXx/sinistralite.git` (private backup)
 - `deploy` -> `https://github.com/ayming-france/sinistralite-france.git` (GitHub Pages, public)
 
 **Deployment:** Push `main` branch to `deploy` remote. GitHub Pages serves the repo root directly.

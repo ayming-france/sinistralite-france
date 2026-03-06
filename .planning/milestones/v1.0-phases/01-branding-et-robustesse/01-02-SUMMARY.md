@@ -7,7 +7,7 @@ tags: [skeleton-loaders, error-handling, css-cleanup, vanilla-js]
 # Dependency graph
 requires:
   - phase: 01-01
-    provides: favicon SVG, Lato font, datagouv-theme localStorage key
+    provides: favicon SVG, Lato font, sinistralite-theme localStorage key
 provides:
   - Skeleton loaders with shimmer animation (pulse during data fetch)
   - Error state with retry button (on fetch failure)

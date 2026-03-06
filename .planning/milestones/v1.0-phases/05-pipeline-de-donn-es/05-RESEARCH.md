@@ -8,7 +8,7 @@
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions
-- Copier `refresh_data.py` et `parse_pdf.py` depuis `~/.claude/bpo/data/`
+- Copier `refresh_data.py` et `parse_pdf.py` depuis `~/projects/bpo/data/`
 - Adapter les chemins pour que la sortie aille dans `data/` (at-data.json, mp-data.json, trajet-data.json)
 - Nettoyer le code pendant la copie : simplifier, retirer la logique spécifique au projet BPO, améliorer les messages d'erreur
 - Scripts dans `data/pipeline/`
@@ -39,9 +39,9 @@ None. Discussion stayed within phase scope.
 
 ## Summary
 
-The pipeline already exists and works in the BPO project. The task is a copy-adapt-clean operation, not new development. The BPO `refresh_data.py` (1157 lines) downloads Excel from ameli.fr, parses it, and outputs JSON + pickle files. The datagouv project only needs JSON, so pickle generation is BPO-specific and must be removed.
+The pipeline already exists and works in the BPO project. The task is a copy-adapt-clean operation, not new development. The BPO `refresh_data.py` (1157 lines) downloads Excel from ameli.fr, parses it, and outputs JSON + pickle files. The sinistralite project only needs JSON, so pickle generation is BPO-specific and must be removed.
 
-The main structural change: `DATA_DIR = Path(__file__).parent` currently resolves to `bpo/data/`. In datagouv, scripts live in `data/pipeline/` and must write JSON to `data/` (one level up). This requires changing output paths to `Path(__file__).parent.parent` or equivalent.
+The main structural change: `DATA_DIR = Path(__file__).parent` currently resolves to `bpo/data/`. In sinistralite, scripts live in `data/pipeline/` and must write JSON to `data/` (one level up). This requires changing output paths to `Path(__file__).parent.parent` or equivalent.
 
 The critical cleanup item is `parse_pdf.py` line 13: `PDF_DIR` is hardcoded to `/Users/encarv/Desktop/Etude-BPO/chart_extractor_project_full/input_pdfs`. This must become a configurable parameter (CLI arg or env var), not a hardcoded path. Without this, the pipeline cannot run on any machine other than the developer's.
 
@@ -114,7 +114,7 @@ AT_JSON_PATH = OUTPUT_DIR / "at-data.json"
 ```
 
 ### Pattern: Remove Pickle Output
-`write_outputs()` in BPO writes both JSON and `.pkl` files. The datagouv project only needs JSON. The function must be simplified to JSON-only:
+`write_outputs()` in BPO writes both JSON and `.pkl` files. The sinistralite project only needs JSON. The function must be simplified to JSON-only:
 
 ```python
 def write_json(data, json_path, label):
@@ -235,7 +235,7 @@ Relancer le pipeline a chaque nouvelle publication.
 
 1. **Is naf38 level consumed by the dashboard?**
    - What we know: BPO builds by_naf38 in all three datasets
-   - What's unclear: Whether any JS in the datagouv dashboard reads by_naf38
+   - What's unclear: Whether any JS in the sinistralite dashboard reads by_naf38
    - Recommendation: Grep dashboard JS for "naf38" before deciding to strip it
 
 2. **AT 2021 Excel secondary download**
@@ -251,9 +251,9 @@ Relancer le pipeline a chaque nouvelle publication.
 ## Sources
 
 ### Primary (HIGH confidence)
-- Direct code inspection of `/Users/encarv/.claude/bpo/data/refresh_data.py` (1157 lines)
-- Direct code inspection of `/Users/encarv/.claude/bpo/data/parse_pdf.py` (393 lines)
-- Project file structure confirmed via `ls /Users/encarv/.claude/datagouv/data/`
+- Direct code inspection of `/Users/encarv/projects/bpo/data/refresh_data.py` (1157 lines)
+- Direct code inspection of `/Users/encarv/projects/bpo/data/parse_pdf.py` (393 lines)
+- Project file structure confirmed via `ls /Users/encarv/projects/sinistralite/data/`
 
 ### Secondary (MEDIUM confidence)
 - CONTEXT.md decisions (user-locked, 2026-02-28)

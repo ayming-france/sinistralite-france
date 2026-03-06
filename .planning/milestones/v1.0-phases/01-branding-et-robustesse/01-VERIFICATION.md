@@ -24,7 +24,7 @@ re_verification: false
 | 3  | Le logo dans la barre de navigation affiche l'icône chart + texte "Sinistralité France" | VERIFIED | Inline SVG (20x20) + `<span>Sinistralité France</span>` in index.html line 24 |
 | 4  | Le favicon est identique sur index.html et landing.html | VERIFIED | Both contain exactly 1 `image/svg+xml` favicon |
 | 5  | Les polices Chart.js utilisent Lato (pas DM Sans) | VERIFIED | `Chart.defaults.font.family = "'Lato', sans-serif"` at js/nav.js:66; zero DM Sans matches in js/ |
-| 6  | Le thème est partagé entre dashboard et landing via datagouv-theme | VERIFIED | js/nav.js uses `datagouv-theme` at lines 21, 24, 84; landing.html has 2 matches |
+| 6  | Le thème est partagé entre dashboard et landing via sinistralite-theme | VERIFIED | js/nav.js uses `sinistralite-theme` at lines 21, 24, 84; landing.html has 2 matches |
 | 7  | L'utilisateur voit des skeletons animés pendant le chargement | VERIFIED | 14 `skeleton` references in index.html; `@keyframes shimmer` in styles/base.css (4 matches) |
 | 8  | Chaque section a son skeleton qui disparait quand la section charge | VERIFIED | js/app.js hides skeleton on success (line 161) and on error (line 220) |
 | 9  | Les skeletons s'adaptent au thème dark/light | VERIFIED | Skeleton CSS uses `var(--bg-elevated)` and `var(--bg-card)` CSS custom properties |
@@ -39,10 +39,10 @@ re_verification: false
 | Artifact | Provides | Status | Details |
 |----------|----------|--------|---------|
 | `js/state.js` | Accented French labels in VIEW_CONFIG | VERIFIED | Contains `Décès` (required pattern) |
-| `js/nav.js` | Lato font + consistent localStorage key | VERIFIED | `'Lato'` at line 66; `datagouv-theme` at lines 21, 24, 84 |
+| `js/nav.js` | Lato font + consistent localStorage key | VERIFIED | `'Lato'` at line 66; `sinistralite-theme` at lines 21, 24, 84 |
 | `js/charts.js` | Lato font in chart configurations | VERIFIED | Zero DM Sans references remain |
 | `index.html` | SVG favicon + nav logo with icon | VERIFIED | 1x `image/svg+xml`, 2x `Sinistralité France`, inline SVG in nav |
-| `landing.html` | Same SVG favicon + datagouv-theme | VERIFIED | 1x `image/svg+xml`, 2x `datagouv-theme` |
+| `landing.html` | Same SVG favicon + sinistralite-theme | VERIFIED | 1x `image/svg+xml`, 2x `sinistralite-theme` |
 | `js/data.js` | Error handling on fetch with response.ok | VERIFIED | `if (!resp.ok) throw new Error(...)` at line 8 |
 | `js/app.js` | Loading state management + error UI | VERIFIED | Contains `skeleton` (hide logic), `catch (err)`, `retryBtn` wiring |
 | `styles/base.css` | Skeleton CSS with shimmer animation | VERIFIED | `@keyframes shimmer` confirmed (4 matches) |
@@ -52,7 +52,7 @@ re_verification: false
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
 | `index.html` | `landing.html` | identical inline SVG favicon | VERIFIED | Both have `image/svg+xml`; same pattern |
-| `js/nav.js` | `landing.html` | shared localStorage key `datagouv-theme` | VERIFIED | nav.js and landing.html both use `datagouv-theme` |
+| `js/nav.js` | `landing.html` | shared localStorage key `sinistralite-theme` | VERIFIED | nav.js and landing.html both use `sinistralite-theme` |
 | `js/data.js` | `js/app.js` | loadDataset throws on failure, caught by try/catch | VERIFIED | data.js throws Error; app.js:219 catches it |
 | `js/app.js` | `index.html` | skeleton elements shown/hidden by id toggle | VERIFIED | app.js references `loadingSkeleton`, `errorState`, `retryBtn` ids present in index.html |
 | `styles/base.css` | `index.html` | skeleton CSS animates placeholder elements | VERIFIED | `shimmer` in CSS; `skeleton` classes in HTML |
@@ -68,7 +68,7 @@ re_verification: false
 | ROBUST-02 | 01-02 | User sees clear error message with retry button | SATISFIED | errorState + retryBtn wired to reload |
 | ROBUST-03 | 01-01, 01-02 | Chart.js font uses Lato not DM Sans | SATISFIED | Zero DM Sans in js/; Lato set in nav.js:66 |
 | ROBUST-04 | 01-02 | Dead CSS classes cleaned up | SATISFIED | All 9 dead classes removed; dark.css unloaded |
-| ROBUST-05 | 01-01, 01-02 | localStorage theme key consistent | SATISFIED | Both pages use `datagouv-theme` |
+| ROBUST-05 | 01-01, 01-02 | localStorage theme key consistent | SATISFIED | Both pages use `sinistralite-theme` |
 
 ### Anti-Patterns Found
 

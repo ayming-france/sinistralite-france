@@ -372,7 +372,7 @@ caisseIds.forEach(id => {
 
 ### Primary (HIGH confidence)
 - [regisenguehard/carte-france-svg](https://github.com/regisenguehard/carte-france-svg) - SVG structure, viewBox, path IDs, CC BY 4.0 license confirmed
-- Project codebase (`/Users/encarv/.claude/datagouv/`) - Existing CSS audit (no conflicting fill/stroke rules), HTML structure, view pattern, JS nav logic
+- Project codebase (`/Users/encarv/projects/sinistralite/`) - Existing CSS audit (no conflicting fill/stroke rules), HTML structure, view pattern, JS nav logic
 - [chsctaudiovisuel.org/liste-des-carsat-et-direccte](https://chsctaudiovisuel.org/liste-des-carsat-et-direccte/) - Authoritative Carsat-to-department mapping (all 16 metropolitan caisses + CRAMIF)
 
 ### Secondary (MEDIUM confidence)

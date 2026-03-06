@@ -57,7 +57,7 @@ A user can search any NAF sector code and instantly see its accident profile com
 
 ### Out of Scope
 
-- Live datagouv MCP queries — sinistralité data is on ameli.fr, not data.gouv.fr. Static JSON pipeline is the right approach.
+- Live sinistralite MCP queries — sinistralité data is on ameli.fr, not data.gouv.fr. Static JSON pipeline is the right approach.
 - Cloudflare Worker proxy — not needed since data is static, updated annually
 - Ameli health data integration — separate app/milestone if needed
 - SIRENE company lookup — separate app
@@ -73,7 +73,7 @@ Shipped v1.0 with 7,091 LOC across JS, CSS, HTML, and Python.
 Tech stack: Vanilla JS + ES modules, Chart.js 4.4.7, Lucide icons, Lato font. No build step.
 Data: 9.2 MB static JSON (at-data.json, mp-data.json, trajet-data.json) from ameli.fr Excel files.
 Pipeline: Python scripts in `data/pipeline/` with optional PDF parsing for demographics.
-Deployment: GitHub Pages via `ayming-france/sinistralite-france` (public). Backup on `xXencarvXx/datagouv` (private).
+Deployment: GitHub Pages via `ayming-france/sinistralite-france` (public). Backup on `xXencarvXx/sinistralite` (private).
 
 ## Constraints
 
@@ -88,13 +88,13 @@ Deployment: GitHub Pages via `ayming-france/sinistralite-france` (public). Backu
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Vanilla JS, no framework | Zero build step, simple deployment, full control | ✓ Good |
-| Static JSON from BPO pipeline | Sinistralité data is on ameli.fr, not datagouv. Annual refresh is sufficient. | ✓ Good |
+| Static JSON from BPO pipeline | Sinistralité data is on ameli.fr, not sinistralite. Annual refresh is sufficient. | ✓ Good |
 | No backend/proxy needed | Data is static, updated yearly. No live queries required. | ✓ Good |
 | Dashboard-first, landing page later | Core value is the dashboard; landing page deferred | ✓ Good |
 | v1 = polish only | Fix quality debt while codebase is small and manageable | ✓ Good |
 | Lato as sole font | DM Sans was never loaded; Lato is consistent across all charts and UI | ✓ Good |
 | SVG data URI favicon | No external file needed, tricolore design (bleu/blanc/rouge) | ✓ Good |
-| localStorage key: datagouv-theme | Namespaced, shared between dashboard and landing page | ✓ Good |
+| localStorage key: sinistralite-theme | Namespaced, shared between dashboard and landing page | ✓ Good |
 | Bottom tab bar for mobile | Simpler than hamburger, matches 3-view structure exactly | ✓ Good |
 | Focus trap in vanilla JS | 2 drawers too simple to justify a CDN library | ✓ Good |
 | CSV semicolons + UTF-8 BOM | French Excel defaults expect semicolons; BOM preserves accents | ✓ Good |

@@ -1798,10 +1798,10 @@
   function toggleTheme() {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    localStorage.setItem('datagouv-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('sinistralite-theme', isDark ? 'light' : 'dark');
     lucide.createIcons();
   }
-  const saved = localStorage.getItem('datagouv-theme');
+  const saved = localStorage.getItem('sinistralite-theme');
   if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
     document.documentElement.setAttribute('data-theme', 'dark');
   }

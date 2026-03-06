@@ -18,10 +18,10 @@ export function toggleTheme(renderFn) {
   var isDark = html.getAttribute('data-theme') === 'dark';
   if (isDark) {
     html.removeAttribute('data-theme');
-    localStorage.setItem('datagouv-theme', 'light');
+    localStorage.setItem('sinistralite-theme', 'light');
   } else {
     html.setAttribute('data-theme', 'dark');
-    localStorage.setItem('datagouv-theme', 'dark');
+    localStorage.setItem('sinistralite-theme', 'dark');
   }
   updateThemeUI();
   updateChartDefaults();
@@ -83,7 +83,7 @@ export function initNav(renderFn) {
   });
 
   // Restore theme from localStorage
-  var saved = localStorage.getItem('datagouv-theme');
+  var saved = localStorage.getItem('sinistralite-theme');
   if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
   updateThemeUI();
 }

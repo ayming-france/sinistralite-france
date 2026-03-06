@@ -64,7 +64,7 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Feature | Reason |
 |---------|--------|
-| Live datagouv MCP queries | Sinistralité data is on ameli.fr, not data.gouv.fr |
+| Live sinistralite MCP queries | Sinistralité data is on ameli.fr, not data.gouv.fr |
 | Cloudflare Worker proxy | Data is static, no live queries needed |
 | MP by caisse régionale | Not available in rapport annuel (only AT and Trajet) |
 | IF by company size | Bar chart in PDF (vector graphic), values not extractable as text |

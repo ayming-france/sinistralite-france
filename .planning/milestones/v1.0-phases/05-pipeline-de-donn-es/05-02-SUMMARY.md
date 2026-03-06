@@ -44,7 +44,7 @@ metrics:
 
 ### parse_pdf.py
 
-Adapted from `/Users/encarv/.claude/bpo/data/parse_pdf.py` (393 lines source). Key changes:
+Adapted from `/Users/encarv/projects/bpo/data/parse_pdf.py` (393 lines source). Key changes:
 
 - **Hardcoded path removed:** `PDF_DIR = Path("/Users/encarv/Desktop/...")` deleted entirely
 - **argparse block added** in `main()`: `--pdf-dir` required argument with help text

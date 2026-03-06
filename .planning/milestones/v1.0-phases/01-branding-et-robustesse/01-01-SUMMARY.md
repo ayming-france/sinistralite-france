@@ -10,7 +10,7 @@ provides:
   - Chart.js uses Lato font exclusively (no DM Sans)
   - SVG chart bar favicon on both index.html and landing.html
   - Nav logo includes chart bar icon + Sinistralité France text
-  - localStorage theme key unified to datagouv-theme across dashboard and landing
+  - localStorage theme key unified to sinistralite-theme across dashboard and landing
 affects: [01-02, all future chart-rendering plans]
 
 # Tech tracking
@@ -19,7 +19,7 @@ tech-stack:
   patterns:
     - "SVG favicon as data URI (URL-encoded inline, no external file)"
     - "Nav logo = inline SVG icon + text span, icon uses var(--accent) for theme adaptation"
-    - "localStorage key convention: datagouv-theme (namespaced to avoid collisions)"
+    - "localStorage key convention: sinistralite-theme (namespaced to avoid collisions)"
 
 key-files:
   created: []
@@ -33,7 +33,7 @@ key-decisions:
   - "Lato chosen as Chart.js font family, consistent with Google Fonts import already in HTML"
   - "SVG favicon: 3-bar ascending chart icon on blue (#4e8ac5) rounded rect background"
   - "Nav logo icon uses var(--accent) fill so it adapts to light/dark theme automatically"
-  - "localStorage key datagouv-theme is the canonical cross-page theme key"
+  - "localStorage key sinistralite-theme is the canonical cross-page theme key"
 
 patterns-established:
   - "DM Sans is removed from the codebase; Lato is the sans-serif for all Chart.js labels"
@@ -48,7 +48,7 @@ completed: 2026-02-27
 
 # Phase 01 Plan 01: Branding et polices Summary
 
-**Branding corrigé : favicon SVG chart-bars sur les deux pages, icône chart dans la nav, Lato remplace DM Sans dans tous les charts, et thème partagé via la clé datagouv-theme**
+**Branding corrigé : favicon SVG chart-bars sur les deux pages, icône chart dans la nav, Lato remplace DM Sans dans tous les charts, et thème partagé via la clé sinistralite-theme**
 
 ## Performance
 
@@ -62,7 +62,7 @@ completed: 2026-02-27
 - Suppression de toutes les références DM Sans (6 occurrences dans nav.js et charts.js) au profit de Lato
 - Remplacement du favicon texte "SF" par un favicon SVG chart-bars (3 barres blanches sur fond bleu) sur index.html et landing.html
 - Ajout de l'icône chart-bars dans la barre de navigation avant le texte "Sinistralité France"
-- Unification de la clé localStorage pour le thème : dashboard et landing page partagent maintenant datagouv-theme
+- Unification de la clé localStorage pour le thème : dashboard et landing page partagent maintenant sinistralite-theme
 
 ## Task Commits
 
@@ -71,7 +71,7 @@ completed: 2026-02-27
 3. **Task 3: Unify localStorage theme key** - `3cee9d0` (fix)
 
 ## Files Created/Modified
-- `js/nav.js` - Lato dans Chart.defaults.font.family, localStorage key datagouv-theme
+- `js/nav.js` - Lato dans Chart.defaults.font.family, localStorage key sinistralite-theme
 - `js/charts.js` - 5 remplacements DM Sans par Lato (doughnut legend, datalabels, sex donut, age ticks)
 - `index.html` - Favicon SVG chart-bars + icône inline dans le logo nav
 - `landing.html` - Favicon SVG chart-bars identique

@@ -19,7 +19,7 @@ Single-page vanilla JS dashboard (no build step, no framework) with 1,524 lines 
 1. **ES5 vs ES6 style split.** Dashboard JS (`js/*.js`) uses `var`, `function(){}`, no arrow functions. Landing page JS uses `const`, `let`, arrow functions (`=>`). If code is ever shared between the two, this will cause friction.
    - Files: `js/app.js`, `js/charts.js` (ES5) vs `landing.html` lines 1793-1866 (ES6)
 
-2. **localStorage key mismatch.** The dashboard stores theme preference as `theme`, but the landing page uses `datagouv-theme`. Switching theme on the landing page does not carry over to the dashboard and vice versa.
+2. **localStorage key mismatch.** The dashboard stores theme preference as `theme`, but the landing page uses `sinistralite-theme`. Switching theme on the landing page does not carry over to the dashboard and vice versa.
    - Files: `js/nav.js` lines 21, 24, 84 vs `landing.html` lines 1801, 1804
 
 3. **Font family reference to unloaded font.** Chart.js configurations reference `'DM Sans'` (6 occurrences), but no Google Fonts link loads DM Sans. The loaded fonts are `Lato` and `JetBrains Mono`. The browser silently falls back to `sans-serif`.
@@ -119,8 +119,8 @@ export async function loadDataset(type) {
 
 ## Potential Bugs
 
-1. **Theme not shared between pages.** Landing uses `datagouv-theme`, dashboard uses `theme` in localStorage. Users who set dark mode on the landing page will see light mode on the dashboard.
-   - Fix: use the same key (`datagouv-theme`) in both pages.
+1. **Theme not shared between pages.** Landing uses `sinistralite-theme`, dashboard uses `theme` in localStorage. Users who set dark mode on the landing page will see light mode on the dashboard.
+   - Fix: use the same key (`sinistralite-theme`) in both pages.
 
 2. **DM Sans font never loaded.** Chart labels reference `'DM Sans'` which is not in the Google Fonts link. Browsers fall back to the generic `sans-serif`. The visual result is acceptable but unintentional.
    - Fix: replace `'DM Sans'` with `var(--sans)` or `'Lato'` in all Chart.js font configs.

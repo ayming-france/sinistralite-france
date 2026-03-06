@@ -57,7 +57,7 @@ completed: 2026-02-28
 
 ## Accomplishments
 
-- Script refresh_data.py adapte de /Users/encarv/.claude/bpo/data/refresh_data.py (1157 lignes source)
+- Script refresh_data.py adapte de /Users/encarv/projects/bpo/data/refresh_data.py (1157 lignes source)
 - Chemins corriges : PIPELINE_DIR/OUTPUT_DIR, JSON dans data/, Excel temporaires dans data/pipeline/
 - Pickle supprime entierement (import + .pkl paths + write_outputs remplace par write_json)
 - Agregation by_naf38 supprimee (confirmee non utilisee dans dashboard par grep)

@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Pipeline Python autonome dans `data/pipeline/` qui télécharge les sources ameli.fr (Excel + PDF) et génère les fichiers JSON consommés par le dashboard. Le pipeline existe déjà dans le projet BPO (`~/.claude/bpo/data/`) et doit être copié, adapté et nettoyé pour ce projet.
+Pipeline Python autonome dans `data/pipeline/` qui télécharge les sources ameli.fr (Excel + PDF) et génère les fichiers JSON consommés par le dashboard. Le pipeline existe déjà dans le projet BPO (`~/projects/bpo/data/`) et doit être copié, adapté et nettoyé pour ce projet.
 
 </domain>
 
@@ -14,7 +14,7 @@ Pipeline Python autonome dans `data/pipeline/` qui télécharge les sources amel
 ## Implementation Decisions
 
 ### Source et adaptation
-- Copier `refresh_data.py` et `parse_pdf.py` depuis `~/.claude/bpo/data/`
+- Copier `refresh_data.py` et `parse_pdf.py` depuis `~/projects/bpo/data/`
 - Adapter les chemins pour que la sortie aille dans `data/` (at-data.json, mp-data.json, trajet-data.json)
 - Nettoyer le code pendant la copie : simplifier, retirer la logique spécifique au projet BPO, améliorer les messages d'erreur
 

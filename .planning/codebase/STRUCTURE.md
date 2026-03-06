@@ -5,7 +5,7 @@
 ## Directory Layout
 
 ```
-datagouv/
+sinistralite/
 ├── data/               # Static JSON datasets (fetched at runtime)
 │   ├── at-data.json    # Accidents du Travail (3.8MB)
 │   ├── mp-data.json    # Maladies Professionnelles (3.4MB)
