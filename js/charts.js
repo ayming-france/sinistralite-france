@@ -156,9 +156,11 @@ export function renderFunnelChart(viewId, s, cfg) {
 export function renderPositionStrip(viewId, code, level, ifValue, renderFn) {
   var store = getStore(viewId, level);
   var data = getData(viewId);
+  // Inclure les secteurs réels à 0 accident (IF=0 mesuré = secteur le plus sûr).
+  // On exclut seulement les secteurs sans salariés (IF indéfini, 0/0).
   var allIF = Object.entries(store)
-    .map(function(pair) { return { code: pair[0], libelle: pair[1].libelle, if_val: pair[1].stats.indice_frequence }; })
-    .filter(function(d) { return d.if_val > 0; })
+    .map(function(pair) { return { code: pair[0], libelle: pair[1].libelle, if_val: pair[1].stats.indice_frequence, nb_salaries: pair[1].stats.nb_salaries }; })
+    .filter(function(d) { return d.nb_salaries > 0; })
     .sort(function(a, b) { return a.if_val - b.if_val; });
 
   if (allIF.length === 0) return;
@@ -640,4 +642,69 @@ export function renderDemographics(viewId, entry) {
       }
     }
   }));
+}
+
+// ── Sinistralité par taille d'établissement (extrait du chart vectoriel des fiches) ──
+export function renderSizeChart(viewId, bands, sectorIF) {
+  var section = viewEl(viewId, 'sizeSection');
+  if (!section) return;
+  var vs = state.views[viewId];
+  if (vs.sizeChart) { vs.sizeChart.destroy(); vs.sizeChart = null; }
+
+  if (!bands || !bands.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  var labels = bands.map(function(b) { return b.label; });
+  var acc = bands.map(function(b) { return b.part_accidents; });
+  var sal = bands.map(function(b) { return b.part_salaries; });
+  // IF par tranche dérivé : (part accidents / part salariés) * IF du secteur
+  var ifBand = bands.map(function(b) {
+    return b.part_salaries > 0 ? Math.round(b.part_accidents / b.part_salaries * sectorIF * 10) / 10 : null;
+  });
+
+  // Tranche en sur-risque : accidents nettement > salariés
+  var worst = null, worstGap = 0;
+  bands.forEach(function(b) {
+    var gap = b.part_accidents - b.part_salaries;
+    if (b.part_salaries >= 1 && gap > worstGap) { worstGap = gap; worst = b.label; }
+  });
+  var sub = viewEl(viewId, 'sizeSub');
+  if (sub) {
+    sub.textContent = worst
+      ? 'Sur-risque dans les établissements de ' + worst + ' salariés : leur part d\'accidents dépasse leur part de salariés.'
+      : 'Part des accidents du travail et part des salariés par taille d\'établissement.';
+  }
+
+  var wrap = viewEl(viewId, 'sizeWrap');
+  wrap.innerHTML = '<canvas id="' + viewId + '-sizeChart"></canvas>';
+  var tickColor = themeColor('--text-dim');
+  var gridColor = themeColor('--border');
+
+  vs.sizeChart = new Chart(viewEl(viewId, 'sizeChart'), {
+    data: {
+      labels: labels,
+      datasets: [
+        { type: 'bar', label: 'Part des accidents', data: acc, backgroundColor: '#6cae6f', borderRadius: 3, yAxisID: 'y', order: 2 },
+        { type: 'bar', label: 'Part des salariés', data: sal, backgroundColor: '#7e57c2', borderRadius: 3, yAxisID: 'y', order: 2 },
+        { type: 'line', label: 'Indice de fréquence', data: ifBand, borderColor: '#c74a43', backgroundColor: '#c74a43', borderWidth: 2, pointRadius: 3, tension: 0.25, yAxisID: 'y1', order: 1, spanGaps: true }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { usePointStyle: true, padding: 12, color: tickColor } },
+        datalabels: { display: false },
+        tooltip: { callbacks: { label: function(c) {
+          if (c.dataset.yAxisID === 'y1') return ' IF tranche : ' + (c.parsed.y == null ? 'n/a' : c.parsed.y);
+          return ' ' + c.dataset.label + ' : ' + c.parsed.y + ' %';
+        } } }
+      },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Part (%)', color: tickColor }, ticks: { color: tickColor, callback: function(v){return v+'%';} }, grid: { color: gridColor } },
+        y1: { beginAtZero: true, position: 'right', title: { display: true, text: 'Indice de fréquence', color: '#c74a43' }, ticks: { color: '#c74a43' }, grid: { drawOnChartArea: false } },
+        x: { ticks: { color: tickColor }, grid: { display: false } }
+      }
+    }
+  });
 }

@@ -330,3 +330,13 @@
     .funnel-bar-label, .funnel-bar-value { font-size: 0.65rem; }
     .funnel-rate { font-size: 0.62rem; }
   }
+
+/* Sinistralité par taille d'établissement */
+.size-section { margin-top: 1.5rem; }
+.size-section .size-sub {
+  text-align: left;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin: 0.25rem 0 1rem;
+  max-width: 70ch;
+}

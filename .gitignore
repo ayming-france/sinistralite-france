@@ -3,3 +3,10 @@
 *.swo
 *~
 .claude/
+
+# Python
+__pycache__/
+*.pyc
+
+# scratch
+data/pipeline/_explore.py

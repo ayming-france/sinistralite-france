@@ -6,8 +6,17 @@ import { el, viewEl } from './utils.js';
 import { initNav, switchView } from './nav.js';
 import { setupSearch, selectCode, setLevel } from './search.js';
 import { renderKPIs, renderNationalState } from './kpi.js';
-import { renderCausesChart, renderFunnelChart, renderPositionStrip, renderComparisonChart, setupCompToggle, renderEvolutionCharts, renderDemographics } from './charts.js';
+import { renderCausesChart, renderFunnelChart, renderPositionStrip, renderComparisonChart, setupCompToggle, renderEvolutionCharts, renderDemographics, renderSizeChart } from './charts.js';
 import { renderInsights, toggleInsights, toggleShare, copyLink, downloadCSV, releaseFocus } from './insights.js';
+
+// Données "taille d'établissement" (AT uniquement, extrait des fiches PDF)
+var sizeData = {};
+async function loadSizeData() {
+  try {
+    var resp = await fetch('./data/size-data.json');
+    if (resp.ok) sizeData = await resp.json();
+  } catch (e) { /* données taille optionnelles */ }
+}
 
 // ── CSV button disabled state ──
 function updateCSVBtnState() {
@@ -105,6 +114,10 @@ function render(viewId, code, level) {
   renderComparisonChart(viewId, code, level, render);
   renderEvolutionCharts(viewId, entry, level);
   renderDemographics(viewId, entry);
+  if (viewId === 'at') {
+    var sd = sizeData[code];
+    renderSizeChart(viewId, sd && sd.bands, s.indice_frequence);
+  }
   updateCSVBtnState();
 }
 
@@ -166,6 +179,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       loadDataset('at'),
       loadDataset('mp'),
       loadDataset('trajet'),
+      loadSizeData(),
     ]);
 
     // Hide skeleton, reveal content

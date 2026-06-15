@@ -55,7 +55,7 @@ export function renderInsights(viewId, s, nat, causes, cfg, yearly) {
   }
 
   if (s.deces > 0) {
-    insights.push({ level: 'danger', text: s.deces + ' décès enregistré' + (s.deces > 1 ? 's' : '') + ' en 2023' });
+    insights.push({ level: 'danger', text: s.deces + ' décès enregistré' + (s.deces > 1 ? 's' : '') + ' en 2024' });
   }
 
   var sorted = causes ? Object.entries(causes).filter(function(pair) { return pair[1] > 0; }).sort(function(a, b) { return b[1] - a[1]; }) : [];
@@ -274,7 +274,7 @@ export function downloadCSV(viewId) {
   var pad = ';;;;;;;;;;';
   var meta = [
     'Sinistralité France' + pad,
-    'Source : données CNAM/ameli.fr 2023' + pad,
+    'Source : données CNAM/ameli.fr 2024' + pad,
     'Vue : ' + viewNames[viewId] + pad,
     'Secteur : ' + code + ' - ' + libelle + pad,
     pad

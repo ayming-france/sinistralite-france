@@ -71,7 +71,7 @@ YEARLY_MAX = {
         "relaxed": {"count": [50_000] * 5, "ip": [20_000] * 5, "deces": [100] * 5, "journees": [10_000_000] * 5},
     },
 }
-YEARLY_YEARS = ["2019", "2020", "2021", "2022", "2023"]
+YEARLY_YEARS = ["2020", "2021", "2022", "2023", "2024"]
 
 
 def _parse_yearly_row(digit_groups: list[str], section: str, key: str) -> list[int]:
@@ -114,7 +114,7 @@ def _parse_yearly_section(page_text: str, section: str) -> dict[str, dict] | Non
     raw = {"count": [], "ip": [], "deces": [], "journees": [], "salaries": []}
 
     for line in lines:
-        if headers[section] in line and "2019" in line:
+        if headers[section] in line and "2020" in line:
             in_section = True
             continue
         if not in_section:

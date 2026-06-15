@@ -16,7 +16,7 @@ let regionalData = null;
 
 const MIN_COLOR = '#deebf7';
 const MAX_COLOR = '#08519c';
-const DEFAULT_YEAR = '2023';
+const DEFAULT_YEAR = '2024';
 
 /**
  * Interpole linéairement entre deux couleurs hex.
@@ -73,7 +73,7 @@ function renderLegende(legendElId, minVal, maxVal, minColor, maxColor, label) {
 /**
  * Colorie la carte SVG avec un dégradé de couleur proportionnel aux données.
  * @param {string} viewType - 'at' ou 'trajet'
- * @param {string} year - année des données (ex: '2023')
+ * @param {string} year - année des données (ex: '2024')
  * @param {object} data - données régionales (regional-data.json)
  */
 export function colorierCarte(viewType, year, data) {
@@ -125,7 +125,7 @@ function getActiveYear(viewType) {
 /**
  * Affiche le classement des caisses pour la vue et l'année données.
  * @param {string} viewType - 'at' ou 'trajet'
- * @param {string} year - année des données (ex: '2023')
+ * @param {string} year - année des données (ex: '2024')
  */
 function renderRanking(viewType, year) {
   const listEl = document.getElementById(viewType + '-rankingList');
@@ -194,7 +194,7 @@ function setupYearSelector(viewType) {
 /**
  * Met à jour la carte, la légende et le classement pour la vue et l'année données.
  * @param {string} viewType - 'at' ou 'trajet'
- * @param {string} year - année des données (ex: '2023')
+ * @param {string} year - année des données (ex: '2024')
  */
 function updateMap(viewType, year) {
   colorierCarte(viewType, year, regionalData);

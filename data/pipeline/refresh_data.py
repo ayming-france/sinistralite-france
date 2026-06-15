@@ -21,13 +21,7 @@ OUTPUT_DIR = PIPELINE_DIR.parent  # data/
 AT_XLSX_PATH = PIPELINE_DIR / "at-by-ctn-naf.xlsx"
 AT_JSON_PATH = OUTPUT_DIR / "at-data.json"
 AT_XLSX_URL = (
-    "https://assurance-maladie.ameli.fr/sites/default/files/2023_Risque-AT-CTN-x-NAF_serie%20annuelle.xlsx"
-)
-# Le fichier 2021 est necessaire pour les colonnes de causes de risque (colonnes 20-31)
-# qui ne sont pas disponibles dans le fichier 2023 au meme format.
-AT_2021_XLSX_PATH = PIPELINE_DIR / "at-2021.xlsx"
-AT_2021_XLSX_URL = (
-    "https://www.assurance-maladie.ameli.fr/sites/default/files/2021_Risque-AT-CTN-x-NAF_serie%20annuelle.xlsx"
+    "https://www.assurance-maladie.ameli.fr/sites/default/files/2024_Risque-AT-CTN-x-NAF_serie_annuelle.xlsx"
 )
 
 AT_COL = {
@@ -39,20 +33,23 @@ AT_COL = {
     "at_1er_reglement": 11, "at_4j_arret": 12,
     "nouvelles_ip": 13, "deces": 16, "journees_it": 17,
 }
+# Le fichier 2024 inclut les causes de risque en colonnes 20-31 (le format 2023
+# ne les fournissait pas, d'ou l'ancien recours au fichier 2021). L'ordre des
+# colonnes de causes differe de l'ancien mapping : il suit l'en-tete 2024.
 AT_RISK_CAUSES = {
-    20: "Manutention manuelle", 21: "Chutes de plain-pied",
-    22: "Risque chimique", 23: "Chutes de hauteur",
-    24: "Risque physique", 25: "Risque machines",
-    26: "Outillage a main", 27: "Risque routier",
-    28: "Agressions", 29: "Manutention mecanique",
-    30: "Autres risques", 31: "Autres vehicules",
+    20: "Outillage a main", 21: "Chutes de plain-pied",
+    22: "Manutention manuelle", 23: "Risque machines",
+    24: "Chutes de hauteur", 25: "Risque physique",
+    26: "Risque routier", 27: "Agressions",
+    28: "Autres risques", 29: "Risque chimique",
+    30: "Manutention mecanique", 31: "Autres vehicules",
 }
 
 # ── MP config ──
 MP_XLSX_PATH = PIPELINE_DIR / "mp-by-ctn-naf.xlsx"
 MP_JSON_PATH = OUTPUT_DIR / "mp-data.json"
 MP_XLSX_URL = (
-    "https://assurance-maladie.ameli.fr/sites/default/files/2023_Risque-MP-par-CTN-x-NAF_serie-annuelle.xlsx"
+    "https://www.assurance-maladie.ameli.fr/sites/default/files/2024_Risque-MP-par-CTN-x-NAF_serie-annuelle.xlsx"
 )
 
 # MP Excel: NAF38 at 4-5, NAF2 at 6-7 (swapped vs AT)
@@ -114,6 +111,20 @@ def safe_num(val):
         return 0
 
 
+def is_placeholder_naf(naf5):
+    """Vrai si le code NAF est un marqueur "valeur manquante" de l'Excel.
+
+    L'Ameli code les établissements sans NAF renseigné avec un code de x
+    (ex: "xxxxx", libellé "Valeur manquante"). Ces lignes ne sont rattachables
+    à aucun secteur : on les exclut du parsing (sinon elles polluent les
+    classements avec un indice de fréquence aberrant).
+    """
+    if not naf5:
+        return True
+    code = str(naf5).strip().lower()
+    return code == "" or code == "none" or set(code) == {"x"}
+
+
 def write_json(data, json_path, label):
     """Ecrit un fichier JSON (seul format de sortie, sans pickle)."""
     json_path.parent.mkdir(parents=True, exist_ok=True)
@@ -138,7 +149,7 @@ def parse_at_xlsx():
         if not naf5_val:
             continue
         naf5 = str(naf5_val).strip()
-        if not naf5 or naf5 == "None":
+        if is_placeholder_naf(naf5):
             continue
 
         entry = {
@@ -269,7 +280,7 @@ def build_at_data(rows):
 
     return {
         "meta": {
-            "source": "Ameli - Risque AT par CTN x NAF 2023",
+            "source": "Ameli - Risque AT par CTN x NAF 2024",
             "source_url": AT_XLSX_URL,
             "national": compute_at_stats(national),
         },
@@ -308,7 +319,7 @@ def parse_mp_xlsx():
         if not naf5_val:
             continue
         naf5 = str(naf5_val).strip()
-        if not naf5 or naf5 == "None":
+        if is_placeholder_naf(naf5):
             continue
 
         ctn = str(row[MP_COL["ctn"]] or "").strip()
@@ -500,7 +511,7 @@ def build_mp_data(rows):
 
     return {
         "meta": {
-            "source": "Ameli - Risque MP par CTN x NAF 2023",
+            "source": "Ameli - Risque MP par CTN x NAF 2024",
             "source_url": MP_XLSX_URL,
             "national": compute_mp_stats(national),
         },
@@ -810,10 +821,10 @@ def compute_trajet_stats(group):
 def build_trajet_data(pdf_data, at_data):
     """Construit les donnees trajet depuis les fiches PDF + main-d'oeuvre AT.
 
-    Utilise les valeurs 2023 de trajet_yearly pour les stats ; 5 ans pour l'evolution.
+    Utilise les valeurs 2024 de trajet_yearly pour les stats ; 5 ans pour l'evolution.
     Main-d'oeuvre (nb_salaries, nb_siret) issue des donnees AT.
     """
-    years = ["2019", "2020", "2021", "2022", "2023"]
+    years = ["2020", "2021", "2022", "2023", "2024"]
 
     # Niveau NAF5
     by_naf5 = {}
@@ -825,7 +836,7 @@ def build_trajet_data(pdf_data, at_data):
         if not at_entry:
             continue
         at_stats = at_entry["stats"]
-        y23 = yearly["2023"]
+        y23 = yearly["2024"]
 
         entry = {
             "libelle": at_entry["libelle"],
@@ -1011,7 +1022,7 @@ def build_yearly_from_pdf(pdf_data, section_key, base_data=None):
 
     Retourne: {year: {naf5: {...}, naf4: {...}, naf2: {...}, national: {...}}, ...}
     """
-    years = ["2019", "2020", "2021", "2022", "2023"]
+    years = ["2020", "2021", "2022", "2023", "2024"]
     yearly_by_year = {}
 
     for year in years:
@@ -1117,9 +1128,6 @@ def main():
     print("=== Pipeline AT ===")
     print("[1] Telechargement...")
     download_xlsx(AT_XLSX_PATH, AT_XLSX_URL)
-    # Le fichier 2021 fournit les colonnes de causes de risque (col. 20-31)
-    # absentes du format 2023. Necessaire pour les graphiques de causes AT.
-    download_xlsx(AT_2021_XLSX_PATH, AT_2021_XLSX_URL)
     print("[2] Parsing...")
     at_rows = parse_at_xlsx()
     print("[3] Construction...")

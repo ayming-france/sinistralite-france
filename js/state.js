@@ -19,7 +19,7 @@ export var VIEW_CONFIG = {
     eventLabel: 'AT en 1er règlement',
     secondaryKey: 'at_4j_arret',
     ifDenominator: 'at_4j_arret',
-    sourceLabel: 'Ameli, Risque AT par CTN x NAF 2023',
+    sourceLabel: 'Ameli, Risque AT par CTN x NAF 2024',
     sourceUrl: 'https://assurance-maladie.ameli.fr/etudes-et-donnees/risque-at-ctn-x-naf-serie-annuelle',
     causesTitle: 'Causes d\'accidents',
     funnelItems: function(s) {
@@ -38,7 +38,7 @@ export var VIEW_CONFIG = {
     eventLabel: 'MP en 1er règlement',
     secondaryKey: 'mp_1er_reglement',
     ifDenominator: 'mp_1er_reglement',
-    sourceLabel: 'Ameli, Risque MP par CTN x NAF 2023',
+    sourceLabel: 'Ameli, Risque MP par CTN x NAF 2024',
     sourceUrl: 'https://assurance-maladie.ameli.fr/etudes-et-donnees/risque-mp-ctn-x-naf-serie-annuelle',
     causesTitle: 'Types de maladies',
     funnelItems: function(s) {
@@ -56,7 +56,7 @@ export var VIEW_CONFIG = {
     eventLabel: 'Accidents de trajet',
     secondaryKey: 'trajet_count',
     ifDenominator: 'trajet_count',
-    sourceLabel: 'Ameli, Fiches NAF 2023 (PDF)',
+    sourceLabel: 'Ameli, Fiches NAF 2024 (PDF)',
     sourceUrl: 'https://assurance-maladie.ameli.fr/etudes-et-donnees/sinistralite-at-mp-par-code-naf',
     causesTitle: null,
     funnelItems: function(s) {
