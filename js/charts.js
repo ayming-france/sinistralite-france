@@ -708,3 +708,103 @@ export function renderSizeChart(viewId, bands, sectorIF) {
     }
   });
 }
+
+// ── Nature des accidents (AT only): siège des lésions / activité physique / modalité ──
+var INJURY_LABELS = {
+  siege: {
+    tete: 'Tête', cou: 'Cou', dos: 'Dos', torse: 'Torse',
+    membres_superieurs: 'Membres supérieurs', membres_inferieurs: 'Membres inférieurs',
+    corps_entier: 'Corps entier', autres: 'Autres'
+  },
+  activite: {
+    operation_machine: 'Opération machine', outils_main: 'Outils à main',
+    conduite_transport: 'Conduite / transport', manipulation_objets: 'Manipulation d\'objets',
+    transport_manuel: 'Transport manuel de charge', mouvement: 'Mouvement du corps',
+    presence: 'Présence sur les lieux', autre: 'Autre'
+  },
+  modalite: {
+    contact_electrique: 'Contact électrique', noyade_ensevelissement: 'Noyade / ensevelissement',
+    ecrasement_mouvement: 'Écrasement en mouvement', heurt_objet: 'Heurt d\'objet',
+    contact_coupant: 'Contact objet coupant', coincement: 'Coincement',
+    contrainte_corps: 'Contrainte physique / posture', morsure: 'Morsure / coup d\'animal', autre: 'Autre'
+  }
+};
+
+// Exclut "non_determine", retire les zéros, renormalise en % sur le reste, trie décroissant.
+function injuryBars(raw, labelMap) {
+  var entries = Object.keys(raw || {})
+    .filter(function(k) { return k !== 'non_determine'; })
+    .map(function(k) { return { label: labelMap[k] || k, value: raw[k] || 0 }; })
+    .filter(function(d) { return d.value > 0; })
+    .sort(function(a, b) { return b.value - a.value; });
+  var total = entries.reduce(function(s, d) { return s + d.value; }, 0);
+  entries.forEach(function(d) { d.pct = total > 0 ? Math.round(d.value / total * 1000) / 10 : 0; });
+  return entries;
+}
+
+function renderInjuryChart(viewId, slot, title, entries, color, charts) {
+  var wrap = viewEl(viewId, slot + 'Wrap');
+  if (!wrap) return;
+  var canvasId = viewId + '-' + slot + 'Chart';
+  wrap.innerHTML = '<canvas id="' + canvasId + '"></canvas>';
+  var tickColor = themeColor('--text-dim');
+  charts.push(new Chart(el(canvasId), {
+    type: 'bar',
+    data: { labels: entries.map(function(d) { return d.label; }),
+      datasets: [{ data: entries.map(function(d) { return d.pct; }), backgroundColor: color, borderRadius: 3 }] },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }, datalabels: { display: false },
+        title: { display: true, text: title, color: themeColor('--text-secondary'), font: { size: 13, weight: '600' }, padding: { bottom: 8 } },
+        tooltip: { callbacks: { label: function(c) { return ' ' + c.parsed.x + ' %'; } } }
+      },
+      scales: {
+        x: { beginAtZero: true, ticks: { color: tickColor, callback: function(v) { return v + '%'; } }, grid: { color: themeColor('--border') } },
+        y: { ticks: { color: tickColor, font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  }));
+}
+
+export function renderInjuryPanel(viewId, dims) {
+  var section = viewEl(viewId, 'injurySection');
+  if (!section) return;
+  var vs = state.views[viewId];
+  if (vs.injuryCharts) vs.injuryCharts.forEach(function(c) { c.destroy(); });
+  vs.injuryCharts = [];
+
+  var siege = dims ? injuryBars(dims.siege_lesions, INJURY_LABELS.siege) : [];
+  var activite = dims ? injuryBars(dims.activite_physique, INJURY_LABELS.activite) : [];
+  var modalite = dims ? injuryBars(dims.modalite_blessure, INJURY_LABELS.modalite) : [];
+
+  if (!siege.length && !activite.length && !modalite.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  renderInjuryChart(viewId, 'injurySiege', 'Siège des lésions', siege, '#5b8def', vs.injuryCharts);
+  renderInjuryChart(viewId, 'injuryActivite', 'Activité physique', activite, '#e0a458', vs.injuryCharts);
+  renderInjuryChart(viewId, 'injuryModalite', 'Modalité de la blessure', modalite, '#c074c0', vs.injuryCharts);
+}
+
+// ── Maladies professionnelles (MP only): tableau positionnel ──
+export function renderDiseaseTable(viewId, dims) {
+  var section = viewEl(viewId, 'diseaseSection');
+  if (!section) return;
+  // Le % est fiable même quand le parsing PDF perd le compte (libellés longs) → on filtre sur pct.
+  var active = ((dims && dims.mp_diseases) || [])
+    .filter(function(d) { return d.pct > 0 || d.nb > 0; })
+    .sort(function(a, b) { return (b.pct - a.pct) || (b.nb - a.nb); });
+  if (!active.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  var rows = active.map(function(d) {
+    return '<tr><td class="dz-code">' + d.code + '</td>' +
+      '<td class="dz-lib">' + (d.libelle || '') + '</td>' +
+      '<td class="dz-nb">' + (d.nb > 0 ? d.nb : '—') + '</td>' +
+      '<td class="dz-pct">' + d.pct + ' %</td></tr>';
+  }).join('');
+  viewEl(viewId, 'diseaseWrap').innerHTML =
+    '<table class="disease-table"><thead><tr>' +
+    '<th>Tableau</th><th>Maladie professionnelle</th><th>Cas</th><th>Part</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>';
+}

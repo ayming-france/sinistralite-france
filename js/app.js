@@ -6,7 +6,7 @@ import { el, viewEl } from './utils.js';
 import { initNav, switchView } from './nav.js';
 import { setupSearch, selectCode, setLevel } from './search.js';
 import { renderKPIs, renderNationalState } from './kpi.js';
-import { renderCausesChart, renderFunnelChart, renderPositionStrip, renderComparisonChart, setupCompToggle, renderEvolutionCharts, renderDemographics, renderSizeChart } from './charts.js';
+import { renderCausesChart, renderFunnelChart, renderPositionStrip, renderComparisonChart, setupCompToggle, renderEvolutionCharts, renderDemographics, renderSizeChart, renderInjuryPanel, renderDiseaseTable } from './charts.js';
 import { renderInsights, toggleInsights, toggleShare, copyLink, downloadCSV, releaseFocus } from './insights.js';
 
 // Données "taille d'établissement" (AT uniquement, extrait des fiches PDF)
@@ -16,6 +16,15 @@ async function loadSizeData() {
     var resp = await fetch('./data/size-data.json');
     if (resp.ok) sizeData = await resp.json();
   } catch (e) { /* données taille optionnelles */ }
+}
+
+// Dimensions textuelles (siège des lésions, activité, modalité, maladies MP) par NAF5
+var extraData = {};
+async function loadExtraData() {
+  try {
+    var resp = await fetch('./data/extra-dimensions.json');
+    if (resp.ok) extraData = await resp.json();
+  } catch (e) { /* dimensions optionnelles */ }
 }
 
 // ── CSV button disabled state ──
@@ -117,6 +126,10 @@ function render(viewId, code, level) {
   if (viewId === 'at') {
     var sd = sizeData[code];
     renderSizeChart(viewId, sd && sd.bands, s.indice_frequence);
+    renderInjuryPanel(viewId, extraData[code]);
+  }
+  if (viewId === 'mp') {
+    renderDiseaseTable(viewId, extraData[code]);
   }
   updateCSVBtnState();
 }
@@ -180,6 +193,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       loadDataset('mp'),
       loadDataset('trajet'),
       loadSizeData(),
+      loadExtraData(),
     ]);
 
     // Hide skeleton, reveal content

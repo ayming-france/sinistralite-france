@@ -340,3 +340,52 @@
   margin: 0.25rem 0 1rem;
   max-width: 70ch;
 }
+
+/* Nature des accidents (siège / activité / modalité) + Maladies professionnelles */
+.injury-section, .disease-section { margin-top: 1.5rem; }
+.injury-sub {
+  text-align: left;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin: 0.25rem 0 1rem;
+  max-width: 80ch;
+}
+.injury-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.injury-grid .chart-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 16px 12px 12px;
+  box-shadow: var(--card-shadow);
+}
+.injury-wrap { height: 300px; position: relative; }
+
+.disease-wrap { overflow-x: auto; }
+.disease-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.disease-table th, .disease-table td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+.disease-table th {
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.disease-table .dz-code { font-variant-numeric: tabular-nums; color: var(--text-dim); white-space: nowrap; }
+.disease-table .dz-nb, .disease-table .dz-pct { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.disease-table tbody tr:hover { background: var(--bg-hover, rgba(127,127,127,0.06)); }
+
+@media (max-width: 768px) {
+  .injury-grid { grid-template-columns: 1fr; }
+}

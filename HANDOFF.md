@@ -81,8 +81,13 @@ ameli-naf-pdf-download-script, sinistralite-data-architecture, sinistralite-2024
    sites, so future refreshes drop it; (b) **current data** — stripped the entries + `naf_index` rows
    from `at-data.json` and `mp-data.json` (trajet was already clean). National KPIs unaffected
    (`meta.national` is precomputed, not summed from `by_naf` at runtime).
-3. **Not yet wired:** injury/disease panel (siège des lésions / activité physique / modalité de blessure /
-   MP disease table) — data ready in `extra-dimensions.json`.
+3. ~~**injury/disease panel**~~ **DONE 2026-06-15.** Wired `extra-dimensions.json` into the app:
+   - AT view: "Nature des accidents" — 3 ranked horizontal bar charts (siège des lésions, activité
+     physique, modalité de la blessure). `non_determine` excluded + renormalized to 100% per user rule.
+   - MP view: "Maladies professionnelles reconnues" — table (code/libellé/cas/part), filtered to
+     diseases with pct>0, sorted. Uses `pct` as source of truth (reliable even when PDF parse drops `nb`).
+   - `charts.js` renderInjuryPanel/renderDiseaseTable; `app.js` loadExtraData + render calls (AT/MP,
+     NAF5 only — hides at NAF4/NAF2); HTML sections + CSS. Verified via Playwright (4711D 3 charts, 0811Z 6 rows).
 4. **Deferred:** statut/contract type (CDI/CDD/intérim) — not text-extractable, needs vector extraction like
    the size chart. **Skipped:** département/territory map (low value, regional data already exists).
 5. **Nothing committed/pushed.** `/tmp/at-data.bak.json`, `/tmp/yearly-2019.json`, `/tmp/yearly-old-baseline.json`
