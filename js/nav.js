@@ -52,6 +52,12 @@ export function switchView(viewId) {
   // Update footer
   el('footerSource').innerHTML = 'Source : <a href="' + cfg.sourceUrl + '" target="_blank">' + cfg.sourceLabel + '</a>';
 
+  // La vue "Comparer" n'a pas de code unique : elle gère ses propres secteurs
+  if (viewId === 'compare') {
+    window.location.hash = 'compare';
+    return;
+  }
+
   // Always carry over the selected sector across tabs
   var prevVs = state.views[prevView];
   var code = prevVs && prevVs.code ? prevVs.code : state.views[viewId].code;

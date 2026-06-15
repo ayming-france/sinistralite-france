@@ -3,7 +3,9 @@
 ## Milestones
 
 - ✅ **v1.0 Sinistralité France** — Phases 1-5 (shipped 2026-02-28)
-- [ ] **v1.1 Carte régionale** — Phases 6-9 (in progress)
+- ✅ **v1.1 Carte régionale** — Phases 6-9 (audit passed 2026-03-02)
+- ✅ **v2.0 Refresh 2024 + enrichissement** — données 2024, évolution 6 ans, taille d'établissement, panneau lésions/maladies (shipped 2026-06-15)
+- [ ] **v3 Évolution (backlog recherche)** — voir section dédiée ci-dessous
 
 ## Phases
 
@@ -103,4 +105,51 @@ Plans:
 | 6. Pipeline régional | v1.1 | 2/2 | Complete | 2026-03-02 |
 | 7. Structure SVG | 2/2 | Complete    | 2026-03-02 | - |
 | 8. Choroplèthe et interactions | 3/3 | Complete   | 2026-03-02 | - |
-| 9. Navigation et mobile | v1.1 | 0/1 | Planned | - |
+| 9. Navigation et mobile | v1.1 | 1/1 | Complete | 2026-03-02 |
+
+---
+
+## v3 — Évolution (backlog issu de la recherche)
+
+Recherche menée le 2026-06-15 (4 axes : outils comparables, UX dashboards data, croissance/SEO,
+besoins métier AT/MP). Synthèse priorisée. Tags : valeur [high/med/low], effort [S/M/L].
+Objectif directeur : rendre l'app **utilisée** (grand public + démos commerciales Ayming) et offrir
+ce que les PDF Ameli ne peuvent pas : comparaison, tendance, découverte, valeur financière.
+
+### Thème A — Comparaison & benchmarking (la force vs PDF + le « money shot » démo)
+- [ ] **A1 [high][M] Comparateur multi-secteurs** : choisir 2-4 codes NAF (recherche par nom) côte à côte, KPIs + évolution superposée + ligne nationale. *(en cours, "comparison first")*
+- [ ] **A2 [high][M] Calculateur « mon entreprise vs mon secteur »** : saisir effectif + nb AT → IF/TF/TG calculés et benchmarkés au secteur + national. Inspiré du BLS Injury Rate Calculator (data.bls.gov/iirc). Principal levier d'engagement.
+- [ ] **A3 [high][S] Cadrage relatif « Nx la moyenne nationale »** sur chaque KPI + phrases d'insight auto en français clair (lisibles à voix haute en démo).
+- [ ] **A4 [med][M] Explorer / league table** : secteurs les plus à risque, plus gros mouvements 2019-2024, filtres CTN / niveau NAF. *(phase 2 de l'Explorer)*
+
+### Thème B — Compréhension & démo (pour les commerciaux qui « ne savent pas s'en servir »)
+- [ ] **B1 [high][M] Visite guidée courte** (3-5 étapes, skippable, relançable) + **mode démo** avec secteur préchargé (jamais d'écran vide en pitch). Tours = +35-50% d'adoption si courts (Appcues).
+- [ ] **B2 [med][S] Glossaire « expliquer cette métrique »** (IF / TF / TG en français clair) + avertissement non-comparabilité avec le LTIFR international.
+- [ ] **B3 [med][S] Bloc confiance** : source citée + note méthodologique + date de mise à jour + gestion explicite des petits effectifs / données manquantes (ex. Mayotte 2020).
+
+### Thème C — Coût & valeur prévention (angle conseil Ayming, relie la data aux €)
+- [ ] **C1 [high][M] Simulateur de coût cotisation AT/MP** : effectif → mode collectif/mixte/individuel, estimation taux net (composantes M1-M4) et coût annuel. (ameli, URSSAF)
+- [ ] **C2 [high][M] Estimateur ROI prévention** : valeur du risque par sinistre + ristourne Carsat jusqu'à -25% → € économisés, pour justifier un budget prévention.
+- [ ] **C3 [med][M] Module « alimenter le DUERP »** : top risques/causes du secteur en export PDF, point de départ du plan d'action (obligation dès 1 salarié, art. R4121-1).
+- [ ] **C4 [med][S] CTA B2B « Demander un audit / diagnostic »** + export brandé (capture de lead). ⏸️ **EN ATTENTE** : dépend de la stratégie lead magnet (à définir).
+
+### Thème D — Découverte & distribution (la croissance : comment les gens arrivent)
+> ⏸️ **THÈME EN ATTENTE** (décision 2026-06-15) : on ne lance pas le SEO / Google tant que la
+> stratégie **lead magnet** n'est pas définie. Inutile d'amener du trafic search avant de savoir
+> ce qu'on lui propose à convertir. À débloquer une fois le lead magnet décidé (lié à C4).
+
+- [ ] **D1 [high][L] Pages par secteur indexables** : supprimer le hash routing (#at/CODE), passer en History API + pré-rendu des ~729 pages. Plus gros levier SEO (un SPA comparable a perdu ~60% de trafic organique à cause du hash). Débloque D2/D3.
+- [ ] **D2 [high][M] SEO programmatique** : title/meta/H1 uniques par secteur + JSON-LD (Dataset/Article) + sitemap.xml des 729 URLs. Requêtes longue traîne « [métier] accidents du travail ».
+- [ ] **D3 [med][S] Cartes OpenGraph/Twitter par secteur** (pré-générées) + liens profonds partageables + export PNG/PDF du profil secteur.
+- [ ] **D4 [med][S] Référencement « réutilisation » sur data.gouv.fr** (distribution gratuite + crédibilité + backlink).
+- [ ] **D5 [med][M] Page « secteurs les plus à risque 2024 »** : data story annuelle, format journaliste, aimant à liens.
+- [ ] **D6 [low][M] Widget iframe intégrable** + alertes email sur secteur suivi (« données 2025 publiées / ce qui a changé ») + newsletter.
+
+### Thème E — Polish & profondeur (priorité moindre)
+- [ ] **E1 [med][M] Accessibilité graphiques** : jamais la couleur seule (motifs/labels directs), contrastes WCAG (4.5:1 texte, 3:1 graphique), tooltips au clavier.
+- [ ] **E2 [low][M] Cross-filtering** (clic sur barre/région filtre les autres vues) + small multiples à axes partagés.
+- [ ] **E3 [low][S] Ligne de projection** sur l'évolution 6 ans.
+- [ ] **E4 [low][L] Couche qualitative** (récits d'accidents type EPICEA) + onglet comparaison européenne (Eurostat work accidents).
+
+### Quick wins recommandés (prochain incrément)
+A1 (comparateur, déjà engagé) → A3 (cadrage « Nx national » + insights auto) → B1 (mode démo + visite guidée) → A2 (calculateur entreprise). Ces quatre servent directement le persona « commercial en démo » et la promesse « ce que le PDF ne peut pas faire ».

@@ -68,6 +68,24 @@ ameli-naf-pdf-download-script, sinistralite-data-architecture, sinistralite-2024
   Note: strip renders `allIF.length` dots + 5 fixed reference markers (national tick+label, min/max axis,
   current-IF label) — a raw element count is therefore count+5, not a bug.
 
+## DONE — v3 evolution (2026-06-15)
+- **Research → roadmap.** 4-axis research (comparable OSH tools, dashboard UX, growth/SEO, AT/MP
+  business needs) synthesized into `.planning/ROADMAP.md` "v3 Évolution" backlog (themes A-E).
+  **Theme D (Google/SEO) + C4 (lead-capture CTA) ON HOLD** pending lead-magnet strategy (user decision).
+- **Comparer view (A1 + A3).** New 4th tab `js/compare.js`: pick up to 4 NAF codes (any level) +
+  domain toggle (AT/MP/Trajet); table with "Moyenne nationale" baseline + "x nationale" multiple;
+  overlaid IF evolution chart. Wired in state.js (VIEW_CONFIG.compare), nav.js (#compare guard),
+  app.js (initCompare), index.html (nav-rail + bottom-nav + view-compare), charts.css. Verified via
+  Playwright (adds sectors, baseline, x-multiple, chart, domain switch; no regressions).
+
+## KNOWN FOLLOW-UPS
+- **Search synonym gap (small):** NAF labels use official wording ("Activités hospitalières"), so
+  common terms ("hôpital", "clinique", "resto") return 0 hits. `normalize()` accent-stripping is fine;
+  this needs a small synonym map (hôpital→hospital, resto→restauration, ...) in search.js + compare.js.
+- **Next roadmap items (in order):** A4 Explorer/league table, B1 demo mode + guided tour,
+  A2 "mon entreprise vs mon secteur" calculator, B2 glossaire métriques, B3 bloc confiance,
+  C1/C2/C3 cotisation+ROI+DUERP. (D + C4 blocked on lead magnet.)
+
 ## OPEN ISSUES (start here next session)
 1. ~~**Size card not visible at NAF5 8710A**~~ **RESOLVED 2026-06-14.** Playwright visual QA (headless
    chromium fallback, MCP not connected) confirmed `#at-sizeSection` renders at 8710A: grouped bars

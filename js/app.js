@@ -8,6 +8,7 @@ import { setupSearch, selectCode, setLevel } from './search.js';
 import { renderKPIs, renderNationalState } from './kpi.js';
 import { renderCausesChart, renderFunnelChart, renderPositionStrip, renderComparisonChart, setupCompToggle, renderEvolutionCharts, renderDemographics, renderSizeChart, renderInjuryPanel, renderDiseaseTable } from './charts.js';
 import { renderInsights, toggleInsights, toggleShare, copyLink, downloadCSV, releaseFocus } from './insights.js';
+import { initCompare } from './compare.js';
 
 // Données "taille d'établissement" (AT uniquement, extrait des fiches PDF)
 var sizeData = {};
@@ -150,7 +151,7 @@ function loadFromHash() {
   } else if (hash.startsWith('trajet/')) {
     viewId = 'trajet';
     code = hash.substring(7);
-  } else if (hash === 'at' || hash === 'mp' || hash === 'trajet') {
+  } else if (hash === 'at' || hash === 'mp' || hash === 'trajet' || hash === 'compare') {
     switchView(hash);
     return;
   } else {
@@ -215,6 +216,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupCompToggle('at');
     setupCompToggle('mp');
     setupCompToggle('trajet');
+
+    // Setup the "Comparer" view
+    initCompare();
 
     // Render national default state for each view
     ['at', 'mp', 'trajet'].forEach(function(viewId) {

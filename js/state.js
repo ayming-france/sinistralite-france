@@ -6,6 +6,7 @@ export var state = {
     at: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1 },
     mp: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1 },
     trajet: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1 },
+    compare: { domain: 'at', codes: [], level: 'naf5', evoChart: null, acIndex: -1 },
   }
 };
 
@@ -66,5 +67,11 @@ export var VIEW_CONFIG = {
         { label: 'Acc. trajet en 1er règlement', value: s.trajet_count || 0, color: '#7c6ef0' },
       ];
     },
+  },
+  compare: {
+    title: 'Comparer les secteurs',
+    subtitle: 'Comparez plusieurs codes NAF côte à côte (AT, MP ou Trajet).',
+    sourceLabel: 'Ameli, données 2024',
+    sourceUrl: 'https://assurance-maladie.ameli.fr/etudes-et-donnees/risque-at-ctn-x-naf-serie-annuelle',
   },
 };
