@@ -129,7 +129,7 @@ function render(viewId, code, level) {
     hideInlineBar(viewId);
   }
 
-  renderKPIs(viewId, s, nat, cfg, allAtLevel, code);
+  renderKPIs(viewId, s, nat, cfg, allAtLevel, code, compareCodes);
   renderInsights(viewId, s, nat, entry.risk_causes || {}, cfg, entry.yearly);
   renderPositionStrip(viewId, code, level, s.indice_frequence, render, compareCodes);
   if (cfg.causesTitle) {

@@ -415,6 +415,8 @@ export function renderEvolutionCharts(viewId, entry, level, compareCodes) {
   var eventKey = cfg.eventKey;
   var eventLabel = cfg.eventLabel;
   var natYearly = data.meta.national.yearly;
+  // Libellé de la ligne du secteur courant : son code (cohérent avec les secteurs comparés).
+  var currentLabel = state.views[viewId].code || 'Secteur';
 
   // Prepare data arrays
   var sectorEvents = [], sectorIF = [], sectorTG = [];
@@ -499,7 +501,7 @@ export function renderEvolutionCharts(viewId, entry, level, compareCodes) {
   if (ifCanvas) {
     var ifDatasets = [
       {
-        label: 'Secteur', data: sectorIF,
+        label: currentLabel, data: sectorIF,
         borderColor: '#eab308', borderWidth: 2,
         pointRadius: 5, pointBackgroundColor: '#eab308', pointHoverRadius: 7,
         fill: true, backgroundColor: 'rgba(234,179,8,0.1)', tension: 0.3,

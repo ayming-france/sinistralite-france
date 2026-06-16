@@ -542,38 +542,117 @@
   .compare-table .cmp-sector { min-width: 160px; }
 }
 
-/* ── Comparaison inline de secteurs (NAF5) ── */
+/* ── Comparaison inline de secteurs, style GA4 (NAF5) ── */
 .inline-compare {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 14px;
-  margin-bottom: 1rem;
+  gap: 8px;
+  margin-bottom: 1.25rem;
   text-align: left;
 }
 .inline-compare-label {
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: var(--text-dim);
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+/* Pastille non amovible du secteur courant (accent) */
+.cmp-current-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--accent-glow, rgba(99,102,241,0.12));
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.cmp-current-pill .chip-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
   flex-shrink: 0;
 }
+/* Bouton "+ Ajouter une comparaison" */
+.cmp-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px dashed var(--border-light);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.cmp-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow, rgba(99,102,241,0.08));
+}
 .inline-compare-search {
-  flex: 1 1 280px;
-  max-width: 420px;
+  flex: 1 1 240px;
+  max-width: 360px;
 }
 .inline-compare-search input {
-  padding-top: 10px;
-  padding-bottom: 10px;
+  padding-top: 9px;
+  padding-bottom: 9px;
   font-size: 0.82rem;
 }
 .inline-compare .compare-chips {
-  flex: 1 1 100%;
+  flex: 0 1 auto;
   margin-bottom: 0;
 }
 .inline-compare .compare-chips:empty { display: none; }
+
+/* ── Valeurs comparées dans les cartes KPI ── */
+.kpi-compare {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+.kpi-cmp-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+.kpi-cmp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.kpi-cmp-code {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.kpi-cmp-val {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
 
 /* Point d'un secteur comparé sur la bande de positionnement */
 .pos-dot.compared {

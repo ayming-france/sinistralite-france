@@ -2,12 +2,21 @@
 
 import { fmt, fmtCompact, badgeHTML, KPI_HELP, viewEl } from './utils.js';
 import { getStore } from './data.js';
+import { SECTOR_COLORS } from './compare.js';
 
-export function renderKPIs(viewId, stats, national, config, allAtLevel, code) {
+// Formate la valeur d'un secteur comparé selon la métrique (IF = 1 décimale, reste = compact).
+function fmtStat(statKey, v) {
+  if (v === undefined || v === null) return '—';
+  if (statKey === 'indice_frequence') return fmt(v);
+  return fmtCompact(v).text;
+}
+
+export function renderKPIs(viewId, stats, national, config, allAtLevel, code, compareCodes) {
   var s = stats;
   var nat = national;
   var cfg = config;
   var eventKey = cfg.eventKey;
+  compareCodes = compareCodes || [];
 
   // Ranking by event count
   var rank = allAtLevel.findIndex(function(e) { return e.code === code; }) + 1;
@@ -20,21 +29,38 @@ export function renderKPIs(viewId, stats, national, config, allAtLevel, code) {
   var c4 = fmtCompact(s.nouvelles_ip);
   var c5 = fmtCompact(s.nb_salaries);
   var kpis = [
-    { label: cfg.eventLabel, value: c1.text, full: c1.compact ? fmt(s[eventKey]) : null, badge: rankBadge },
-    { label: 'Indice de fréquence', value: fmt(s.indice_frequence), full: null, badge: badgeHTML(s.indice_frequence, nat.indice_frequence) },
-    { label: 'Décès', value: c2.text, full: c2.compact ? fmt(s.deces) : null, badge: '' },
-    { label: 'Journées perdues', value: c3.text, full: c3.compact ? fmt(s.journees_it) : null, badge: '' },
-    { label: 'Incapacités permanentes', value: c4.text, full: c4.compact ? fmt(s.nouvelles_ip) : null, badge: '' },
-    { label: 'Salariés', value: c5.text, full: c5.compact ? fmt(s.nb_salaries) : null, badge: '' },
+    { label: cfg.eventLabel, statKey: eventKey, value: c1.text, full: c1.compact ? fmt(s[eventKey]) : null, badge: rankBadge },
+    { label: 'Indice de fréquence', statKey: 'indice_frequence', value: fmt(s.indice_frequence), full: null, badge: badgeHTML(s.indice_frequence, nat.indice_frequence) },
+    { label: 'Décès', statKey: 'deces', value: c2.text, full: c2.compact ? fmt(s.deces) : null, badge: '' },
+    { label: 'Journées perdues', statKey: 'journees_it', value: c3.text, full: c3.compact ? fmt(s.journees_it) : null, badge: '' },
+    { label: 'Incapacités permanentes', statKey: 'nouvelles_ip', value: c4.text, full: c4.compact ? fmt(s.nouvelles_ip) : null, badge: '' },
+    { label: 'Salariés', statKey: 'nb_salaries', value: c5.text, full: c5.compact ? fmt(s.nb_salaries) : null, badge: '' },
   ];
+
+  // En mode comparaison, on lit les valeurs des secteurs comparés (NAF5).
+  var naf5 = compareCodes.length ? getStore(viewId, 'naf5') : null;
 
   viewEl(viewId, 'kpiGrid').innerHTML = kpis.map(function(k) {
     var fullAttr = k.full ? ' data-full="' + k.full + '"' : '';
     var help = KPI_HELP[k.label] ? '<span class="kpi-help">?<span class="kpi-help-tip">' + KPI_HELP[k.label] + '</span></span>' : '';
+    var cmpHtml = '';
+    if (compareCodes.length) {
+      cmpHtml = '<div class="kpi-compare">' + compareCodes.map(function(cc, i) {
+        var ce = naf5[cc];
+        var val = ce ? fmtStat(k.statKey, ce.stats[k.statKey]) : '—';
+        var color = SECTOR_COLORS[i % SECTOR_COLORS.length];
+        return '<div class="kpi-cmp-row">' +
+          '<span class="kpi-cmp-dot" style="background:' + color + '"></span>' +
+          '<span class="kpi-cmp-code">' + cc + '</span>' +
+          '<span class="kpi-cmp-val">' + val + '</span>' +
+          '</div>';
+      }).join('') + '</div>';
+    }
     return '<div class="kpi-card">' +
       '<div class="label">' + k.label + help + '</div>' +
       '<div class="value"' + fullAttr + '>' + k.value + '</div>' +
       (k.badge || '') +
+      cmpHtml +
       '</div>';
   }).join('');
 }

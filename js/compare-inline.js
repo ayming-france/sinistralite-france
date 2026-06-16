@@ -70,6 +70,13 @@ export function renderChips(viewId) {
 export function renderInline(viewId) {
   var bar = viewEl(viewId, 'cmpBar');
   if (bar) bar.style.display = '';
+  // Pastille non amovible du secteur courant (couleur accent via CSS).
+  var cur = viewEl(viewId, 'cmpCurrent');
+  if (cur) {
+    var vs = state.views[viewId];
+    cur.innerHTML = '<span class="chip-dot"></span>' +
+      '<span class="cmp-current-code">' + (vs.code || '') + '</span>';
+  }
   renderChips(viewId);
 }
 
@@ -83,10 +90,28 @@ function setupInput(viewId) {
   var input = viewEl(viewId, 'cmpAddInput');
   var acBox = viewEl(viewId, 'cmpAutocomplete');
   if (!input || !acBox) return;
+  var addBtn = viewEl(viewId, 'cmpAddBtn');
+  var searchWrap = viewEl(viewId, 'cmpSearchWrap');
   var vs = state.views[viewId];
   var acIndex = -1;
 
   function closeAc() { acBox.classList.remove('open'); acIndex = -1; }
+
+  // Affiche le champ de recherche (style GA4 : un clic révèle l'input).
+  function showSearch() {
+    if (searchWrap) searchWrap.style.display = '';
+    if (addBtn) addBtn.style.display = 'none';
+    input.focus();
+    show(input.value);
+  }
+  // Masque le champ et restaure le bouton "+ Ajouter".
+  function hideSearch() {
+    if (searchWrap) searchWrap.style.display = 'none';
+    if (addBtn) addBtn.style.display = '';
+    input.value = '';
+    closeAc();
+  }
+  if (addBtn) addBtn.addEventListener('click', showSearch);
 
   function show(query) {
     if (vs.compareCodes.length >= MAX_COMPARE) {
@@ -124,9 +149,7 @@ function setupInput(viewId) {
     acBox.querySelectorAll('.ac-item').forEach(function(item) {
       item.addEventListener('click', function() {
         addCompareCode(viewId, this.dataset.code);
-        input.value = '';
-        closeAc();
-        input.focus();
+        hideSearch();
       });
     });
     acIndex = -1;
@@ -153,12 +176,21 @@ function setupInput(viewId) {
       e.preventDefault();
       if (items.length) items[acIndex >= 0 ? acIndex : 0].click();
     } else if (e.key === 'Escape') {
-      closeAc();
+      hideSearch();
+      if (addBtn) addBtn.focus();
     }
   });
 
+  // Fermeture du champ quand le focus le quitte (laisse le clic sur un item passer).
+  input.addEventListener('blur', function() {
+    setTimeout(function() {
+      var a = document.activeElement;
+      if (!a || !a.closest || !a.closest('#' + viewId + '-cmpBar')) hideSearch();
+    }, 150);
+  });
+
   document.addEventListener('click', function(e) {
-    if (!e.target.closest('#' + viewId + '-cmpBar')) closeAc();
+    if (!e.target.closest('#' + viewId + '-cmpBar')) { closeAc(); hideSearch(); }
   });
 }
 
