@@ -7,7 +7,7 @@ import { el, fmt, themeColor, normalize } from './utils.js';
 var MAX_CODES = 4;
 var LEVELS = ['naf5', 'naf4', 'naf2'];
 // Couleurs distinctes par secteur (max 4)
-var SECTOR_COLORS = ['#6366f1', '#e5534b', '#3fb950', '#e0a458'];
+export var SECTOR_COLORS = ['#6366f1', '#e5534b', '#3fb950', '#e0a458'];
 
 function vs() { return state.views.compare; }
 

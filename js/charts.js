@@ -4,6 +4,7 @@ import { fmt, themeColor, CAUSE_COLORS, el, viewEl } from './utils.js';
 import { state, VIEW_CONFIG } from './state.js';
 import { getData, getStore } from './data.js';
 import { selectCode } from './search.js';
+import { SECTOR_COLORS } from './compare.js';
 
 // ── Causes chart ──
 export function renderCausesChart(viewId, causes) {
@@ -153,7 +154,8 @@ export function renderFunnelChart(viewId, s, cfg) {
 }
 
 // ── Position strip ──
-export function renderPositionStrip(viewId, code, level, ifValue, renderFn) {
+export function renderPositionStrip(viewId, code, level, ifValue, renderFn, compareCodes) {
+  compareCodes = compareCodes || [];
   var store = getStore(viewId, level);
   var data = getData(viewId);
   // Inclure les secteurs réels à 0 accident (IF=0 mesuré = secteur le plus sûr).
@@ -176,7 +178,9 @@ export function renderPositionStrip(viewId, code, level, ifValue, renderFn) {
   allIF.forEach(function(d, i) {
     var x = (d.if_val / maxIF * 96) + 2;
     var isCurrent = d.code === code;
-    html += '<div class="pos-dot' + (isCurrent ? ' current' : '') + '" style="left:' + x + '%" data-idx="' + i + '"></div>';
+    var isCompared = !isCurrent && compareCodes.indexOf(d.code) !== -1;
+    var dotCls = 'pos-dot' + (isCurrent ? ' current' : isCompared ? ' compared' : '');
+    html += '<div class="' + dotCls + '" style="left:' + x + '%" data-idx="' + i + '"></div>';
     if (isCurrent) {
       html += '<div class="pos-marker-label" style="left:' + x + '%">IF ' + ifValue.toFixed(1) + '</div>';
     }
@@ -211,13 +215,24 @@ export function renderPositionStrip(viewId, code, level, ifValue, renderFn) {
 }
 
 // ── Comparison chart ──
-export function renderComparisonChart(viewId, code, level, renderFn) {
+export function renderComparisonChart(viewId, code, level, renderFn, compareCodes) {
+  compareCodes = compareCodes || [];
   var data = getData(viewId);
   var items = [];
   var naf5Store = getStore(viewId, 'naf5');
   var clickLevel = level;
+  var selectedMode = compareCodes.length > 0 && level === 'naf5';
 
-  if (level === 'naf5') {
+  if (selectedMode) {
+    items = [code].concat(compareCodes)
+      .map(function(c) {
+        var e = naf5Store[c];
+        return e ? { code: c, libelle: e.libelle, if_val: e.stats.indice_frequence } : null;
+      })
+      .filter(Boolean);
+    clickLevel = 'naf5';
+    viewEl(viewId, 'compTitle').textContent = 'Comparaison // secteurs sélectionnés';
+  } else if (level === 'naf5') {
     var naf2 = code.substring(0, 2);
     items = Object.entries(naf5Store)
       .filter(function(pair) { return pair[0].substring(0, 2) === naf2; })
@@ -236,7 +251,8 @@ export function renderComparisonChart(viewId, code, level, renderFn) {
     viewEl(viewId, 'compTitle').textContent = 'Comparaison // toutes divisions';
   }
 
-  items.sort(function(a, b) { return b.if_val - a.if_val; });
+  // En mode "secteurs sélectionnés", on conserve l'ordre (courant en premier).
+  if (!selectedMode) items.sort(function(a, b) { return b.if_val - a.if_val; });
 
   var labels = items.map(function(s) { return s.code; });
   var values = items.map(function(s) { return s.if_val; });
@@ -244,8 +260,18 @@ export function renderComparisonChart(viewId, code, level, renderFn) {
   var inactiveColor = themeColor('--border');
   var inactiveBorder = themeColor('--border-light');
   var accentColor = themeColor('--accent');
-  var colors = items.map(function(s) { return (allAccent || s.code === code) ? accentColor : inactiveColor; });
-  var borderColors = items.map(function(s) { return (allAccent || s.code === code) ? accentColor : inactiveBorder; });
+  var colors, borderColors;
+  if (selectedMode) {
+    colors = items.map(function(s) {
+      if (s.code === code) return accentColor;
+      var ci = compareCodes.indexOf(s.code);
+      return SECTOR_COLORS[ci % SECTOR_COLORS.length];
+    });
+    borderColors = colors;
+  } else {
+    colors = items.map(function(s) { return (allAccent || s.code === code) ? accentColor : inactiveColor; });
+    borderColors = items.map(function(s) { return (allAccent || s.code === code) ? accentColor : inactiveBorder; });
+  }
 
   var canvas = viewEl(viewId, 'compChart');
   canvas.style.cursor = 'pointer';
@@ -371,7 +397,8 @@ export function setupCompToggle(viewId) {
 }
 
 // ── Evolution charts ──
-export function renderEvolutionCharts(viewId, entry, level) {
+export function renderEvolutionCharts(viewId, entry, level, compareCodes) {
+  compareCodes = compareCodes || [];
   var data = getData(viewId);
   var years = data.meta.years;
   var sec = viewEl(viewId, 'evoSection');
@@ -470,24 +497,41 @@ export function renderEvolutionCharts(viewId, entry, level) {
   // 2. IF chart (sector line + national dashed line) - skip for views without IF canvas
   var ifCanvas = viewEl(viewId, 'evoIF');
   if (ifCanvas) {
+    var ifDatasets = [
+      {
+        label: 'Secteur', data: sectorIF,
+        borderColor: '#eab308', borderWidth: 2,
+        pointRadius: 5, pointBackgroundColor: '#eab308', pointHoverRadius: 7,
+        fill: true, backgroundColor: 'rgba(234,179,8,0.1)', tension: 0.3,
+      },
+      {
+        label: 'National', data: natIF,
+        borderColor: '#64748b', borderWidth: 2, borderDash: [6, 3],
+        pointRadius: 4, pointBackgroundColor: '#64748b',
+        fill: false, tension: 0.3,
+      }
+    ];
+    // Superposition des secteurs comparés (NAF5 uniquement)
+    if (compareCodes.length && level === 'naf5') {
+      var naf5Store = getStore(viewId, 'naf5');
+      compareCodes.forEach(function(cc, i) {
+        var ce = naf5Store[cc];
+        if (!ce || !ce.yearly) return;
+        var color = SECTOR_COLORS[i % SECTOR_COLORS.length];
+        ifDatasets.push({
+          label: cc,
+          data: years.map(function(yr) { return ce.yearly[yr] ? ce.yearly[yr].indice_frequence : null; }),
+          borderColor: color, backgroundColor: color, borderWidth: 2,
+          pointRadius: 4, pointBackgroundColor: color, pointHoverRadius: 6,
+          fill: false, tension: 0.3, spanGaps: true,
+        });
+      });
+    }
     vs.evoCharts.push(new Chart(ifCanvas, {
       type: 'line',
       data: {
         labels: years,
-        datasets: [
-          {
-            label: 'Secteur', data: sectorIF,
-            borderColor: '#eab308', borderWidth: 2,
-            pointRadius: 5, pointBackgroundColor: '#eab308', pointHoverRadius: 7,
-            fill: true, backgroundColor: 'rgba(234,179,8,0.1)', tension: 0.3,
-          },
-          {
-            label: 'National', data: natIF,
-            borderColor: '#64748b', borderWidth: 2, borderDash: [6, 3],
-            pointRadius: 4, pointBackgroundColor: '#64748b',
-            fill: false, tension: 0.3,
-          }
-        ]
+        datasets: ifDatasets
       },
       options: Object.assign({}, baseOpts, {
         plugins: Object.assign({}, baseOpts.plugins, {

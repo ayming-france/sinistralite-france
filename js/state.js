@@ -3,9 +3,9 @@
 export var state = {
   activeView: 'at',
   views: {
-    at: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1 },
-    mp: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1 },
-    trajet: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1 },
+    at: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1, compareCodes: [] },
+    mp: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1, compareCodes: [] },
+    trajet: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1, compareCodes: [] },
     compare: { domain: 'at', codes: [], level: 'naf5', evoChart: null, acIndex: -1, company: { effectif: null, sinistres: null, deces: null } },
   }
 };

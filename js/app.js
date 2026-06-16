@@ -9,6 +9,7 @@ import { renderKPIs, renderNationalState } from './kpi.js';
 import { renderCausesChart, renderFunnelChart, renderPositionStrip, renderComparisonChart, setupCompToggle, renderEvolutionCharts, renderDemographics, renderSizeChart, renderInjuryPanel, renderDiseaseTable } from './charts.js';
 import { renderInsights, toggleInsights, toggleShare, copyLink, downloadCSV, releaseFocus } from './insights.js';
 import { initCompare } from './compare.js';
+import { initInlineCompare, renderInline, hideInlineBar } from './compare-inline.js';
 
 // Données "taille d'établissement" (AT uniquement, extrait des fiches PDF)
 var sizeData = {};
@@ -114,15 +115,29 @@ function render(viewId, code, level) {
     .map(function(pair) { return { code: pair[0], count: pair[1].stats[eventKey] }; })
     .sort(function(a, b) { return b.count - a.count; });
 
+  // Comparaison inline de secteurs : NAF5 uniquement.
+  var vstate = state.views[viewId];
+  var compareCodes = [];
+  if (level === 'naf5') {
+    // On purge les codes obsolètes (inexistants ou égaux au secteur courant).
+    vstate.compareCodes = (vstate.compareCodes || []).filter(function(c) {
+      return c !== code && store[c];
+    });
+    compareCodes = vstate.compareCodes;
+    renderInline(viewId);
+  } else {
+    hideInlineBar(viewId);
+  }
+
   renderKPIs(viewId, s, nat, cfg, allAtLevel, code);
   renderInsights(viewId, s, nat, entry.risk_causes || {}, cfg, entry.yearly);
-  renderPositionStrip(viewId, code, level, s.indice_frequence, render);
+  renderPositionStrip(viewId, code, level, s.indice_frequence, render, compareCodes);
   if (cfg.causesTitle) {
     renderCausesChart(viewId, entry.risk_causes);
   }
   renderFunnelChart(viewId, s, cfg);
-  renderComparisonChart(viewId, code, level, render);
-  renderEvolutionCharts(viewId, entry, level);
+  renderComparisonChart(viewId, code, level, render, compareCodes);
+  renderEvolutionCharts(viewId, entry, level, compareCodes);
   renderDemographics(viewId, entry);
   if (viewId === 'at') {
     var sd = sizeData[code];
@@ -219,6 +234,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Setup the "Comparer" view
     initCompare();
+
+    // Setup inline sector comparison (NAF5) for each detail view
+    initInlineCompare(render);
 
     // Render national default state for each view
     ['at', 'mp', 'trajet'].forEach(function(viewId) {
