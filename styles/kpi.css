@@ -96,8 +96,12 @@
   .badge.down { background: var(--safe-dim); color: var(--safe); }
   .badge.neutral { background: rgba(139,148,158,0.1); color: var(--text-secondary); }
 
-  /* Mode comparaison (style GA4) : segments côte à côte, chiffres aussi visibles */
-  .kpi-grid.comparing { grid-template-columns: repeat(2, 1fr); }
+  /* Mode comparaison (style GA4) : segments côte à côte, chiffres aussi visibles.
+     La grille reste à 3 colonnes pour 2-3 segments (la taille des cartes change peu),
+     puis s'élargit à 2 colonnes seulement à partir de 4 segments. */
+  .kpi-grid.comparing { grid-template-columns: repeat(3, 1fr); }
+  .kpi-grid.comparing.seg-4,
+  .kpi-grid.comparing.seg-5 { grid-template-columns: repeat(2, 1fr); }
   .kpi-card-compare .kpi-segments {
     display: flex;
     flex-wrap: wrap;
@@ -131,7 +135,9 @@
     color: var(--text);
   }
   @media (max-width: 900px) {
-    .kpi-grid.comparing { grid-template-columns: 1fr; }
+    .kpi-grid.comparing,
+    .kpi-grid.comparing.seg-4,
+    .kpi-grid.comparing.seg-5 { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 768px) {

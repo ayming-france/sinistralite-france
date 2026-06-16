@@ -42,6 +42,9 @@ export function renderKPIs(viewId, stats, national, config, allAtLevel, code, co
 
   var grid = viewEl(viewId, 'kpiGrid');
   grid.classList.toggle('comparing', compareCodes.length > 0);
+  // Nombre de segments (secteur courant + comparés) → la grille s'élargit progressivement.
+  grid.classList.remove('seg-2', 'seg-3', 'seg-4', 'seg-5');
+  if (compareCodes.length) grid.classList.add('seg-' + Math.min(compareCodes.length + 1, 5));
 
   grid.innerHTML = kpis.map(function(k) {
     var help = KPI_HELP[k.label] ? '<span class="kpi-help">?<span class="kpi-help-tip">' + KPI_HELP[k.label] + '</span></span>' : '';
