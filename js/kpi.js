@@ -40,27 +40,34 @@ export function renderKPIs(viewId, stats, national, config, allAtLevel, code, co
   // En mode comparaison, on lit les valeurs des secteurs comparés (NAF5).
   var naf5 = compareCodes.length ? getStore(viewId, 'naf5') : null;
 
-  viewEl(viewId, 'kpiGrid').innerHTML = kpis.map(function(k) {
-    var fullAttr = k.full ? ' data-full="' + k.full + '"' : '';
+  var grid = viewEl(viewId, 'kpiGrid');
+  grid.classList.toggle('comparing', compareCodes.length > 0);
+
+  grid.innerHTML = kpis.map(function(k) {
     var help = KPI_HELP[k.label] ? '<span class="kpi-help">?<span class="kpi-help-tip">' + KPI_HELP[k.label] + '</span></span>' : '';
-    var cmpHtml = '';
+
+    // Mode comparaison : segments côte à côte (secteur courant + comparés), chiffres aussi visibles (style GA4).
     if (compareCodes.length) {
-      cmpHtml = '<div class="kpi-compare">' + compareCodes.map(function(cc, i) {
+      var segs = '<div class="kpi-seg"><span class="kpi-seg-pill current">' + code + '</span>' +
+        '<span class="kpi-seg-val">' + k.value + '</span></div>';
+      segs += compareCodes.map(function(cc, i) {
         var ce = naf5[cc];
         var val = ce ? fmtStat(k.statKey, ce.stats[k.statKey]) : '—';
         var color = SECTOR_COLORS[i % SECTOR_COLORS.length];
-        return '<div class="kpi-cmp-row">' +
-          '<span class="kpi-cmp-dot" style="background:' + color + '"></span>' +
-          '<span class="kpi-cmp-code">' + cc + '</span>' +
-          '<span class="kpi-cmp-val">' + val + '</span>' +
-          '</div>';
-      }).join('') + '</div>';
+        return '<div class="kpi-seg"><span class="kpi-seg-pill" style="background:' + color + '">' + cc + '</span>' +
+          '<span class="kpi-seg-val">' + val + '</span></div>';
+      }).join('');
+      return '<div class="kpi-card kpi-card-compare">' +
+        '<div class="label">' + k.label + help + '</div>' +
+        '<div class="kpi-segments">' + segs + '</div>' +
+        '</div>';
     }
+
+    var fullAttr = k.full ? ' data-full="' + k.full + '"' : '';
     return '<div class="kpi-card">' +
       '<div class="label">' + k.label + help + '</div>' +
       '<div class="value"' + fullAttr + '>' + k.value + '</div>' +
       (k.badge || '') +
-      cmpHtml +
       '</div>';
   }).join('');
 }

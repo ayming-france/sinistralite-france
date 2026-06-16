@@ -96,6 +96,44 @@
   .badge.down { background: var(--safe-dim); color: var(--safe); }
   .badge.neutral { background: rgba(139,148,158,0.1); color: var(--text-secondary); }
 
+  /* Mode comparaison (style GA4) : segments côte à côte, chiffres aussi visibles */
+  .kpi-grid.comparing { grid-template-columns: repeat(2, 1fr); }
+  .kpi-card-compare .kpi-segments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 28px;
+    margin-top: 10px;
+  }
+  .kpi-seg {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 64px;
+  }
+  .kpi-seg-pill {
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #fff;
+    background: var(--accent);
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .kpi-seg-pill.current { background: var(--accent); }
+  .kpi-seg-val {
+    font-family: var(--sans);
+    font-size: 1.7rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text);
+  }
+  @media (max-width: 900px) {
+    .kpi-grid.comparing { grid-template-columns: 1fr; }
+  }
+
   @media (max-width: 768px) {
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .kpi-card .value { font-size: 1.5rem; }
