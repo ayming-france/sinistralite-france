@@ -180,7 +180,12 @@ export function renderPositionStrip(viewId, code, level, ifValue, renderFn, comp
     var isCurrent = d.code === code;
     var isCompared = !isCurrent && compareCodes.indexOf(d.code) !== -1;
     var dotCls = 'pos-dot' + (isCurrent ? ' current' : isCompared ? ' compared' : '');
-    html += '<div class="' + dotCls + '" style="left:' + x + '%" data-idx="' + i + '"></div>';
+    var dotStyle = 'left:' + x + '%';
+    if (isCompared) {
+      // Même couleur que les pastilles / segments KPI / courbes pour ce secteur.
+      dotStyle += ';background:' + SECTOR_COLORS[compareCodes.indexOf(d.code) % SECTOR_COLORS.length];
+    }
+    html += '<div class="' + dotCls + '" style="' + dotStyle + '" data-idx="' + i + '"></div>';
     if (isCurrent) {
       html += '<div class="pos-marker-label" style="left:' + x + '%">IF ' + ifValue.toFixed(1) + '</div>';
     }
@@ -499,12 +504,15 @@ export function renderEvolutionCharts(viewId, entry, level, compareCodes) {
   // 2. IF chart (sector line + national dashed line) - skip for views without IF canvas
   var ifCanvas = viewEl(viewId, 'evoIF');
   if (ifCanvas) {
+    // En mode comparaison, le secteur courant prend la couleur d'accent (cohérence
+    // avec ses pastilles / points de position / barres). Sinon, doré (identité du graphe).
+    var curColor = compareCodes.length ? themeColor('--accent') : '#eab308';
     var ifDatasets = [
       {
         label: currentLabel, data: sectorIF,
-        borderColor: '#eab308', borderWidth: 2,
-        pointRadius: 5, pointBackgroundColor: '#eab308', pointHoverRadius: 7,
-        fill: true, backgroundColor: 'rgba(234,179,8,0.1)', tension: 0.3,
+        borderColor: curColor, borderWidth: 2,
+        pointRadius: 5, pointBackgroundColor: curColor, pointHoverRadius: 7,
+        fill: true, backgroundColor: compareCodes.length ? 'transparent' : 'rgba(234,179,8,0.1)', tension: 0.3,
       },
       {
         label: 'National', data: natIF,
