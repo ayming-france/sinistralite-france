@@ -683,6 +683,29 @@
       </div>
     </div>
 
+    <div class="compare-company" id="compare-company">
+      <div class="compare-company-head">
+        <h3>Mon entreprise</h3>
+        <button type="button" class="compare-company-reset" id="compare-coReset">Effacer</button>
+      </div>
+      <p class="compare-company-intro">Renseignez vos chiffres pour situer votre entreprise face aux secteurs et à la moyenne nationale.</p>
+      <div class="compare-company-fields">
+        <div class="compare-company-field">
+          <label for="compare-coEffectif">Effectif (nombre de salariés)</label>
+          <input type="number" id="compare-coEffectif" min="0" step="1" inputmode="numeric" placeholder="ex. 500" autocomplete="off">
+        </div>
+        <div class="compare-company-field">
+          <label for="compare-coSinistres">Accidents avec arrêt sur l'année</label>
+          <input type="number" id="compare-coSinistres" min="0" step="1" inputmode="numeric" placeholder="ex. 20" autocomplete="off">
+        </div>
+        <div class="compare-company-field">
+          <label for="compare-coDeces">Décès (optionnel)</label>
+          <input type="number" id="compare-coDeces" min="0" step="1" inputmode="numeric" placeholder="ex. 0" autocomplete="off">
+        </div>
+      </div>
+      <div class="compare-company-result" id="compare-coResult"></div>
+    </div>
+
     <div class="compare-chips" id="compare-chips" aria-label="Secteurs sélectionnés"></div>
 
     <div class="compare-table-card">
