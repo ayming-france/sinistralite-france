@@ -99,10 +99,16 @@
   /* Mode comparaison (style GA4) : segments côte à côte, chiffres aussi visibles.
      La grille reste à 3 colonnes pour 2-3 segments (la taille des cartes change peu),
      puis s'élargit à 2 colonnes seulement à partir de 4 segments. */
-  /* Cartes dimensionnées au contenu : autant de colonnes ~230px que possible,
-     égales et alignées, plutôt que 3 colonnes trop larges pour leur contenu. */
-  .kpi-grid.comparing { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
-  .kpi-grid.comparing .kpi-card { padding: 18px 18px; }
+  /* La largeur des cartes grandit avec le nombre de segments pour garder les
+     valeurs sur UNE seule ligne (style GA4) : 2 secteurs = 3 colonnes, 3-4 = 2
+     colonnes, 5 = pleine largeur. */
+  .kpi-grid.comparing { grid-template-columns: repeat(2, 1fr); }
+  .kpi-grid.comparing.seg-2 { grid-template-columns: repeat(3, 1fr); }
+  .kpi-grid.comparing.seg-3,
+  .kpi-grid.comparing.seg-4 { grid-template-columns: repeat(2, 1fr); }
+  .kpi-grid.comparing.seg-5 { grid-template-columns: 1fr; }
+  .kpi-grid.comparing .kpi-card { padding: 18px 20px; }
+  .kpi-card-compare .kpi-segments { justify-content: space-between; }
   .kpi-card-compare .kpi-segments {
     display: flex;
     flex-wrap: wrap;
@@ -134,6 +140,13 @@
     font-weight: 700;
     line-height: 1.1;
     color: var(--text);
+  }
+  @media (max-width: 900px) {
+    .kpi-grid.comparing,
+    .kpi-grid.comparing.seg-2,
+    .kpi-grid.comparing.seg-3,
+    .kpi-grid.comparing.seg-4,
+    .kpi-grid.comparing.seg-5 { grid-template-columns: 1fr; }
   }
   @media (max-width: 480px) {
     .kpi-grid.comparing .kpi-card { padding: 16px; }
