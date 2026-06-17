@@ -6,8 +6,9 @@ import { el, fmt, themeColor, normalize } from './utils.js';
 
 var MAX_CODES = 4;
 var LEVELS = ['naf5', 'naf4', 'naf2'];
-// Couleurs distinctes par secteur (max 4)
-export var SECTOR_COLORS = ['#6366f1', '#e5534b', '#3fb950', '#e0a458'];
+// Couleurs distinctes par secteur comparé (palette GA4 : orange, cyan, magenta, vert).
+// Le secteur courant garde l'accent (bleu) ; ces teintes évitent le bleu/violet peu lisible.
+export var SECTOR_COLORS = ['#e8710a', '#12b5cb', '#e52592', '#1e8e3e'];
 
 function vs() { return state.views.compare; }
 
