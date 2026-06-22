@@ -90,8 +90,12 @@ ameli-naf-pdf-download-script, sinistralite-data-architecture, sinistralite-2024
     label "Mon entreprise" + building-2 icon, #view-compare rebuilt (bench-* form + #bench-results). charts.css: bench-* styles.
   - Verified via headless Chrome: 8710C + 500 sal + 30 AT → IF 60 vs secteur 84.6 ("29% en dessous"), coût direct
     ~196 k€ (CTN I), indirect ×5 → 982 k€, gap vs sector avg shown. No console errors (only benign Lucide SVG warn).
+  - **MP & Trajet positioning DONE (2026-06-22):** "Ma position" is now a 3-row table (AT/MP/Trajet) — mon
+    entreprise (optional MP/trajet count inputs) vs secteur vs national + "vs secteur" badge per risk. Sector
+    resolved per-domain via getData('mp'/'trajet'). Cost social stays AT-only (barème). Search now leads with
+    NAF5 (empty state = type hint, no NAF2 browse list). Note: CTN H label is officially "Services I", CTN I = "Services II".
   - **NEXT (deferred per user):** real cotisation AT/MP calculator (needs tarification taux nets + NAF→numéro de
-    risque mapping). MP & Trajet positioning in the benchmark (v1 is AT-only). Obsolete compare-* CSS (controls/
+    risque mapping). Obsolete compare-* CSS (controls/
     toggle/company/table/evo) is now dead but harmless — clean up when convenient (keep `.compare-chip*`, used by inline).
 
 ## DONE — v3 evolution (2026-06-15)

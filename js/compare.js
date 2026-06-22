@@ -13,11 +13,19 @@ export var SECTOR_COLORS = ['#e8710a', '#12b5cb', '#e52592', '#1e8e3e'];
 
 var DOMAIN = 'at';
 var LEVELS = ['naf5', 'naf4', 'naf2'];
+var LVL_RANK = { naf5: 0, naf4: 1, naf2: 2 };   // pour classer les résultats : NAF5 d'abord
+// Risques positionnés dans le benchmark (le coût social reste sur l'AT).
+var POS_DOMAINS = [
+  { id: 'at', label: 'Accidents du travail', field: 'accidents' },
+  { id: 'mp', label: 'Maladies professionnelles', field: 'mp' },
+  { id: 'trajet', label: 'Accidents de trajet', field: 'trajet' }
+];
 
 function vs() { return state.views.compare; }
 
 // ── Formatage ──
 function frNum(n) { return n.toLocaleString('fr-FR'); }
+function fmt0(n) { return (n == null || isNaN(n)) ? '—' : Math.round(n).toLocaleString('fr-FR'); }
 function fmt1(n) { return (n == null || isNaN(n)) ? '—' : n.toFixed(1).replace('.', ','); }
 function pct(x) { return Math.round(x * 100) + ' %'; }
 function fmtEur(n) {
@@ -28,9 +36,10 @@ function fmtEur(n) {
 }
 
 // ── Résolution du secteur (tous niveaux du domaine AT) ──
-function resolveEntry(code) {
+function resolveEntry(code, domain) {
+  domain = domain || DOMAIN;
   for (var i = 0; i < LEVELS.length; i++) {
-    var store = getStore(DOMAIN, LEVELS[i]);
+    var store = getStore(domain, LEVELS[i]);
     if (store && store[code]) return { entry: store[code], level: LEVELS[i] };
   }
   return null;
@@ -65,26 +74,21 @@ function renderBench() {
   var v = vs();
 
   renderSectorChip();
+  applyOtherVisibility();
 
   var sectorRes = v.sector ? resolveEntry(v.sector) : null;
   var eff = v.effectif, acc = v.accidents;
   var ready = sectorRes && eff > 0 && acc != null && acc >= 0;
 
   if (!ready) {
-    box.innerHTML = '<div class="bench-empty">' +
-      (sectorRes
-        ? 'Renseignez votre effectif et vos accidents du travail avec arrêt pour situer votre entreprise.'
-        : 'Choisissez votre secteur, puis renseignez votre effectif et vos accidents du travail avec arrêt.') +
-      '</div>';
+    box.innerHTML = renderSamplePreview(!!sectorRes);
     return;
   }
 
   var entry = sectorRes.entry;
   var s = entry.stats;
-  var nat = data.meta.national;
-  var coIF = (acc / eff) * 1000;
 
-  box.innerHTML = renderPosition(coIF, s.indice_frequence, nat.indice_frequence, entry) +
+  box.innerHTML = renderPositions(v, eff) +
                   renderCost(v, entry, s, eff, acc);
 
   var chk = el('bench-indirectChk');
@@ -94,35 +98,84 @@ function renderBench() {
   });
 }
 
-// ── Carte « Ma position » ──
-function renderPosition(coIF, secIF, natIF, entry) {
-  var ratio = secIF > 0 ? coIF / secIF : null;
-  var verdict, vcls;
-  if (ratio == null) { verdict = 'Secteur sans indice de référence.'; vcls = 'neutral'; }
-  else if (ratio > 1.05) { verdict = 'Votre fréquence d\'accidents est <strong>' + pct(ratio - 1) + ' au-dessus</strong> de votre secteur.'; vcls = 'above'; }
-  else if (ratio < 0.95) { verdict = 'Votre fréquence d\'accidents est <strong>' + pct(1 - ratio) + ' en dessous</strong> de votre secteur.'; vcls = 'below'; }
-  else { verdict = 'Votre fréquence d\'accidents est <strong>proche de la moyenne</strong> de votre secteur.'; vcls = 'neutral'; }
+// ── État initial : aperçu grisé de ce que l'outil va produire ──
+function renderSamplePreview(hasSector) {
+  var hint = hasSector
+    ? 'Renseignez votre <strong>effectif</strong> et vos <strong>AT avec arrêt</strong> pour voir votre position et le coût estimé.'
+    : 'Choisissez votre <strong>secteur</strong>, puis renseignez votre effectif et vos AT avec arrêt.';
+  var ghost =
+    '<section class="bench-card bench-ghost" aria-hidden="true">' +
+      '<h3>Ma position — indice de fréquence</h3>' +
+      '<p class="bench-sub">Vos sinistres ramenés à 1 000 salariés, comparés à votre secteur et à la moyenne nationale.</p>' +
+      '<div class="bench-pos-tablewrap"><table class="bench-pos-table"><thead><tr>' +
+        '<th>Risque</th><th>Mon entreprise</th><th>Mon secteur</th><th>National</th><th>vs secteur</th>' +
+      '</tr></thead><tbody>' +
+        '<tr><td class="bench-pos-risk">Accidents du travail</td>' +
+          '<td class="num accent"><div class="bench-co"><span class="bench-co-if">22,5</span><span class="bench-co-cap">votre indice de fréquence</span></div></td>' +
+          '<td class="num">76,5</td><td class="num">23,9</td><td><span class="bench-badge below">−71%</span></td></tr>' +
+      '</tbody></table></div>' +
+    '</section>';
+  return '<div class="bench-sample"><div class="bench-sample-hint"><span>' + hint + '</span></div>' + ghost + '</div>';
+}
 
-  var secSub = (vs().sector || '') + ' · ' + (entry.libelle || '');
+// ── Carte « Ma position » (AT + MP + Trajet) ──
+function companyIF(count, eff) {
+  return (count != null && count >= 0 && eff > 0) ? (count / eff) * 1000 : null;
+}
+
+function renderPositions(v, eff) {
+  // Verdict principal : sur l'AT (risque renseigné par défaut).
+  var headline = '';
+  var atRes = resolveEntry(v.sector, 'at');
+  var atSec = atRes ? atRes.entry.stats.indice_frequence : null;
+  var atCo = companyIF(v.accidents, eff);
+  if (atCo != null && atSec > 0) {
+    var r = atCo / atSec;
+    var cls = r > 1.05 ? 'above' : r < 0.95 ? 'below' : 'neutral';
+    var txt = r > 1.05 ? 'Votre fréquence d\'accidents du travail est <strong>' + pct(r - 1) + ' au-dessus</strong> de votre secteur.'
+            : r < 0.95 ? 'Votre fréquence d\'accidents du travail est <strong>' + pct(1 - r) + ' en dessous</strong> de votre secteur.'
+            : 'Votre fréquence d\'accidents du travail est <strong>proche de la moyenne</strong> de votre secteur.';
+    headline = '<div class="bench-verdict ' + cls + '">' + txt + '</div>';
+  }
+
+  // MP / Trajet n'apparaissent que si l'utilisateur les a ajoutés (indépendamment).
+  var rows = POS_DOMAINS.filter(function(d) {
+    return d.id === 'at' || (d.id === 'mp' && v.showMp) || (d.id === 'trajet' && v.showTrajet);
+  }).map(function(d) {
+    var data = getData(d.id);
+    var res = resolveEntry(v.sector, d.id);
+    var secIF = res ? res.entry.stats.indice_frequence : null;
+    var natIF = (data && data.meta.national) ? data.meta.national.indice_frequence : null;
+    var count = v[d.field];
+    var coIF = companyIF(count, eff);
+    var badge = '<span class="bench-badge muted">—</span>';
+    if (coIF != null && secIF > 0) {
+      var rr = coIF / secIF;
+      var bcls = rr > 1.05 ? 'above' : rr < 0.95 ? 'below' : 'neutral';
+      badge = '<span class="bench-badge ' + bcls + '">' + (rr >= 1 ? '+' : '−') + Math.round(Math.abs(rr - 1) * 100) + '%</span>';
+    }
+    // Cellule "Mon entreprise" : l'indice de fréquence, libellé clair (pas la formule brute).
+    var coCell = (coIF != null)
+      ? '<div class="bench-co"><span class="bench-co-if">' + fmt1(coIF) + '</span>' +
+          '<span class="bench-co-cap">votre indice de fréquence</span></div>'
+      : '<span class="bench-co-empty">—</span>';
+    return '<tr>' +
+      '<td class="bench-pos-risk">' + d.label + '</td>' +
+      '<td class="num accent">' + coCell + '</td>' +
+      '<td class="num">' + fmt1(secIF) + '</td>' +
+      '<td class="num">' + fmt1(natIF) + '</td>' +
+      '<td>' + badge + '</td>' +
+    '</tr>';
+  }).join('');
 
   return '<section class="bench-card">' +
     '<h3>Ma position — indice de fréquence</h3>' +
-    '<p class="bench-sub">Nombre d\'accidents du travail avec arrêt pour 1 000 salariés.</p>' +
-    '<div class="bench-pos-grid">' +
-      posCell('Mon entreprise', coIF, 'accent', null) +
-      posCell('Mon secteur', secIF, 'sector', secSub) +
-      posCell('Moyenne nationale', natIF, 'nat', null) +
-    '</div>' +
-    '<div class="bench-verdict ' + vcls + '">' + verdict + '</div>' +
+    '<p class="bench-sub">L\'indice de fréquence ramène vos sinistres à 1 000 salariés (nombre ÷ effectif × 1 000), pour pouvoir comparer à votre secteur et à la moyenne nationale, quelle que soit la taille.</p>' +
+    headline +
+    '<div class="bench-pos-tablewrap"><table class="bench-pos-table"><thead><tr>' +
+      '<th>Risque</th><th>Mon entreprise</th><th>Mon secteur</th><th>National</th><th>vs secteur</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
   '</section>';
-}
-
-function posCell(label, value, cls, sub) {
-  return '<div class="bench-pos-cell ' + cls + '">' +
-    '<div class="bench-pos-label">' + label + '</div>' +
-    (sub ? '<div class="bench-pos-sublib">' + sub + '</div>' : '') +
-    '<div class="bench-pos-val">' + fmt1(value) + '</div>' +
-  '</div>';
 }
 
 // ── Carte « Coût social estimé » ──
@@ -171,6 +224,23 @@ function breakdownRow(label, value) {
     '<span class="bench-bd-val">' + fmtEur(value) + '</span></div>';
 }
 
+// ── Ajout indépendant des risques MP / Trajet ──
+function toggleRisk(key, on, label) {
+  var field = el('bench-' + key + 'Field');
+  var btn = el('bench-add' + key.charAt(0).toUpperCase() + key.slice(1));
+  if (field) field.style.display = on ? '' : 'none';
+  if (btn) {
+    btn.classList.toggle('active', on);
+    btn.textContent = (on ? '✓ ' : '+ ') + label;
+  }
+}
+function applyOtherVisibility() {
+  var v = vs();
+  toggleRisk('mp', v.showMp, 'Maladies professionnelles');
+  toggleRisk('trajet', v.showTrajet, 'Accidents de trajet');
+  toggleRisk('deces', v.showDeces, 'Décès');
+}
+
 // ── Pastille du secteur sélectionné ──
 function renderSectorChip() {
   var wrap = el('bench-sectorChip');
@@ -200,22 +270,24 @@ function setupSectorInput() {
 
   function show(query) {
     var index = buildIndex();
-    var matches;
     var raw = (query || '').trim();
     if (!raw) {
-      matches = index.filter(function(e) { return e.level === 'naf2'; }).slice(0, 25);
-    } else {
-      var q = normalize(query);
-      var qUp = raw.toUpperCase();
-      var isCode = /^[0-9]/.test(raw);
-      matches = index.filter(function(e) {
-        if (isCode) return e.code.toUpperCase().startsWith(qUp);
-        return normalize(e.code).includes(q) || normalize(e.libelle).includes(q);
-      }).sort(function(a, b) {
-        if (a.code.length !== b.code.length) return a.code.length - b.code.length;
-        return a.code.localeCompare(b.code);
-      }).slice(0, 25);
+      // Pas de liste de divisions par défaut : on invite à taper, NAF5 = le plus précis.
+      acBox.innerHTML = '<div class="ac-hint">Tapez un métier ou un code NAF. Le niveau le plus précis (NAF5) donne l\'estimation la plus juste.</div>';
+      acBox.classList.add('open');
+      return;
     }
+    var q = normalize(query);
+    var qUp = raw.toUpperCase();
+    var isCode = /^[0-9]/.test(raw);
+    var matches = index.filter(function(e) {
+      if (isCode) return e.code.toUpperCase().startsWith(qUp);
+      return normalize(e.code).includes(q) || normalize(e.libelle).includes(q);
+    }).sort(function(a, b) {
+      var ra = LVL_RANK[a.level], rb = LVL_RANK[b.level];   // NAF5 en tête
+      if (ra !== rb) return ra - rb;
+      return a.code.localeCompare(b.code);
+    }).slice(0, 30);
     if (!matches.length) { closeAc(); return; }
     acBox.innerHTML = matches.map(function(m) {
       return '<div class="ac-item" data-code="' + m.code + '">' +
@@ -267,22 +339,46 @@ function setupSectorInput() {
 
 // ── Champs entreprise ──
 function setupCompanyInputs() {
-  var map = { 'bench-effectif': 'effectif', 'bench-accidents': 'accidents', 'bench-deces': 'deces' };
+  var map = { 'bench-effectif': 'effectif', 'bench-accidents': 'accidents', 'bench-mp': 'mp', 'bench-trajet': 'trajet', 'bench-deces': 'deces' };
   Object.keys(map).forEach(function(id) {
     var inp = el(id);
     if (!inp) return;
     inp.addEventListener('input', function() {
-      var n = parseFloat(this.value);
-      vs()[map[id]] = isNaN(n) ? null : n;
+      // Compteurs entiers : on retire les séparateurs de milliers (espace, point, virgule)
+      // pour éviter que "2 000" / "2,000" soit lu comme 2.
+      var raw = (this.value || '').replace(/[^\d]/g, '');
+      vs()[map[id]] = raw === '' ? null : parseInt(raw, 10);
       renderBench();
     });
   });
+  var addMp = el('bench-addMp');
+  if (addMp) addMp.addEventListener('click', function() {
+    var v = vs(); v.showMp = !v.showMp;
+    if (!v.showMp) { v.mp = null; var i = el('bench-mp'); if (i) i.value = ''; }
+    renderBench();
+    if (v.showMp) { var f = el('bench-mp'); if (f) f.focus(); }
+  });
+  var addTrajet = el('bench-addTrajet');
+  if (addTrajet) addTrajet.addEventListener('click', function() {
+    var v = vs(); v.showTrajet = !v.showTrajet;
+    if (!v.showTrajet) { v.trajet = null; var i = el('bench-trajet'); if (i) i.value = ''; }
+    renderBench();
+    if (v.showTrajet) { var f = el('bench-trajet'); if (f) f.focus(); }
+  });
+  var addDeces = el('bench-addDeces');
+  if (addDeces) addDeces.addEventListener('click', function() {
+    var v = vs(); v.showDeces = !v.showDeces;
+    if (!v.showDeces) { v.deces = null; var i = el('bench-deces'); if (i) i.value = ''; }
+    renderBench();
+    if (v.showDeces) { var f = el('bench-deces'); if (f) f.focus(); }
+  });
+
   var reset = el('bench-reset');
   if (reset) reset.addEventListener('click', function() {
     var v = vs();
-    v.effectif = null; v.accidents = null; v.deces = null; v.indirect = 0;
-    v.sector = null; v.sectorLevel = null; v.sectorLib = null;
-    ['bench-effectif', 'bench-accidents', 'bench-deces', 'bench-sectorInput'].forEach(function(id) {
+    v.effectif = null; v.accidents = null; v.mp = null; v.trajet = null; v.deces = null; v.indirect = 0;
+    v.sector = null; v.sectorLevel = null; v.sectorLib = null; v.showMp = false; v.showTrajet = false; v.showDeces = false;
+    ['bench-effectif', 'bench-accidents', 'bench-mp', 'bench-trajet', 'bench-deces', 'bench-sectorInput'].forEach(function(id) {
       var e = el(id); if (e) e.value = '';
     });
     renderBench();

@@ -6,7 +6,7 @@ export var state = {
     at: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1, compareCodes: [] },
     mp: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1, compareCodes: [] },
     trajet: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1, compareCodes: [] },
-    compare: { sector: null, sectorLevel: null, sectorLib: null, effectif: null, accidents: null, deces: null, indirect: 0, acIndex: -1 },
+    compare: { sector: null, sectorLevel: null, sectorLib: null, effectif: null, accidents: null, mp: null, trajet: null, deces: null, indirect: 0, showMp: false, showTrajet: false, showDeces: false, acIndex: -1 },
   }
 };
 

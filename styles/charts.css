@@ -881,13 +881,26 @@
 .bench-card h3 { margin: 0 0 4px; font-size: 1.05rem; }
 .bench-sub { margin: 0 0 16px; font-size: 0.85rem; color: var(--text-secondary); }
 
-.bench-pos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.bench-pos-cell { border: 1px solid var(--border-light); border-radius: 8px; padding: 14px; background: var(--bg-elevated); min-width: 0; }
-.bench-pos-cell.accent { border-color: var(--accent); }
-.bench-pos-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); }
-.bench-pos-sublib { font-size: 0.72rem; color: var(--text-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bench-pos-val { font-family: var(--mono); font-size: 1.8rem; font-weight: 700; color: var(--text); margin-top: 8px; }
-.bench-pos-cell.accent .bench-pos-val { color: var(--accent); }
+.bench-pos-tablewrap { overflow-x: auto; }
+.bench-pos-table { width: 100%; border-collapse: collapse; }
+.bench-pos-table th {
+  text-align: right; font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+  color: var(--text-dim); padding: 8px 10px; border-bottom: 1px solid var(--border-light); white-space: nowrap;
+}
+.bench-pos-table th:first-child { text-align: left; }
+.bench-pos-table td { padding: 11px 10px; border-bottom: 1px solid var(--border-light); }
+.bench-pos-table tr:last-child td { border-bottom: none; }
+.bench-pos-table .bench-pos-risk { font-weight: 600; color: var(--text); }
+.bench-pos-table .num { text-align: right; font-family: var(--mono); font-size: 1.05rem; font-weight: 600; color: var(--text); }
+.bench-pos-table .num.accent { color: var(--accent); }
+.bench-pos-table td:last-child { text-align: right; white-space: nowrap; }
+.bench-badge { font-family: var(--mono); font-size: 0.8rem; font-weight: 600; padding: 3px 9px; border-radius: 999px; }
+.bench-badge.above { background: rgba(220,38,38,0.12); color: #dc2626; }
+.bench-badge.below { background: rgba(22,163,74,0.12); color: #16a34a; }
+.bench-badge.neutral { background: var(--border-light); color: var(--text-secondary); }
+.bench-badge.muted { background: transparent; color: var(--text-dim); }
+
+.ac-hint { padding: 12px 14px; font-size: 0.82rem; color: var(--text-dim); line-height: 1.5; }
 
 .bench-verdict { margin-top: 14px; padding: 12px 14px; border-radius: 8px; font-size: 0.92rem; }
 .bench-verdict.above { background: rgba(220,38,38,0.1); color: #dc2626; }
@@ -911,3 +924,64 @@
 @media (max-width: 600px) {
   .bench-pos-grid { grid-template-columns: 1fr; }
 }
+
+/* Mon entreprise — toggle "autres risques" + légende de calcul dans la cellule */
+.bench-add-btn {
+  margin-top: 14px;
+  font-family: var(--sans); font-size: 0.82rem; font-weight: 500;
+  padding: 9px 14px; border: 1px dashed var(--border); border-radius: 8px;
+  background: transparent; color: var(--text-secondary); cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.bench-add-btn:hover { color: var(--text); border-color: var(--accent); background: var(--bg-hover, rgba(127,127,127,0.05)); }
+.bench-other-fields { margin-top: 12px; }
+.bench-co { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.bench-co-if { font-family: var(--mono); font-size: 1.05rem; font-weight: 600; color: var(--accent); }
+.bench-co-cap { font-family: var(--sans); font-size: 0.68rem; font-weight: 400; color: var(--text-dim); white-space: nowrap; }
+.bench-co-empty { color: var(--text-dim); }
+
+/* Mon entreprise — refonte UX (hiérarchie, reset discret, aperçu) */
+.bench-form-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.bench-form-head .bench-label { margin-bottom: 0; }
+.bench-reset-link {
+  border: none; background: none; padding: 0; cursor: pointer;
+  font-family: var(--sans); font-size: 0.8rem; color: var(--text-dim);
+  text-decoration: underline; text-underline-offset: 2px; transition: color 0.15s;
+}
+.bench-reset-link:hover { color: var(--text-secondary); }
+
+/* Contraste : champs plus lisibles sur fond clair */
+.bench-field input { border-color: var(--border) !important; }
+.bench-field label { color: var(--text-secondary); }
+.bench-field input::placeholder { color: var(--text-dim); }
+
+/* Légende sous l'indice de l'entreprise */
+.bench-co-cap { text-transform: none; letter-spacing: 0; }
+
+/* État initial : aperçu grisé + bulle d'invite par-dessus */
+.bench-sample { position: relative; }
+.bench-ghost { opacity: 0.45; filter: grayscale(0.25); pointer-events: none; user-select: none; }
+.bench-sample-hint {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  z-index: 2; padding: 1rem; text-align: center;
+}
+.bench-sample-hint span {
+  background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px;
+  padding: 14px 20px; max-width: 460px; color: var(--text-secondary); font-size: 0.95rem;
+  line-height: 1.5; box-shadow: 0 6px 24px rgba(0,0,0,0.10);
+}
+.bench-sample-hint strong { color: var(--text); }
+
+/* Ajout indépendant MP / Trajet — pastilles bien visibles */
+.bench-add-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.bench-add-label { font-size: 0.82rem; font-weight: 500; color: var(--text-secondary); }
+.bench-add-chip {
+  font-family: var(--sans); font-size: 0.82rem; font-weight: 600;
+  padding: 7px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent-glow, rgba(99,102,241,0.10)); color: var(--accent);
+  transition: background 0.15s, color 0.15s;
+}
+.bench-add-chip:hover { background: var(--accent); color: #fff; }
+.bench-add-chip.active { background: var(--accent); color: #fff; }
+.bench-extra-fields { margin-top: 12px; }
+.bench-extra-fields:not(:has(.bench-field[style*="block"])):not(:has(.bench-field:not([style*="none"]))) { margin-top: 0; }

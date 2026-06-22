@@ -704,8 +704,11 @@
   <!-- COMPARE VIEW -->
   <div class="view" id="view-compare">
     <div class="bench-form">
-      <div class="bench-sector">
+      <div class="bench-form-head">
         <label class="bench-label" for="bench-sectorInput">Mon secteur d'activité</label>
+        <button type="button" class="bench-reset-link" id="bench-reset">Réinitialiser</button>
+      </div>
+      <div class="bench-sector">
         <div class="search-wrapper bench-search">
           <span class="icon">/</span>
           <input type="text" id="bench-sectorInput" aria-label="Rechercher mon secteur" placeholder="Recherchez votre métier ou code NAF..." autocomplete="off">
@@ -722,11 +725,26 @@
           <label for="bench-accidents">AT avec arrêt (sur l'année)</label>
           <input type="number" id="bench-accidents" min="0" step="1" inputmode="numeric" placeholder="ex. 20" autocomplete="off">
         </div>
-        <div class="bench-field">
-          <label for="bench-deces">Décès (optionnel)</label>
+      </div>
+      <div class="bench-add-row">
+        <span class="bench-add-label">Ajouter :</span>
+        <button type="button" class="bench-add-chip" id="bench-addMp">+ Maladies professionnelles</button>
+        <button type="button" class="bench-add-chip" id="bench-addTrajet">+ Accidents de trajet</button>
+        <button type="button" class="bench-add-chip" id="bench-addDeces">+ Décès</button>
+      </div>
+      <div class="bench-fields bench-extra-fields">
+        <div class="bench-field" id="bench-mpField" style="display:none">
+          <label for="bench-mp">Maladies pro. reconnues (sur l'année)</label>
+          <input type="number" id="bench-mp" min="0" step="1" inputmode="numeric" placeholder="ex. 2" autocomplete="off">
+        </div>
+        <div class="bench-field" id="bench-trajetField" style="display:none">
+          <label for="bench-trajet">Accidents de trajet (sur l'année)</label>
+          <input type="number" id="bench-trajet" min="0" step="1" inputmode="numeric" placeholder="ex. 3" autocomplete="off">
+        </div>
+        <div class="bench-field" id="bench-decesField" style="display:none">
+          <label for="bench-deces">Décès (sur l'année)</label>
           <input type="number" id="bench-deces" min="0" step="1" inputmode="numeric" placeholder="ex. 0" autocomplete="off">
         </div>
-        <button type="button" class="bench-reset" id="bench-reset">Effacer</button>
       </div>
     </div>
 
