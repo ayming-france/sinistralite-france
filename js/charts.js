@@ -7,8 +7,8 @@ import { selectCode } from './search.js';
 import { SECTOR_COLORS } from './compare.js';
 
 // ── Causes chart ──
-export function renderCausesChart(viewId, causes) {
-  var sorted = Object.entries(causes)
+function buildCausesChart(canvas, causes, viewId) {
+  var sorted = Object.entries(causes || {})
     .filter(function(pair) { return pair[1] > 0; })
     .sort(function(a, b) { return b[1] - a[1]; });
 
@@ -22,25 +22,12 @@ export function renderCausesChart(viewId, causes) {
     chartData = sorted;
   }
 
-  if (chartData.length === 0) {
-    viewEl(viewId, 'causesWrap').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:320px;color:var(--text-dim)">Aucune donnée de cause</div>';
-    return;
-  }
+  if (chartData.length === 0) return null;
 
   var labels = chartData.map(function(pair) { return pair[0]; });
   var values = chartData.map(function(pair) { return pair[1]; });
 
-  var vs = state.views[viewId];
-  if (vs.causesChart) vs.causesChart.destroy();
-
-  // Ensure canvas exists
-  var wrap = viewEl(viewId, 'causesWrap');
-  if (!wrap.querySelector('canvas')) {
-    wrap.innerHTML = '<canvas id="' + viewId + '-causesChart"></canvas>';
-  }
-  wrap.style.height = '320px';
-
-  vs.causesChart = new Chart(viewEl(viewId, 'causesChart'), {
+  return new Chart(canvas, {
     type: 'doughnut',
     data: {
       labels: labels,
@@ -106,11 +93,35 @@ export function renderCausesChart(viewId, causes) {
   });
 }
 
+export function renderCausesChart(viewId, sectors) {
+  var vs = state.views[viewId];
+  if (vs.causesChart) { vs.causesChart.destroy(); vs.causesChart = null; }
+  if (vs.causesCharts) vs.causesCharts.forEach(function(c) { c.destroy(); });
+  vs.causesCharts = [];
+  var wrap = viewEl(viewId, 'causesWrap');
+  if (!wrap) return;
+
+  if (sectors.length < 2) {
+    wrap.classList.remove('cmp-cols', 'cmp-cols-1', 'cmp-cols-2');
+    wrap.style.height = '320px';
+    wrap.innerHTML = '<canvas id="' + viewId + '-causesChart"></canvas>';
+    var ch = buildCausesChart(el(viewId + '-causesChart'), sectors[0].entry && sectors[0].entry.risk_causes, viewId);
+    if (ch) vs.causesCharts.push(ch);
+    else wrap.innerHTML = '<div class="cmp-nodata" style="height:320px;display:flex;align-items:center;justify-content:center">Aucune donnée de cause</div>';
+    return;
+  }
+  wrap.style.height = 'auto';
+  buildCompareColumns(wrap, sectors, function(sec, idx, body) {
+    body.innerHTML = '<div class="chart-wrap" style="height:300px"><canvas></canvas></div>';
+    var c = buildCausesChart(body.querySelector('canvas'), sec.entry && sec.entry.risk_causes, viewId);
+    if (c) vs.causesCharts.push(c);
+    else body.innerHTML = '<p class="cmp-nodata">Aucune donnée de cause.</p>';
+  });
+}
+
 // ── Funnel chart ──
-export function renderFunnelChart(viewId, s, cfg) {
-  var items = cfg.funnelItems(s);
+function buildFunnel(container, items, viewId, uid) {
   var maxVal = items[items.length - 1].value || 1;
-  var wrap = viewEl(viewId, 'funnelWrap');
   var n = items.length;
 
   // Build bars with conversion rates between them
@@ -131,13 +142,13 @@ export function renderFunnelChart(viewId, s, cfg) {
     }
   }
 
-  var tipId = viewId + '-funnelTip';
-  wrap.style.position = 'relative';
-  wrap.innerHTML = '<div class="funnel">' + html + '</div><div class="funnel-tooltip" id="' + tipId + '"></div>';
+  var tipId = viewId + '-funnelTip' + uid;
+  container.style.position = 'relative';
+  container.innerHTML = '<div class="funnel">' + html + '</div><div class="funnel-tooltip" id="' + tipId + '"></div>';
 
   var tip = el(tipId);
   var eventLabel = VIEW_CONFIG[viewId].eventLabel;
-  wrap.querySelectorAll('.funnel-bar').forEach(function(bar) {
+  container.querySelectorAll('.funnel-bar').forEach(function(bar) {
     var i = +bar.dataset.idx;
     var pctText = i === items.length - 1 ? '100% des ' + eventLabel : bar.dataset.pct + '% des ' + eventLabel;
     bar.addEventListener('mouseenter', function() {
@@ -145,11 +156,26 @@ export function renderFunnelChart(viewId, s, cfg) {
       tip.classList.add('visible');
     });
     bar.addEventListener('mousemove', function(e) {
-      var rect = wrap.getBoundingClientRect();
+      var rect = container.getBoundingClientRect();
       tip.style.left = (e.clientX - rect.left + 12) + 'px';
       tip.style.top = (e.clientY - rect.top - 32) + 'px';
     });
     bar.addEventListener('mouseleave', function() { tip.classList.remove('visible'); });
+  });
+}
+
+export function renderFunnelChart(viewId, sectors, cfg) {
+  var wrap = viewEl(viewId, 'funnelWrap');
+  if (!wrap) return;
+
+  if (sectors.length < 2) {
+    wrap.classList.remove('cmp-cols', 'cmp-cols-1', 'cmp-cols-2');
+    buildFunnel(wrap, cfg.funnelItems(sectors[0].entry.stats), viewId, '');
+    return;
+  }
+  buildCompareColumns(wrap, sectors, function(sec, idx, body) {
+    if (!sec.entry) { body.innerHTML = '<p class="cmp-nodata">Données indisponibles.</p>'; return; }
+    buildFunnel(body, cfg.funnelItems(sec.entry.stats), viewId, idx);
   });
 }
 
@@ -484,16 +510,35 @@ export function renderEvolutionCharts(viewId, entry, level, compareCodes) {
   var evColors = barColors(99, 102, 241, nYears);
   var ifColors = barColors(234, 179, 8, nYears);
 
-  // 1. Events chart (line with fill)
+  // 1. Events chart (line). En comparaison (NAF5) : superposition des secteurs comparés,
+  // SANS ligne nationale (les comptes absolus ne se comparent pas au total national).
   var evCanvas = viewEl(viewId, 'evoEvents');
+  var comparingEvo = compareCodes.length && level === 'naf5';
+  var evCurColor = compareCodes.length ? themeColor('--accent') : '#6366f1';
+  var evDatasets = [{
+    label: compareCodes.length ? currentLabel : eventLabel, data: sectorEvents,
+    borderColor: evCurColor, borderWidth: 2,
+    pointRadius: 5, pointBackgroundColor: evCurColor, pointHoverRadius: 7,
+    fill: !compareCodes.length, backgroundColor: 'rgba(99,102,241,0.1)', tension: 0.3,
+  }];
+  if (comparingEvo) {
+    var naf5StoreEv = getStore(viewId, 'naf5');
+    compareCodes.forEach(function(cc, i) {
+      var ce = naf5StoreEv[cc];
+      if (!ce || !ce.yearly) return;
+      var color = SECTOR_COLORS[i % SECTOR_COLORS.length];
+      evDatasets.push({
+        label: cc,
+        data: years.map(function(yr) { return ce.yearly[yr] ? ce.yearly[yr].events : null; }),
+        borderColor: color, backgroundColor: color, borderWidth: 2,
+        pointRadius: 4, pointBackgroundColor: color, pointHoverRadius: 6,
+        fill: false, tension: 0.3, spanGaps: true,
+      });
+    });
+  }
   vs.evoCharts.push(new Chart(evCanvas, {
     type: 'line',
-    data: { labels: years, datasets: [{
-      label: eventLabel, data: sectorEvents,
-      borderColor: '#6366f1', borderWidth: 2,
-      pointRadius: 5, pointBackgroundColor: '#6366f1', pointHoverRadius: 7,
-      fill: true, backgroundColor: 'rgba(99,102,241,0.1)', tension: 0.3,
-    }] },
+    data: { labels: years, datasets: evDatasets },
     options: Object.assign({}, baseOpts, {
       plugins: Object.assign({}, baseOpts.plugins, {
         title: { display: true, text: eventLabel, font: { family: 'var(--sans)', size: 13, weight: '500' }, color: '#cbd5e1', padding: { bottom: 8 } },
@@ -553,32 +598,44 @@ export function renderEvolutionCharts(viewId, entry, level, compareCodes) {
 }
 
 // ── Demographics charts (AT only) ──
-export function renderDemographics(viewId, entry) {
+// Colonnes côte à côte (une par secteur) avec en-tête coloré, façon GA4.
+// renderCol(secteur, idx, bodyEl) y dessine les graphiques du secteur.
+function buildCompareColumns(container, sectors, renderCol) {
+  container.classList.add('cmp-cols', 'cmp-cols-' + sectors.length);
+  container.innerHTML = '';
+  sectors.forEach(function(sec, idx) {
+    var col = document.createElement('div');
+    col.className = 'cmp-col';
+    var lib = sec.entry && sec.entry.libelle ? sec.entry.libelle : '';
+    col.innerHTML =
+      '<div class="cmp-col-head">' +
+        '<span class="cmp-col-dot" style="background:' + sec.color + '"></span>' +
+        '<span class="cmp-col-code">' + sec.code + '</span>' +
+        (lib ? '<span class="cmp-col-lib">' + lib + '</span>' : '') +
+      '</div>' +
+      '<div class="cmp-col-body"></div>';
+    container.appendChild(col);
+    renderCol(sec, idx, col.querySelector('.cmp-col-body'));
+  });
+}
+
+export function renderDemographics(viewId, sectors) {
   var section = viewEl(viewId, 'demoSection');
   if (!section) return;
-
-  var demo = entry.demographics;
   var vs = state.views[viewId];
 
-  // Destroy previous charts
   if (vs.demoCharts) vs.demoCharts.forEach(function(c) { c.destroy(); });
   vs.demoCharts = [];
 
-  if (!demo || !demo.sex || (!demo.sex.masculin && !demo.sex.feminin)) {
-    section.style.display = 'none';
-    return;
-  }
+  var hasDemo = function(sec) {
+    var d = sec.entry && sec.entry.demographics;
+    return d && d.sex && (d.sex.masculin || d.sex.feminin);
+  };
+  if (!sectors.some(hasDemo)) { section.style.display = 'none'; return; }
   section.style.display = '';
 
-  // Ensure canvases exist
-  var sexWrap = section.querySelector('#' + viewId + '-demoSex').parentElement;
-  var ageWrap = section.querySelector('#' + viewId + '-demoAge').parentElement;
-  sexWrap.innerHTML = '<canvas id="' + viewId + '-demoSex"></canvas>';
-  ageWrap.innerHTML = '<canvas id="' + viewId + '-demoAge"></canvas>';
-
-  var sexCanvas = el(viewId + '-demoSex');
-  var ageCanvas = el(viewId + '-demoAge');
-
+  // Construit les deux graphiques (sexe + âge) d'un secteur dans les canvas fournis.
+  function buildDemo(sexCanvas, ageCanvas, demo) {
   // 1. Sex donut
   var sexLabels = ['Masculin', 'Féminin'];
   var sexValues = [demo.sex.masculin || 0, demo.sex.feminin || 0];
@@ -696,18 +753,45 @@ export function renderDemographics(viewId, entry) {
       }
     }
   }));
+  } // fin buildDemo
+
+  var grid = section.querySelector('.demo-grid');
+  if (sectors.length < 2) {
+    grid.classList.remove('cmp-cols', 'cmp-cols-1', 'cmp-cols-2');
+    grid.innerHTML =
+      '<div class="demo-card"><div class="demo-chart-wrap"><canvas id="' + viewId + '-demoSex"></canvas></div></div>' +
+      '<div class="demo-card"><div class="demo-chart-wrap"><canvas id="' + viewId + '-demoAge"></canvas></div></div>';
+    buildDemo(el(viewId + '-demoSex'), el(viewId + '-demoAge'), sectors[0].entry.demographics);
+    return;
+  }
+  buildCompareColumns(grid, sectors, function(sec, idx, body) {
+    var d = sec.entry && sec.entry.demographics;
+    if (!d || !d.sex || (!d.sex.masculin && !d.sex.feminin)) {
+      body.innerHTML = '<p class="cmp-nodata">Démographie indisponible.</p>';
+      return;
+    }
+    body.innerHTML =
+      '<div class="demo-chart-wrap"><canvas></canvas></div>' +
+      '<div class="demo-chart-wrap"><canvas></canvas></div>';
+    var cv = body.querySelectorAll('canvas');
+    buildDemo(cv[0], cv[1], d);
+  });
 }
 
 // ── Sinistralité par taille d'établissement (extrait du chart vectoriel des fiches) ──
-export function renderSizeChart(viewId, bands, sectorIF) {
-  var section = viewEl(viewId, 'sizeSection');
-  if (!section) return;
-  var vs = state.views[viewId];
-  if (vs.sizeChart) { vs.sizeChart.destroy(); vs.sizeChart = null; }
+// Phrase de contexte : tranche d'effectif en sur-risque (part accidents > part salariés).
+function sizeSubText(bands) {
+  var worst = null, worstGap = 0;
+  (bands || []).forEach(function(b) {
+    var gap = b.part_accidents - b.part_salaries;
+    if (b.part_salaries >= 1 && gap > worstGap) { worstGap = gap; worst = b.label; }
+  });
+  return worst
+    ? 'Sur-risque dans les établissements de ' + worst + ' salariés : leur part d\'accidents dépasse leur part de salariés.'
+    : 'Part des accidents du travail et part des salariés par taille d\'établissement.';
+}
 
-  if (!bands || !bands.length) { section.style.display = 'none'; return; }
-  section.style.display = '';
-
+function buildSizeChart(canvas, bands, sectorIF) {
   var labels = bands.map(function(b) { return b.label; });
   var acc = bands.map(function(b) { return b.part_accidents; });
   var sal = bands.map(function(b) { return b.part_salaries; });
@@ -715,26 +799,9 @@ export function renderSizeChart(viewId, bands, sectorIF) {
   var ifBand = bands.map(function(b) {
     return b.part_salaries > 0 ? Math.round(b.part_accidents / b.part_salaries * sectorIF * 10) / 10 : null;
   });
-
-  // Tranche en sur-risque : accidents nettement > salariés
-  var worst = null, worstGap = 0;
-  bands.forEach(function(b) {
-    var gap = b.part_accidents - b.part_salaries;
-    if (b.part_salaries >= 1 && gap > worstGap) { worstGap = gap; worst = b.label; }
-  });
-  var sub = viewEl(viewId, 'sizeSub');
-  if (sub) {
-    sub.textContent = worst
-      ? 'Sur-risque dans les établissements de ' + worst + ' salariés : leur part d\'accidents dépasse leur part de salariés.'
-      : 'Part des accidents du travail et part des salariés par taille d\'établissement.';
-  }
-
-  var wrap = viewEl(viewId, 'sizeWrap');
-  wrap.innerHTML = '<canvas id="' + viewId + '-sizeChart"></canvas>';
   var tickColor = themeColor('--text-dim');
   var gridColor = themeColor('--border');
-
-  vs.sizeChart = new Chart(viewEl(viewId, 'sizeChart'), {
+  return new Chart(canvas, {
     data: {
       labels: labels,
       datasets: [
@@ -760,6 +827,37 @@ export function renderSizeChart(viewId, bands, sectorIF) {
         x: { ticks: { color: tickColor }, grid: { display: false } }
       }
     }
+  });
+}
+
+export function renderSizeChart(viewId, sectors) {
+  var section = viewEl(viewId, 'sizeSection');
+  if (!section) return;
+  var vs = state.views[viewId];
+  if (vs.sizeCharts) vs.sizeCharts.forEach(function(c) { c.destroy(); });
+  if (vs.sizeChart) { vs.sizeChart.destroy(); vs.sizeChart = null; }
+  vs.sizeCharts = [];
+
+  var hasBands = function(sec) { return sec.bands && sec.bands.length; };
+  if (!sectors.some(hasBands)) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  var card = section.querySelector('.chart-card');
+  var sub = viewEl(viewId, 'sizeSub');
+
+  if (sectors.length < 2) {
+    var s0 = sectors[0];
+    if (sub) sub.textContent = sizeSubText(s0.bands);
+    card.classList.remove('cmp-cols', 'cmp-cols-1', 'cmp-cols-2');
+    card.innerHTML = '<div class="chart-wrap" id="' + viewId + '-sizeWrap" style="height:340px"><canvas id="' + viewId + '-sizeChart"></canvas></div>';
+    vs.sizeCharts.push(buildSizeChart(el(viewId + '-sizeChart'), s0.bands, s0.sectorIF));
+    return;
+  }
+  if (sub) sub.textContent = 'Part des accidents et part des salariés par taille d\'établissement, comparées entre secteurs.';
+  buildCompareColumns(card, sectors, function(sec, idx, body) {
+    if (!hasBands(sec)) { body.innerHTML = '<p class="cmp-nodata">Données de taille indisponibles.</p>'; return; }
+    body.innerHTML = '<div class="chart-wrap" style="height:320px"><canvas></canvas></div>';
+    vs.sizeCharts.push(buildSizeChart(body.querySelector('canvas'), sec.bands, sec.sectorIF));
   });
 }
 
@@ -796,13 +894,9 @@ function injuryBars(raw, labelMap) {
   return entries;
 }
 
-function renderInjuryChart(viewId, slot, title, entries, color, charts) {
-  var wrap = viewEl(viewId, slot + 'Wrap');
-  if (!wrap) return;
-  var canvasId = viewId + '-' + slot + 'Chart';
-  wrap.innerHTML = '<canvas id="' + canvasId + '"></canvas>';
+function buildInjuryChart(canvas, title, entries, color) {
   var tickColor = themeColor('--text-dim');
-  charts.push(new Chart(el(canvasId), {
+  return new Chart(canvas, {
     type: 'bar',
     data: { labels: entries.map(function(d) { return d.label; }),
       datasets: [{ data: entries.map(function(d) { return d.pct; }), backgroundColor: color, borderRadius: 3 }] },
@@ -818,26 +912,46 @@ function renderInjuryChart(viewId, slot, title, entries, color, charts) {
         y: { ticks: { color: tickColor, font: { size: 11 } }, grid: { display: false } }
       }
     }
-  }));
+  });
 }
 
-export function renderInjuryPanel(viewId, dims) {
+var INJURY_METRICS = [
+  { slot: 'injurySiege', title: 'Siège des lésions', key: 'siege_lesions', map: INJURY_LABELS.siege, color: '#5b8def' },
+  { slot: 'injuryActivite', title: 'Activité physique', key: 'activite_physique', map: INJURY_LABELS.activite, color: '#e0a458' },
+  { slot: 'injuryModalite', title: 'Modalité de la blessure', key: 'modalite_blessure', map: INJURY_LABELS.modalite, color: '#c074c0' }
+];
+
+export function renderInjuryPanel(viewId, sectors) {
   var section = viewEl(viewId, 'injurySection');
   if (!section) return;
   var vs = state.views[viewId];
   if (vs.injuryCharts) vs.injuryCharts.forEach(function(c) { c.destroy(); });
   vs.injuryCharts = [];
 
-  var siege = dims ? injuryBars(dims.siege_lesions, INJURY_LABELS.siege) : [];
-  var activite = dims ? injuryBars(dims.activite_physique, INJURY_LABELS.activite) : [];
-  var modalite = dims ? injuryBars(dims.modalite_blessure, INJURY_LABELS.modalite) : [];
-
-  if (!siege.length && !activite.length && !modalite.length) { section.style.display = 'none'; return; }
+  var barsFor = function(dims, m) { return dims ? injuryBars(dims[m.key], m.map) : []; };
+  var hasInjury = function(sec) { return INJURY_METRICS.some(function(m) { return barsFor(sec.dims, m).length; }); };
+  if (!sectors.some(hasInjury)) { section.style.display = 'none'; return; }
   section.style.display = '';
 
-  renderInjuryChart(viewId, 'injurySiege', 'Siège des lésions', siege, '#5b8def', vs.injuryCharts);
-  renderInjuryChart(viewId, 'injuryActivite', 'Activité physique', activite, '#e0a458', vs.injuryCharts);
-  renderInjuryChart(viewId, 'injuryModalite', 'Modalité de la blessure', modalite, '#c074c0', vs.injuryCharts);
+  var grid = section.querySelector('.injury-grid');
+  if (sectors.length < 2) {
+    grid.classList.remove('cmp-cols', 'cmp-cols-1', 'cmp-cols-2');
+    grid.innerHTML = INJURY_METRICS.map(function(m) {
+      return '<div class="chart-card"><div class="chart-wrap injury-wrap" id="' + viewId + '-' + m.slot + 'Wrap"><canvas id="' + viewId + '-' + m.slot + 'Chart"></canvas></div></div>';
+    }).join('');
+    INJURY_METRICS.forEach(function(m) {
+      vs.injuryCharts.push(buildInjuryChart(el(viewId + '-' + m.slot + 'Chart'), m.title, barsFor(sectors[0].dims, m), m.color));
+    });
+    return;
+  }
+  buildCompareColumns(grid, sectors, function(sec, idx, body) {
+    if (!hasInjury(sec)) { body.innerHTML = '<p class="cmp-nodata">Nature des accidents indisponible.</p>'; return; }
+    body.innerHTML = INJURY_METRICS.map(function() { return '<div class="chart-wrap injury-wrap"><canvas></canvas></div>'; }).join('');
+    var cv = body.querySelectorAll('canvas');
+    INJURY_METRICS.forEach(function(m, i) {
+      vs.injuryCharts.push(buildInjuryChart(cv[i], m.title, barsFor(sec.dims, m), m.color));
+    });
+  });
 }
 
 // ── Maladies professionnelles (MP only): tableau positionnel ──

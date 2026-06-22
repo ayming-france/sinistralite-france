@@ -5,6 +5,10 @@
     gap: 24px;
     margin-bottom: 24px;
   }
+  /* Sans min-width:0, le donut « Causes » déborde sa piste 1fr et écrase la « Cascade ». */
+  .charts-row > .chart-card { min-width: 0; }
+  .charts-row > .chart-card .chart-wrap,
+  .charts-row > .chart-card > div { min-width: 0; }
   .chart-card {
     background: var(--bg-elevated);
     border: 1px solid var(--border-light);
@@ -364,6 +368,54 @@
 }
 .injury-wrap { height: 300px; position: relative; }
 
+/* ── Comparaison côte à côte (GA4) : une colonne par secteur dans les sections breakdown ── */
+.cmp-cols {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px;
+  align-items: start;
+}
+.cmp-cols-1 { grid-template-columns: minmax(0, 1fr) !important; }
+/* Le graphique « taille » vit dans un .chart-card : on neutralise sa carte externe en mode comparaison. */
+.chart-card.cmp-cols { padding: 0; border: none; box-shadow: none; background: transparent; }
+/* Causes / Cascade : leurs colonnes sont DANS un .chart-card (titre + wrap) → neutraliser la carte,
+   et empiler la rangée verticalement pour donner toute la largeur à chaque secteur. */
+.chart-card:has(.cmp-cols) { border: none; box-shadow: none; background: transparent; padding: 0; }
+.chart-card:has(.cmp-cols) > h3 { margin-bottom: 12px; }
+.charts-row:has(.cmp-cols) { grid-template-columns: 1fr !important; }
+.cmp-col {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: var(--card-shadow);
+  min-width: 0;
+}
+.cmp-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+.cmp-col-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.cmp-col-code { font-family: var(--mono); font-weight: 600; color: var(--text); }
+.cmp-col-lib {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cmp-col-body > .demo-chart-wrap { height: 240px; }
+.cmp-col-body > .demo-chart-wrap + .demo-chart-wrap { margin-top: 12px; }
+.cmp-col-body > .injury-wrap { height: 260px; }
+.cmp-col-body > .injury-wrap + .injury-wrap { margin-top: 10px; }
+.cmp-nodata { color: var(--text-dim); font-size: 0.88rem; padding: 1.5rem 0; text-align: center; }
+
+@media (max-width: 768px) {
+  .cmp-cols { grid-template-columns: 1fr !important; }
+}
+
 .disease-wrap { overflow-x: auto; }
 .disease-table {
   width: 100%;
@@ -479,6 +531,112 @@
   transition: background 0.15s, color 0.15s;
 }
 .compare-chip .chip-remove:hover { background: var(--accent); color: #fff; }
+
+/* ── Calculateur "Mon entreprise" ── */
+.compare-company {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+.compare-company-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.compare-company-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.compare-company-reset {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 5px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.compare-company-reset:hover {
+  color: var(--text);
+  border-color: var(--border);
+  background: var(--bg-hover, rgba(127,127,127,0.06));
+}
+.compare-company-intro {
+  margin: 6px 0 14px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.compare-company-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+.compare-company-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.compare-company-field label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+.compare-company-field input {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  padding: 9px 11px;
+  border: 1px solid var(--border-light);
+  border-radius: 7px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.compare-company-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow, rgba(99,102,241,0.15));
+}
+.compare-company-result {
+  display: none;
+}
+.compare-company-result.visible {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px 18px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-light);
+}
+.compare-company-if {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+.compare-company-if strong {
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  color: var(--text);
+}
+.compare-company-mult {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.compare-company-mult.above { background: rgba(220,38,38,0.12); color: #dc2626; }
+.compare-company-mult.below { background: rgba(22,163,74,0.12); color: #16a34a; }
+.compare-company-mult.neutral { background: var(--border-light); color: var(--text-secondary); }
 
 .compare-table-card {
   background: var(--bg-card);

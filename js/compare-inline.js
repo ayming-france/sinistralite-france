@@ -7,7 +7,9 @@ import { getStore } from './data.js';
 import { viewEl, normalize } from './utils.js';
 import { SECTOR_COLORS } from './compare.js';
 
-var MAX_COMPARE = 4;
+// Le secteur courant compte dans le total : 1 courant + 1 comparé = 2 colonnes max
+// (comparaison côte à côte façon GA4). À étendre plus tard si besoin.
+var MAX_COMPARE = 1;
 var renderFn = null;
 
 // Index NAF5 (code -> libellé) par domaine, construit à la demande.
@@ -70,14 +72,21 @@ export function renderChips(viewId) {
 export function renderInline(viewId) {
   var bar = viewEl(viewId, 'cmpBar');
   if (bar) bar.style.display = '';
+  var vs = state.views[viewId];
   // Pastille non amovible du secteur courant (couleur accent via CSS).
   var cur = viewEl(viewId, 'cmpCurrent');
   if (cur) {
-    var vs = state.views[viewId];
     cur.innerHTML = '<span class="chip-dot"></span>' +
       '<span class="cmp-current-code">' + (vs.code || '') + '</span>';
   }
   renderChips(viewId);
+  // À la limite (1 courant + MAX_COMPARE comparé), on masque le bouton d'ajout
+  // et la recherche : pas de cul-de-sac, le secteur comparé reste affiché.
+  var atMax = vs.compareCodes.length >= MAX_COMPARE;
+  var addBtn = viewEl(viewId, 'cmpAddBtn');
+  var searchWrap = viewEl(viewId, 'cmpSearchWrap');
+  if (addBtn) addBtn.style.display = atMax ? 'none' : '';
+  if (atMax && searchWrap) searchWrap.style.display = 'none';
 }
 
 export function hideInlineBar(viewId) {
@@ -104,10 +113,10 @@ function setupInput(viewId) {
     input.focus();
     show(input.value);
   }
-  // Masque le champ et restaure le bouton "+ Ajouter".
+  // Masque le champ et restaure le bouton "+ Ajouter" (sauf à la limite, où il reste masqué).
   function hideSearch() {
     if (searchWrap) searchWrap.style.display = 'none';
-    if (addBtn) addBtn.style.display = '';
+    if (addBtn) addBtn.style.display = (vs.compareCodes.length >= MAX_COMPARE) ? 'none' : '';
     input.value = '';
     closeAc();
   }
@@ -115,7 +124,8 @@ function setupInput(viewId) {
 
   function show(query) {
     if (vs.compareCodes.length >= MAX_COMPARE) {
-      acBox.innerHTML = '<div class="ac-item ac-item-info">Maximum ' + MAX_COMPARE + ' secteurs comparés.</div>';
+      var lbl = MAX_COMPARE > 1 ? MAX_COMPARE + ' secteurs comparés' : '1 secteur comparé';
+      acBox.innerHTML = '<div class="ac-item ac-item-info">Maximum ' + lbl + '.</div>';
       acBox.classList.add('open');
       return;
     }

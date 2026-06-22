@@ -108,8 +108,10 @@ ameli-naf-pdf-download-script, sinistralite-data-architecture, sinistralite-2024
      NAF5 only — hides at NAF4/NAF2); HTML sections + CSS. Verified via Playwright (4711D 3 charts, 0811Z 6 rows).
 4. **Deferred:** statut/contract type (CDI/CDD/intérim) — not text-extractable, needs vector extraction like
    the size chart. **Skipped:** département/territory map (low value, regional data already exists).
-5. **Nothing committed/pushed.** `/tmp/at-data.bak.json`, `/tmp/yearly-2019.json`, `/tmp/yearly-old-baseline.json`
-   are ephemeral safety copies — may not survive a reboot; re-create from git/pipeline if needed.
+5. **Pushed + deployed 2026-06-22.** All work through `d35752d` (v2 refresh + v3 Comparer view) is
+   committed and pushed to both `origin` (xXencarvXx) and `deploy` (ayming-france GitHub Pages).
+   `/tmp/at-data.bak.json`, `/tmp/yearly-2019.json`, `/tmp/yearly-old-baseline.json` are ephemeral
+   safety copies — may not survive a reboot; re-create from git/pipeline if needed.
 
 ## TEST / RESUME
 ```

@@ -10,6 +10,7 @@ import { renderCausesChart, renderFunnelChart, renderPositionStrip, renderCompar
 import { renderInsights, toggleInsights, toggleShare, copyLink, downloadCSV, releaseFocus } from './insights.js';
 import { initCompare } from './compare.js';
 import { initInlineCompare, renderInline, hideInlineBar } from './compare-inline.js';
+import { SECTOR_COLORS } from './compare.js';
 
 // Données "taille d'établissement" (AT uniquement, extrait des fiches PDF)
 var sizeData = {};
@@ -129,20 +130,34 @@ function render(viewId, code, level) {
     hideInlineBar(viewId);
   }
 
+  // Secteurs à afficher côte à côte (courant + comparés) dans toutes les cartes.
+  // Le courant porte la couleur accent ; les comparés reprennent la palette des chips.
+  var cmpSet = [code].concat(compareCodes);
+  var colorOf = function(i) { return i === 0 ? 'var(--accent)' : SECTOR_COLORS[(i - 1) % SECTOR_COLORS.length]; };
+  var store5 = getStore(viewId, 'naf5');
+  var sectorOf = function(c, i) { return { code: c, color: colorOf(i), entry: store[c] || store5[c] }; };
+  var sectors = cmpSet.map(sectorOf);
+
   renderKPIs(viewId, s, nat, cfg, allAtLevel, code, compareCodes);
   renderInsights(viewId, s, nat, entry.risk_causes || {}, cfg, entry.yearly);
   renderPositionStrip(viewId, code, level, s.indice_frequence, render, compareCodes);
   if (cfg.causesTitle) {
-    renderCausesChart(viewId, entry.risk_causes);
+    renderCausesChart(viewId, sectors);
   }
-  renderFunnelChart(viewId, s, cfg);
+  renderFunnelChart(viewId, sectors, cfg);
   renderComparisonChart(viewId, code, level, render, compareCodes);
   renderEvolutionCharts(viewId, entry, level, compareCodes);
-  renderDemographics(viewId, entry);
+
+  renderDemographics(viewId, sectors);
   if (viewId === 'at') {
-    var sd = sizeData[code];
-    renderSizeChart(viewId, sd && sd.bands, s.indice_frequence);
-    renderInjuryPanel(viewId, extraData[code]);
+    renderSizeChart(viewId, cmpSet.map(function(c, i) {
+      var sd = sizeData[c];
+      var e = store5[c];
+      return { code: c, color: colorOf(i), entry: e, bands: sd && sd.bands, sectorIF: e ? e.stats.indice_frequence : 0 };
+    }));
+    renderInjuryPanel(viewId, cmpSet.map(function(c, i) {
+      return { code: c, color: colorOf(i), entry: store5[c], dims: extraData[c] };
+    }));
   }
   if (viewId === 'mp') {
     renderDiseaseTable(viewId, extraData[code]);
