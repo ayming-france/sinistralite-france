@@ -11,6 +11,7 @@ import { renderInsights, toggleInsights, toggleShare, copyLink, downloadCSV, rel
 import { initCompare } from './compare.js';
 import { initInlineCompare, renderInline, hideInlineBar } from './compare-inline.js';
 import { SECTOR_COLORS } from './compare.js';
+import { loadCtnMap } from './cost-model.js';
 
 // Données "taille d'établissement" (AT uniquement, extrait des fiches PDF)
 var sizeData = {};
@@ -225,6 +226,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       loadDataset('trajet'),
       loadSizeData(),
       loadExtraData(),
+      loadCtnMap(),
     ]);
 
     // Hide skeleton, reveal content

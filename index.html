@@ -48,9 +48,9 @@
       <span class="nav-icon-wrap"><i data-lucide="car"></i></span>
       <span class="nav-label">Trajet</span>
     </button>
-    <button class="nav-item" data-view="compare" aria-label="Comparer les secteurs">
-      <span class="nav-icon-wrap"><i data-lucide="git-compare"></i></span>
-      <span class="nav-label">Comparer</span>
+    <button class="nav-item" data-view="compare" aria-label="Mon entreprise">
+      <span class="nav-icon-wrap"><i data-lucide="building-2"></i></span>
+      <span class="nav-label">Mon entreprise</span>
     </button>
     <div class="nav-divider"></div>
     <button class="nav-item disabled" data-view="overview" aria-label="Vue d'ensemble (bientôt disponible)">
@@ -703,52 +703,34 @@
 
   <!-- COMPARE VIEW -->
   <div class="view" id="view-compare">
-    <div class="compare-controls">
-      <div class="compare-toggle" id="compare-domainToggle" role="group" aria-label="Choisir le domaine">
-        <button class="active" data-domain="at" aria-label="Accidents du Travail">Accidents du Travail</button>
-        <button data-domain="mp" aria-label="Maladies Professionnelles">Maladies Pro.</button>
-        <button data-domain="trajet" aria-label="Accidents de Trajet">Trajet</button>
-      </div>
-      <div class="search-wrapper compare-search">
-        <span class="icon">/</span>
-        <input type="text" id="compare-addInput" aria-label="Ajouter un secteur à comparer" placeholder="Recherchez un métier ou un code NAF à ajouter..." autocomplete="off">
-        <div class="autocomplete" id="compare-autocomplete"></div>
-      </div>
-    </div>
-
-    <div class="compare-company" id="compare-company">
-      <div class="compare-company-head">
-        <h3>Mon entreprise</h3>
-        <button type="button" class="compare-company-reset" id="compare-coReset">Effacer</button>
-      </div>
-      <p class="compare-company-intro">Renseignez vos chiffres pour situer votre entreprise face aux secteurs et à la moyenne nationale.</p>
-      <div class="compare-company-fields">
-        <div class="compare-company-field">
-          <label for="compare-coEffectif">Effectif (nombre de salariés)</label>
-          <input type="number" id="compare-coEffectif" min="0" step="1" inputmode="numeric" placeholder="ex. 500" autocomplete="off">
+    <div class="bench-form">
+      <div class="bench-sector">
+        <label class="bench-label" for="bench-sectorInput">Mon secteur d'activité</label>
+        <div class="search-wrapper bench-search">
+          <span class="icon">/</span>
+          <input type="text" id="bench-sectorInput" aria-label="Rechercher mon secteur" placeholder="Recherchez votre métier ou code NAF..." autocomplete="off">
+          <div class="autocomplete" id="bench-autocomplete"></div>
         </div>
-        <div class="compare-company-field">
-          <label for="compare-coSinistres">Accidents avec arrêt sur l'année</label>
-          <input type="number" id="compare-coSinistres" min="0" step="1" inputmode="numeric" placeholder="ex. 20" autocomplete="off">
-        </div>
-        <div class="compare-company-field">
-          <label for="compare-coDeces">Décès (optionnel)</label>
-          <input type="number" id="compare-coDeces" min="0" step="1" inputmode="numeric" placeholder="ex. 0" autocomplete="off">
-        </div>
+        <div class="bench-sector-chip" id="bench-sectorChip"></div>
       </div>
-      <div class="compare-company-result" id="compare-coResult"></div>
+      <div class="bench-fields">
+        <div class="bench-field">
+          <label for="bench-effectif">Effectif (salariés)</label>
+          <input type="number" id="bench-effectif" min="0" step="1" inputmode="numeric" placeholder="ex. 500" autocomplete="off">
+        </div>
+        <div class="bench-field">
+          <label for="bench-accidents">AT avec arrêt (sur l'année)</label>
+          <input type="number" id="bench-accidents" min="0" step="1" inputmode="numeric" placeholder="ex. 20" autocomplete="off">
+        </div>
+        <div class="bench-field">
+          <label for="bench-deces">Décès (optionnel)</label>
+          <input type="number" id="bench-deces" min="0" step="1" inputmode="numeric" placeholder="ex. 0" autocomplete="off">
+        </div>
+        <button type="button" class="bench-reset" id="bench-reset">Effacer</button>
+      </div>
     </div>
 
-    <div class="compare-chips" id="compare-chips" aria-label="Secteurs sélectionnés"></div>
-
-    <div class="compare-table-card">
-      <div class="compare-table-wrap" id="compare-table"></div>
-    </div>
-
-    <div class="chart-card compare-evo-card">
-      <h3 id="compare-evoTitle">Évolution de l'indice de fréquence</h3>
-      <div class="evo-chart-wrap"><canvas id="compare-evoChart"></canvas></div>
-    </div>
+    <div class="bench-results" id="bench-results"></div>
   </div>
 
   <footer>

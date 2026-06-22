@@ -1,29 +1,43 @@
-// ── Comparer les secteurs (domain-agnostic) ──
+// ── Mon entreprise : benchmark sectoriel + coût social estimé (AT) ──
+// L'entreprise renseigne son secteur, son effectif et ses AT avec arrêt ;
+// on la situe face à son secteur et à la moyenne nationale, puis on estime
+// le coût social de ses accidents via le barème officiel des coûts moyens AT/MP.
 
-import { state, VIEW_CONFIG } from './state.js';
+import { state } from './state.js';
 import { getData, getStore } from './data.js';
-import { el, fmt, themeColor, normalize } from './utils.js';
+import { el, normalize } from './utils.js';
+import { estimateCoutSocial, BAREME_YEAR, BAREME_SOURCE } from './cost-model.js';
 
-var MAX_CODES = 4;
-var LEVELS = ['naf5', 'naf4', 'naf2'];
-// Couleurs distinctes par secteur comparé (palette GA4 : orange, cyan, magenta, vert).
-// Le secteur courant garde l'accent (bleu) ; ces teintes évitent le bleu/violet peu lisible.
+// Palette des secteurs comparés (réutilisée par la comparaison inline + l'app).
 export var SECTOR_COLORS = ['#e8710a', '#12b5cb', '#e52592', '#1e8e3e'];
+
+var DOMAIN = 'at';
+var LEVELS = ['naf5', 'naf4', 'naf2'];
 
 function vs() { return state.views.compare; }
 
-// Résout une entrée NAF dans le domaine actif, quel que soit son niveau.
-function resolveEntry(domain, code) {
+// ── Formatage ──
+function frNum(n) { return n.toLocaleString('fr-FR'); }
+function fmt1(n) { return (n == null || isNaN(n)) ? '—' : n.toFixed(1).replace('.', ','); }
+function pct(x) { return Math.round(x * 100) + ' %'; }
+function fmtEur(n) {
+  n = Math.round(n);
+  if (n >= 1000000) return frNum(Math.round(n / 100000) / 10) + ' M€';
+  if (n >= 10000) return frNum(Math.round(n / 1000)) + ' k€';
+  return frNum(n) + ' €';
+}
+
+// ── Résolution du secteur (tous niveaux du domaine AT) ──
+function resolveEntry(code) {
   for (var i = 0; i < LEVELS.length; i++) {
-    var store = getStore(domain, LEVELS[i]);
+    var store = getStore(DOMAIN, LEVELS[i]);
     if (store && store[code]) return { entry: store[code], level: LEVELS[i] };
   }
   return null;
 }
 
-// ── Index de recherche (nom -> code) sur naf5 + naf4 + naf2 du domaine actif ──
-function buildIndex(domain) {
-  var data = getData(domain);
+function buildIndex() {
+  var data = getData(DOMAIN);
   if (!data) return [];
   if (data.naf_index) return data.naf_index;
   return []
@@ -33,275 +47,167 @@ function buildIndex(domain) {
 }
 
 // ── Actions ──
-function addSector(code) {
+function selectSector(code) {
+  var res = resolveEntry(code);
+  if (!res) return;
   var v = vs();
-  if (v.codes.indexOf(code) !== -1) return;
-  if (v.codes.length >= MAX_CODES) return;
-  v.codes.push(code);
-  renderCompare();
+  v.sector = code;
+  v.sectorLevel = res.level;
+  v.sectorLib = res.entry.libelle || '';
+  renderBench();
 }
 
-function removeSector(code) {
+// ── Rendu principal ──
+function renderBench() {
+  var data = getData(DOMAIN);
+  var box = el('bench-results');
+  if (!data || !box) return;
   var v = vs();
-  v.codes = v.codes.filter(function(c) { return c !== code; });
-  renderCompare();
-}
 
-function setDomain(domain) {
-  var v = vs();
-  v.domain = domain;
-  // Ne garder que les codes qui existent dans le nouveau domaine
-  v.codes = v.codes.filter(function(c) { return !!resolveEntry(domain, c); });
-  // Mettre à jour l'état actif des pills
-  var toggle = el('compare-domainToggle');
-  if (toggle) toggle.querySelectorAll('button').forEach(function(b) {
-    b.classList.toggle('active', b.dataset.domain === domain);
-  });
-  renderCompare();
-}
+  renderSectorChip();
 
-// ── Ratio "x nationale" en format FR (ex. "1,8x") ──
-function ratioStr(value, base) {
-  if (!base || base === 0 || value == null) return '—';
-  return (value / base).toFixed(1).replace('.', ',') + 'x';
-}
+  var sectorRes = v.sector ? resolveEntry(v.sector) : null;
+  var eff = v.effectif, acc = v.accidents;
+  var ready = sectorRes && eff > 0 && acc != null && acc >= 0;
 
-// ── Nombre à 1 décimale en format FR ──
-function fmt1(n) {
-  if (n == null || isNaN(n)) return '—';
-  return n.toFixed(1).replace('.', ',');
-}
-
-// ── Indice de fréquence de l'entreprise saisie (sinistres / effectif × 1000) ──
-function companyIF() {
-  var c = vs().company;
-  if (c.effectif != null && c.effectif > 0 && c.sinistres != null && c.sinistres >= 0) {
-    return (c.sinistres / c.effectif) * 1000;
-  }
-  return null;
-}
-
-// ── Rendu ──
-function renderCompare() {
-  var v = vs();
-  var domain = v.domain;
-  var data = getData(domain);
-  if (!data) return;
-  var cfg = VIEW_CONFIG[domain];
-  var nat = data.meta.national;
-
-  renderChips();
-
-  var coIF = companyIF();
-  renderCompanyResult(coIF, nat);
-
-  var tableWrap = el('compare-table');
-  var evoCard = document.querySelector('.compare-evo-card');
-
-  if (!v.codes.length && coIF == null) {
-    if (tableWrap) tableWrap.innerHTML =
-      '<div class="compare-empty">Renseignez votre entreprise ci-dessus, ou ajoutez des secteurs à comparer.</div>';
-    if (evoCard) evoCard.style.display = 'none';
-    if (v.evoChart) { v.evoChart.destroy(); v.evoChart = null; }
+  if (!ready) {
+    box.innerHTML = '<div class="bench-empty">' +
+      (sectorRes
+        ? 'Renseignez votre effectif et vos accidents du travail avec arrêt pour situer votre entreprise.'
+        : 'Choisissez votre secteur, puis renseignez votre effectif et vos accidents du travail avec arrêt.') +
+      '</div>';
     return;
   }
-  if (evoCard) evoCard.style.display = '';
 
-  // Ligne "Mon entreprise" (si données valides)
-  var companyRow = '';
-  if (coIF != null) {
-    var c = v.company;
-    companyRow = '<tr class="company-row">' +
-      '<td class="cmp-sector"><span class="cmp-code">Mon entreprise</span></td>' +
-      '<td class="cmp-num">' + fmt1(coIF) + '</td>' +
-      '<td class="cmp-num">' + ratioStr(coIF, nat.indice_frequence) + '</td>' +
-      '<td class="cmp-num">—</td>' +
-      '<td class="cmp-num">' + (c.deces != null ? fmt(c.deces) : '—') + '</td>' +
-      '<td class="cmp-num">' + fmt(c.effectif) + '</td>' +
-      '</tr>';
-  }
+  var entry = sectorRes.entry;
+  var s = entry.stats;
+  var nat = data.meta.national;
+  var coIF = (acc / eff) * 1000;
 
-  // Lignes des secteurs sélectionnés
-  var rows = v.codes.map(function(code) {
-    var res = resolveEntry(domain, code);
-    if (!res) return '';
-    var s = res.entry.stats;
-    return '<tr>' +
-      '<td class="cmp-sector"><span class="cmp-code">' + code + '</span>' +
-      '<span class="cmp-lib">' + res.entry.libelle + '</span></td>' +
-      '<td class="cmp-num">' + fmt(s.indice_frequence) + '</td>' +
-      '<td class="cmp-num">' + ratioStr(s.indice_frequence, nat.indice_frequence) + '</td>' +
-      '<td class="cmp-num">' + fmt(s.taux_gravite) + '</td>' +
-      '<td class="cmp-num">' + fmt(s.deces) + '</td>' +
-      '<td class="cmp-num">' + fmt(s.nb_salaries) + '</td>' +
-      '</tr>';
-  }).join('');
+  box.innerHTML = renderPosition(coIF, s.indice_frequence, nat.indice_frequence, entry) +
+                  renderCost(v, entry, s, eff, acc);
 
-  // Ligne de référence : moyenne nationale
-  var baseRow = '<tr class="cmp-baseline">' +
-    '<td class="cmp-sector"><span class="cmp-code">FR</span>' +
-    '<span class="cmp-lib">Moyenne nationale</span></td>' +
-    '<td class="cmp-num">' + fmt(nat.indice_frequence) + '</td>' +
-    '<td class="cmp-num">—</td>' +
-    '<td class="cmp-num">' + fmt(nat.taux_gravite) + '</td>' +
-    '<td class="cmp-num">' + fmt(nat.deces) + '</td>' +
-    '<td class="cmp-num">' + fmt(nat.nb_salaries) + '</td>' +
-    '</tr>';
-
-  if (tableWrap) {
-    tableWrap.innerHTML = '<table class="compare-table">' +
-      '<thead><tr>' +
-      '<th>Secteur</th><th>Indice de fréquence</th><th>x nationale</th>' +
-      '<th>Taux de gravité</th><th>Décès</th><th>Salariés</th>' +
-      '</tr></thead><tbody>' + companyRow + rows + baseRow + '</tbody></table>';
-  }
-
-  renderEvoChart(domain, data, cfg, nat, coIF);
+  var chk = el('bench-indirectChk');
+  if (chk) chk.addEventListener('change', function() {
+    v.indirect = this.checked ? 4 : 0;
+    renderBench();
+  });
 }
 
-// ── Ligne de résultat "Mon entreprise" ──
-function renderCompanyResult(coIF, nat) {
-  var box = el('compare-coResult');
-  if (!box) return;
-  if (coIF == null) { box.innerHTML = ''; box.classList.remove('visible'); return; }
-  var base = nat.indice_frequence;
-  var multHTML = '';
-  if (base && base > 0) {
-    var mult = coIF / base;
-    var cls = mult > 1.05 ? 'above' : mult < 0.95 ? 'below' : 'neutral';
-    multHTML = '<span class="compare-company-mult ' + cls + '">' +
-      fmt1(mult) + 'x la moyenne nationale</span>';
-  }
-  box.innerHTML = '<span class="compare-company-if">Votre indice de fréquence : <strong>' +
-    fmt1(coIF) + '</strong></span>' + multHTML;
-  box.classList.add('visible');
+// ── Carte « Ma position » ──
+function renderPosition(coIF, secIF, natIF, entry) {
+  var ratio = secIF > 0 ? coIF / secIF : null;
+  var verdict, vcls;
+  if (ratio == null) { verdict = 'Secteur sans indice de référence.'; vcls = 'neutral'; }
+  else if (ratio > 1.05) { verdict = 'Votre fréquence d\'accidents est <strong>' + pct(ratio - 1) + ' au-dessus</strong> de votre secteur.'; vcls = 'above'; }
+  else if (ratio < 0.95) { verdict = 'Votre fréquence d\'accidents est <strong>' + pct(1 - ratio) + ' en dessous</strong> de votre secteur.'; vcls = 'below'; }
+  else { verdict = 'Votre fréquence d\'accidents est <strong>proche de la moyenne</strong> de votre secteur.'; vcls = 'neutral'; }
+
+  var secSub = (vs().sector || '') + ' · ' + (entry.libelle || '');
+
+  return '<section class="bench-card">' +
+    '<h3>Ma position — indice de fréquence</h3>' +
+    '<p class="bench-sub">Nombre d\'accidents du travail avec arrêt pour 1 000 salariés.</p>' +
+    '<div class="bench-pos-grid">' +
+      posCell('Mon entreprise', coIF, 'accent', null) +
+      posCell('Mon secteur', secIF, 'sector', secSub) +
+      posCell('Moyenne nationale', natIF, 'nat', null) +
+    '</div>' +
+    '<div class="bench-verdict ' + vcls + '">' + verdict + '</div>' +
+  '</section>';
 }
 
-function renderChips() {
-  var v = vs();
-  var wrap = el('compare-chips');
+function posCell(label, value, cls, sub) {
+  return '<div class="bench-pos-cell ' + cls + '">' +
+    '<div class="bench-pos-label">' + label + '</div>' +
+    (sub ? '<div class="bench-pos-sublib">' + sub + '</div>' : '') +
+    '<div class="bench-pos-val">' + fmt1(value) + '</div>' +
+  '</div>';
+}
+
+// ── Carte « Coût social estimé » ──
+function renderCost(v, entry, s, eff, acc) {
+  var mult = v.indirect || 0;
+  var deces = v.deces != null ? v.deces : undefined;
+  var est = estimateCoutSocial(v.sector, s, { accidents: acc, deces: deces }, mult);
+  if (!est) return '';
+
+  // Coût attendu si l'entreprise était à la moyenne de son secteur.
+  var expectedAcc = (s.indice_frequence || 0) * eff / 1000;
+  var estExp = estimateCoutSocial(v.sector, s, { accidents: expectedAcc }, mult);
+  var headline = mult ? est.total : est.direct;
+  var diffHTML = '';
+  if (estExp) {
+    var expHead = mult ? estExp.total : estExp.direct;
+    var diff = headline - expHead;
+    if (diff > headline * 0.02) diffHTML = '<div class="bench-gap above">≈ <strong>' + fmtEur(diff) + '/an</strong> de surcoût lié à votre sur-sinistralité, par rapport à la moyenne de votre secteur.</div>';
+    else if (diff < -headline * 0.02) diffHTML = '<div class="bench-gap below">≈ <strong>' + fmtEur(-diff) + '/an</strong> de moins que la moyenne de votre secteur.</div>';
+    else diffHTML = '<div class="bench-gap neutral">Proche du coût attendu pour la moyenne de votre secteur.</div>';
+  }
+
+  return '<section class="bench-card bench-cost">' +
+    '<h3>Coût social estimé de vos accidents</h3>' +
+    '<p class="bench-sub">Estimation via le barème des coûts moyens AT/MP ' + BAREME_YEAR +
+      ' (CTN ' + est.ctn + ' — ' + est.ctnLabel + ').</p>' +
+    '<div class="bench-cost-main">' +
+      '<span class="bench-cost-big">' + fmtEur(headline) + '</span>' +
+      '<span class="bench-cost-unit">par an<br>' + (mult ? 'coûts directs + indirects estimés' : 'coûts directs') + '</span>' +
+    '</div>' +
+    diffHTML +
+    '<div class="bench-cost-breakdown">' +
+      breakdownRow('Arrêts de travail (' + Math.round(est.itCount) + ')', est.itCost) +
+      breakdownRow('Incapacités permanentes (' + fmt1(est.ipCount) + ')', est.ipCost) +
+      breakdownRow('Décès / cas graves (' + fmt1(est.deathCount) + ')', est.deathCost) +
+    '</div>' +
+    '<label class="bench-indirect"><input type="checkbox" id="bench-indirectChk"' + (mult ? ' checked' : '') + '>' +
+      ' Inclure les coûts indirects estimés (×4 : désorganisation, remplacement, retards…)</label>' +
+    '<p class="bench-disclaimer">Estimation indicative. ' + BAREME_SOURCE +
+      ' Profil de gravité dérivé de votre secteur. Le coût réel dépend de chaque sinistre et des règles de tarification (numéro de risque).</p>' +
+  '</section>';
+}
+
+function breakdownRow(label, value) {
+  return '<div class="bench-bd-row"><span class="bench-bd-label">' + label + '</span>' +
+    '<span class="bench-bd-val">' + fmtEur(value) + '</span></div>';
+}
+
+// ── Pastille du secteur sélectionné ──
+function renderSectorChip() {
+  var wrap = el('bench-sectorChip');
   if (!wrap) return;
-  if (!v.codes.length) { wrap.innerHTML = ''; return; }
-  wrap.innerHTML = v.codes.map(function(code, idx) {
-    var res = resolveEntry(v.domain, code);
-    var lib = res ? res.entry.libelle : '';
-    var color = SECTOR_COLORS[idx % SECTOR_COLORS.length];
-    return '<span class="compare-chip" data-code="' + code + '">' +
-      '<span class="chip-dot" style="background:' + color + '"></span>' +
-      '<span class="chip-code">' + code + '</span>' +
-      '<span class="chip-lib">' + lib + '</span>' +
-      '<button class="chip-remove" data-code="' + code + '" aria-label="Retirer ' + code + '">&times;</button>' +
-      '</span>';
-  }).join('');
-  wrap.querySelectorAll('.chip-remove').forEach(function(btn) {
-    btn.addEventListener('click', function() { removeSector(this.dataset.code); });
-  });
-}
-
-function renderEvoChart(domain, data, cfg, nat, coIF) {
   var v = vs();
-  if (v.evoChart) { v.evoChart.destroy(); v.evoChart = null; }
-  var years = data.meta.years;
-  var canvas = el('compare-evoChart');
-  if (!canvas || !years || years.length < 2) return;
-
-  var natYearly = nat.yearly || {};
-  var datasets = v.codes.map(function(code, idx) {
-    var res = resolveEntry(domain, code);
-    if (!res || !res.entry.yearly) return null;
-    var yearly = res.entry.yearly;
-    var color = SECTOR_COLORS[idx % SECTOR_COLORS.length];
-    var lib = res.entry.libelle || code;
-    var shortLib = lib.length > 32 ? lib.slice(0, 32) + '…' : lib;
-    return {
-      label: shortLib + ' (' + code + ')',
-      sectorName: code + ' ' + lib,
-      data: years.map(function(yr) { return yearly[yr] ? yearly[yr].indice_frequence : null; }),
-      borderColor: color,
-      backgroundColor: color,
-      borderWidth: 2,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-      fill: false,
-      tension: 0.3,
-      spanGaps: true,
-    };
-  }).filter(Boolean);
-
-  // Ligne nationale en pointillés
-  datasets.push({
-    label: 'Moyenne nationale',
-    data: years.map(function(yr) { return natYearly[yr] ? natYearly[yr].indice_frequence : null; }),
-    borderColor: '#64748b',
-    backgroundColor: '#64748b',
-    borderWidth: 2,
-    borderDash: [6, 3],
-    pointRadius: 3,
-    fill: false,
-    tension: 0.3,
-    spanGaps: true,
-  });
-
-  // Ligne de référence "Mon entreprise" (valeur constante sur toutes les années)
-  if (coIF != null) {
-    datasets.push({
-      label: 'Mon entreprise',
-      sectorName: 'Mon entreprise',
-      data: years.map(function() { return coIF; }),
-      borderColor: '#16a34a',
-      backgroundColor: '#16a34a',
-      borderWidth: 2,
-      borderDash: [3, 3],
-      pointRadius: 0,
-      fill: false,
-      tension: 0,
-      spanGaps: true,
-    });
-  }
-
-  v.evoChart = new Chart(canvas, {
-    type: 'line',
-    data: { labels: years, datasets: datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, padding: 12, color: themeColor('--text-secondary'), font: { size: 11, family: "'Lato', sans-serif" } } },
-        datalabels: { display: false },
-        tooltip: {
-          backgroundColor: themeColor('--chart-tooltip-bg'), borderColor: themeColor('--border'), borderWidth: 1,
-          titleColor: themeColor('--text'), bodyColor: themeColor('--text-secondary'),
-          titleFont: { family: "'JetBrains Mono', monospace", size: 11 }, bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
-          callbacks: { label: function(ctx) { return ' ' + (ctx.dataset.sectorName || ctx.dataset.label) + ' : ' + (ctx.parsed.y == null ? 'n/a' : ctx.parsed.y.toFixed(1)); } }
-        }
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { family: "'JetBrains Mono', monospace", size: 12, weight: '600' }, color: themeColor('--chart-label') } },
-        y: { beginAtZero: true, grid: { color: themeColor('--chart-grid') }, ticks: { font: { family: "'JetBrains Mono', monospace", size: 11 }, color: themeColor('--text-dim') } }
-      }
-    }
+  if (!v.sector) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = '<span class="bench-chip">' +
+    '<span class="bench-chip-code">' + v.sector + '</span>' +
+    '<span class="bench-chip-lib">' + (v.sectorLib || '') + '</span>' +
+    '<button class="bench-chip-x" id="bench-sectorClear" aria-label="Changer de secteur">&times;</button>' +
+  '</span>';
+  var clr = el('bench-sectorClear');
+  if (clr) clr.addEventListener('click', function() {
+    var s = vs(); s.sector = null; s.sectorLevel = null; s.sectorLib = null;
+    var inp = el('bench-sectorInput'); if (inp) inp.value = '';
+    renderBench();
   });
 }
 
-// ── Autocomplete d'ajout de secteur ──
-function setupAddInput() {
-  var input = el('compare-addInput');
-  var acBox = el('compare-autocomplete');
+// ── Autocomplete secteur (sélection unique) ──
+function setupSectorInput() {
+  var input = el('bench-sectorInput');
+  var acBox = el('bench-autocomplete');
   if (!input || !acBox) return;
 
   function closeAc() { acBox.classList.remove('open'); vs().acIndex = -1; }
 
   function show(query) {
-    var domain = vs().domain;
-    var index = buildIndex(domain);
+    var index = buildIndex();
     var matches;
-    if (!query || !query.trim()) {
+    var raw = (query || '').trim();
+    if (!raw) {
       matches = index.filter(function(e) { return e.level === 'naf2'; }).slice(0, 25);
     } else {
       var q = normalize(query);
-      var qUp = query.trim().toUpperCase();
-      var isCode = /^[0-9]/.test(query.trim());
+      var qUp = raw.toUpperCase();
+      var isCode = /^[0-9]/.test(raw);
       matches = index.filter(function(e) {
         if (isCode) return e.code.toUpperCase().startsWith(qUp);
         return normalize(e.code).includes(q) || normalize(e.libelle).includes(q);
@@ -310,10 +216,6 @@ function setupAddInput() {
         return a.code.localeCompare(b.code);
       }).slice(0, 25);
     }
-    // Exclure les codes déjà sélectionnés
-    var selected = vs().codes;
-    matches = matches.filter(function(m) { return selected.indexOf(m.code) === -1; });
-
     if (!matches.length) { closeAc(); return; }
     acBox.innerHTML = matches.map(function(m) {
       return '<div class="ac-item" data-code="' + m.code + '">' +
@@ -324,10 +226,9 @@ function setupAddInput() {
     }).join('');
     acBox.querySelectorAll('.ac-item').forEach(function(item) {
       item.addEventListener('click', function() {
-        addSector(this.dataset.code);
+        selectSector(this.dataset.code);
         input.value = '';
         closeAc();
-        input.focus();
       });
     });
     vs().acIndex = -1;
@@ -360,47 +261,44 @@ function setupAddInput() {
   });
 
   document.addEventListener('click', function(e) {
-    if (!e.target.closest('#view-compare .compare-search')) closeAc();
+    if (!e.target.closest('#view-compare .bench-search')) closeAc();
   });
 }
 
-// ── Calculateur "Mon entreprise" : saisie effectif / sinistres / décès ──
+// ── Champs entreprise ──
 function setupCompanyInputs() {
-  var map = { 'compare-coEffectif': 'effectif', 'compare-coSinistres': 'sinistres', 'compare-coDeces': 'deces' };
+  var map = { 'bench-effectif': 'effectif', 'bench-accidents': 'accidents', 'bench-deces': 'deces' };
   Object.keys(map).forEach(function(id) {
     var inp = el(id);
     if (!inp) return;
     inp.addEventListener('input', function() {
       var n = parseFloat(this.value);
-      vs().company[map[id]] = isNaN(n) ? null : n;
-      renderCompare();
+      vs()[map[id]] = isNaN(n) ? null : n;
+      renderBench();
     });
   });
-  var reset = el('compare-coReset');
+  var reset = el('bench-reset');
   if (reset) reset.addEventListener('click', function() {
-    var c = vs().company; c.effectif = null; c.sinistres = null; c.deces = null;
-    Object.keys(map).forEach(function(id) { var e = el(id); if (e) e.value = ''; });
-    renderCompare();
+    var v = vs();
+    v.effectif = null; v.accidents = null; v.deces = null; v.indirect = 0;
+    v.sector = null; v.sectorLevel = null; v.sectorLib = null;
+    ['bench-effectif', 'bench-accidents', 'bench-deces', 'bench-sectorInput'].forEach(function(id) {
+      var e = el(id); if (e) e.value = '';
+    });
+    renderBench();
   });
 }
 
 // ── Init ──
 export function initCompare() {
-  // Pills de domaine
-  var toggle = el('compare-domainToggle');
-  if (toggle) toggle.querySelectorAll('button').forEach(function(btn) {
-    btn.addEventListener('click', function() { setDomain(this.dataset.domain); });
-  });
-
-  setupAddInput();
+  setupSectorInput();
   setupCompanyInputs();
 
-  // Rendu quand la vue devient active (clic nav + hashchange + au chargement)
   document.querySelectorAll('.nav-item[data-view="compare"]').forEach(function(item) {
-    item.addEventListener('click', function() { renderCompare(); });
+    item.addEventListener('click', function() { renderBench(); });
   });
   window.addEventListener('hashchange', function() {
-    if (window.location.hash.replace('#', '').trim() === 'compare') renderCompare();
+    if (window.location.hash.replace('#', '').trim() === 'compare') renderBench();
   });
-  if (window.location.hash.replace('#', '').trim() === 'compare') renderCompare();
+  if (window.location.hash.replace('#', '').trim() === 'compare') renderBench();
 }

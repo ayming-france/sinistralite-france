@@ -68,6 +68,32 @@ ameli-naf-pdf-download-script, sinistralite-data-architecture, sinistralite-2024
   Note: strip renders `allIF.length` dots + 5 fixed reference markers (national tick+label, min/max axis,
   current-IF label) — a raw element count is therefore count+5, not a bug.
 
+## DONE — Mon entreprise benchmark + coût social (2026-06-22, pushed `1ff1b67` for the side-by-side; benchmark not yet committed)
+- **Side-by-side comparison everywhere** (committed `1ff1b67`): inline sector comparison capped at 2 (current+1),
+  add-button hidden at max; every breakdown card (Causes, Cascade, Démographie, Taille, Nature) renders GA4
+  small-multiples per sector with code+libellé headers; events evolution chart overlays both sectors (no national);
+  single-sector charts-row min-width:0 overflow fix; "Mon entreprise" calculator CSS added.
+- **Comparer tab repurposed → "Mon entreprise" benchmark** (NOT yet committed). The sector-vs-sector table was
+  redundant with the inline comparison, so the 4th tab is now a company benchmark + coût social estimator.
+  - `js/compare.js` fully rewritten (keeps `SECTOR_COLORS` export used by app/charts/kpi/compare-inline).
+    Inputs: secteur (NAF search, single) + effectif + AT avec arrêt + décès optionnel. Outputs: "Ma position"
+    (IF entreprise vs secteur vs national + verdict) and "Coût social estimé".
+  - `js/cost-model.js` NEW: official **barème coûts moyens AT/MP 2024** (arrêté 27/12/2023), 9 CTN × 10 catégories
+    (6 IT par durée + 4 IP). NAF→CTN from `data/naf-ctn.json` = OFFICIAL CNAM doc "Part de chacun des 9 CTN
+    dans le code NAF (2019)" (étude 2020-226, `data/sources/reference/2019_part-ctn-dans-naf_at-mp.pdf`) which
+    states the CTN majoritaire en effectifs salariés per NAF (723 NAF5) + 5 newer codes from a 2023 recompute.
+    `loadCtnMap()` in app.js Promise.all; hand NAF2 map kept as fallback only. (CTN ≠ NAF; real imputation by numéro de risque.)
+    `estimateCoutSocial(naf, sectorStats, {accidents, deces?}, indirectMult)`: derives severity mix (durée moy,
+    taux IP, taux décès) from the sector, IT cost by avg-duration bucket, IP at ip1 (<10%, prudent), décès at ip4.
+    Indirect toggle ×4 (Heinrich/INRS). BTP (CTN B) uses banded Alsace-Moselle values (métropole merges IP≥10%).
+  - state.js: VIEW_CONFIG.compare title/subtitle → "Mon entreprise"; compare state reshaped. index.html: nav
+    label "Mon entreprise" + building-2 icon, #view-compare rebuilt (bench-* form + #bench-results). charts.css: bench-* styles.
+  - Verified via headless Chrome: 8710C + 500 sal + 30 AT → IF 60 vs secteur 84.6 ("29% en dessous"), coût direct
+    ~196 k€ (CTN I), indirect ×5 → 982 k€, gap vs sector avg shown. No console errors (only benign Lucide SVG warn).
+  - **NEXT (deferred per user):** real cotisation AT/MP calculator (needs tarification taux nets + NAF→numéro de
+    risque mapping). MP & Trajet positioning in the benchmark (v1 is AT-only). Obsolete compare-* CSS (controls/
+    toggle/company/table/evo) is now dead but harmless — clean up when convenient (keep `.compare-chip*`, used by inline).
+
 ## DONE — v3 evolution (2026-06-15)
 - **Research → roadmap.** 4-axis research (comparable OSH tools, dashboard UX, growth/SEO, AT/MP
   business needs) synthesized into `.planning/ROADMAP.md` "v3 Évolution" backlog (themes A-E).

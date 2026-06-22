@@ -10,3 +10,6 @@ __pycache__/
 
 # scratch
 data/pipeline/_explore.py
+
+# Source files (raw PDFs/Excels) — local only, do not push (1 GB)
+data/sources/

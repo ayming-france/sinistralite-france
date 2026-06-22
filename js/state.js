@@ -6,7 +6,7 @@ export var state = {
     at: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1, compareCodes: [] },
     mp: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1, compareCodes: [] },
     trajet: { code: null, level: 'naf2', causesChart: null, compChart: null, evoCharts: [], demoCharts: [], acIndex: -1, compareCodes: [] },
-    compare: { domain: 'at', codes: [], level: 'naf5', evoChart: null, acIndex: -1, company: { effectif: null, sinistres: null, deces: null } },
+    compare: { sector: null, sectorLevel: null, sectorLib: null, effectif: null, accidents: null, deces: null, indirect: 0, acIndex: -1 },
   }
 };
 
@@ -69,9 +69,9 @@ export var VIEW_CONFIG = {
     },
   },
   compare: {
-    title: 'Comparer les secteurs',
-    subtitle: 'Comparez plusieurs codes NAF côte à côte (AT, MP ou Trajet).',
-    sourceLabel: 'Ameli, données 2024',
+    title: 'Mon entreprise',
+    subtitle: 'Situez votre entreprise face à votre secteur et estimez le coût social de vos accidents du travail.',
+    sourceLabel: 'Ameli 2024 · barème coûts moyens AT/MP 2024',
     sourceUrl: 'https://assurance-maladie.ameli.fr/etudes-et-donnees/risque-at-ctn-x-naf-serie-annuelle',
   },
 };
