@@ -6,7 +6,7 @@
 import { state } from './state.js';
 import { getData, getStore } from './data.js';
 import { el, normalize } from './utils.js';
-import { estimateCoutSocial, BAREME_YEAR, BAREME_SOURCE } from './cost-model.js';
+import { estimateCotisation, AVG_SALARY, MAJORATIONS, BAREME_YEAR, BAREME_SOURCE } from './cost-model.js';
 
 // Palette des secteurs comparés (réutilisée par la comparaison inline + l'app).
 export var SECTOR_COLORS = ['#e8710a', '#12b5cb', '#e52592', '#1e8e3e'];
@@ -88,14 +88,7 @@ function renderBench() {
   var entry = sectorRes.entry;
   var s = entry.stats;
 
-  box.innerHTML = renderPositions(v, eff) +
-                  renderCost(v, entry, s, eff, acc);
-
-  var chk = el('bench-indirectChk');
-  if (chk) chk.addEventListener('change', function() {
-    v.indirect = this.checked ? 4 : 0;
-    renderBench();
-  });
+  box.innerHTML = renderPositions(v, eff) + renderCotisation(v, entry, s, eff);
 }
 
 // ── État initial : aperçu grisé de ce que l'outil va produire ──
@@ -105,7 +98,7 @@ function renderSamplePreview(hasSector) {
     : 'Choisissez votre <strong>secteur</strong>, puis renseignez votre effectif et vos AT avec arrêt.';
   var ghost =
     '<section class="bench-card bench-ghost" aria-hidden="true">' +
-      '<h3>Ma position — indice de fréquence</h3>' +
+      '<h3>Ma position : indice de fréquence</h3>' +
       '<p class="bench-sub">Vos sinistres ramenés à 1 000 salariés, comparés à votre secteur et à la moyenne nationale.</p>' +
       '<div class="bench-pos-tablewrap"><table class="bench-pos-table"><thead><tr>' +
         '<th>Risque</th><th>Mon entreprise</th><th>Mon secteur</th><th>National</th><th>vs secteur</th>' +
@@ -169,7 +162,7 @@ function renderPositions(v, eff) {
   }).join('');
 
   return '<section class="bench-card">' +
-    '<h3>Ma position — indice de fréquence</h3>' +
+    '<h3>Ma position : indice de fréquence</h3>' +
     '<p class="bench-sub">L\'indice de fréquence ramène vos sinistres à 1 000 salariés (nombre ÷ effectif × 1 000), pour pouvoir comparer à votre secteur et à la moyenne nationale, quelle que soit la taille.</p>' +
     headline +
     '<div class="bench-pos-tablewrap"><table class="bench-pos-table"><thead><tr>' +
@@ -179,43 +172,47 @@ function renderPositions(v, eff) {
 }
 
 // ── Carte « Coût social estimé » ──
-function renderCost(v, entry, s, eff, acc) {
-  var mult = v.indirect || 0;
-  var deces = v.deces != null ? v.deces : undefined;
-  var est = estimateCoutSocial(v.sector, s, { accidents: acc, deces: deces }, mult);
+function renderCotisation(v, entry, s, eff) {
+  var company = { accidents: v.accidents };
+  if (v.deces != null) company.deces = v.deces;
+  var est = estimateCotisation(v.sector, s, company, v.masseSalariale || 0, eff);
   if (!est) return '';
 
-  // Coût attendu si l'entreprise était à la moyenne de son secteur.
-  var expectedAcc = (s.indice_frequence || 0) * eff / 1000;
-  var estExp = estimateCoutSocial(v.sector, s, { accidents: expectedAcc }, mult);
-  var headline = mult ? est.total : est.direct;
-  var diffHTML = '';
-  if (estExp) {
-    var expHead = mult ? estExp.total : estExp.direct;
-    var diff = headline - expHead;
-    if (diff > headline * 0.02) diffHTML = '<div class="bench-gap above">≈ <strong>' + fmtEur(diff) + '/an</strong> de surcoût lié à votre sur-sinistralité, par rapport à la moyenne de votre secteur.</div>';
-    else if (diff < -headline * 0.02) diffHTML = '<div class="bench-gap below">≈ <strong>' + fmtEur(-diff) + '/an</strong> de moins que la moyenne de votre secteur.</div>';
-    else diffHTML = '<div class="bench-gap neutral">Proche du coût attendu pour la moyenne de votre secteur.</div>';
+  var modeNote = est.mode === 'individuel'
+    ? 'Tarification individuelle (≥ 150 salariés) : votre taux reflète directement votre sinistralité.'
+    : est.mode === 'mixte'
+      ? 'Tarification mixte (20–149 salariés) : une partie de votre taux dépend de votre sinistralité.'
+      : 'Tarification collective (< 20 salariés) : votre taux est fixé par votre secteur ; la prévention agit indirectement.';
+
+  // L'économie potentielle = écart de cotisation vs une entreprise à la sinistralité moyenne du secteur.
+  var gapHTML = '';
+  if (est.gap != null) {
+    var g = est.gap;
+    if (g > est.cotisation * 0.02) gapHTML = '<div class="bench-gap above">≈ <strong>' + fmtEur(g) + ' / an</strong> de surcoût lié à votre sur-sinistralité. C\'est votre économie potentielle en revenant à la moyenne de votre secteur.</div>';
+    else if (g < -est.cotisation * 0.02) gapHTML = '<div class="bench-gap below">≈ <strong>' + fmtEur(-g) + ' / an</strong> de moins qu\'une entreprise moyenne de votre secteur : vous êtes déjà sous la moyenne.</div>';
+    else gapHTML = '<div class="bench-gap neutral">Proche de la cotisation attendue pour la moyenne de votre secteur.</div>';
   }
 
+  var msLabel = est.estimatedMs
+    ? 'Masse salariale estimée (' + fmt0(eff) + ' × ' + fmt0(AVG_SALARY) + ' €)'
+    : 'Masse salariale (saisie)';
+
   return '<section class="bench-card bench-cost">' +
-    '<h3>Coût social estimé de vos accidents</h3>' +
-    '<p class="bench-sub">Estimation via le barème des coûts moyens AT/MP ' + BAREME_YEAR +
-      ' (CTN ' + est.ctn + ' — ' + est.ctnLabel + ').</p>' +
+    '<h3>Votre cotisation AT/MP estimée</h3>' +
+    '<p class="bench-sub">Part de votre cotisation liée à votre sinistralité, à partir du barème des coûts moyens AT/MP ' +
+      BAREME_YEAR + ' (CTN ' + est.ctn + ') et des majorations ' + MAJORATIONS.year + '.</p>' +
     '<div class="bench-cost-main">' +
-      '<span class="bench-cost-big">' + fmtEur(headline) + '</span>' +
-      '<span class="bench-cost-unit">par an<br>' + (mult ? 'coûts directs + indirects estimés' : 'coûts directs') + '</span>' +
+      '<span class="bench-cost-big">' + fmtEur(est.cotisation) + '</span>' +
+      '<span class="bench-cost-unit">par an<br>taux net estimé ≈ ' + fmt1(est.tauxNet) + ' %</span>' +
     '</div>' +
-    diffHTML +
+    gapHTML +
     '<div class="bench-cost-breakdown">' +
-      breakdownRow('Arrêts de travail (' + Math.round(est.itCount) + ')', est.itCost) +
-      breakdownRow('Incapacités permanentes (' + fmt1(est.ipCount) + ')', est.ipCost) +
-      breakdownRow('Décès / cas graves (' + fmt1(est.deathCount) + ')', est.deathCost) +
+      breakdownRow(msLabel, est.masseSalariale) +
+      breakdownRow('Coût de votre sinistralité (valeur du risque)', est.imputedCost) +
+      (est.cotisationRef != null ? breakdownRow('Cotisation à la moyenne du secteur', est.cotisationRef) : '') +
     '</div>' +
-    '<label class="bench-indirect"><input type="checkbox" id="bench-indirectChk"' + (mult ? ' checked' : '') + '>' +
-      ' Inclure les coûts indirects estimés (×4 : désorganisation, remplacement, retards…)</label>' +
-    '<p class="bench-disclaimer">Estimation indicative. ' + BAREME_SOURCE +
-      ' Profil de gravité dérivé de votre secteur. Le coût réel dépend de chaque sinistre et des règles de tarification (numéro de risque).</p>' +
+    '<p class="bench-disclaimer">' + modeNote + ' Estimation indicative (± selon le code risque réel ; le taux collectif exact n\'est pas public par NAF). ' +
+      BAREME_SOURCE + ' Renseignez votre masse salariale réelle pour affiner.</p>' +
   '</section>';
 }
 
@@ -339,7 +336,7 @@ function setupSectorInput() {
 
 // ── Champs entreprise ──
 function setupCompanyInputs() {
-  var map = { 'bench-effectif': 'effectif', 'bench-accidents': 'accidents', 'bench-mp': 'mp', 'bench-trajet': 'trajet', 'bench-deces': 'deces' };
+  var map = { 'bench-effectif': 'effectif', 'bench-masse': 'masseSalariale', 'bench-accidents': 'accidents', 'bench-mp': 'mp', 'bench-trajet': 'trajet', 'bench-deces': 'deces' };
   Object.keys(map).forEach(function(id) {
     var inp = el(id);
     if (!inp) return;
@@ -376,9 +373,9 @@ function setupCompanyInputs() {
   var reset = el('bench-reset');
   if (reset) reset.addEventListener('click', function() {
     var v = vs();
-    v.effectif = null; v.accidents = null; v.mp = null; v.trajet = null; v.deces = null; v.indirect = 0;
+    v.effectif = null; v.masseSalariale = null; v.accidents = null; v.mp = null; v.trajet = null; v.deces = null;
     v.sector = null; v.sectorLevel = null; v.sectorLib = null; v.showMp = false; v.showTrajet = false; v.showDeces = false;
-    ['bench-effectif', 'bench-accidents', 'bench-mp', 'bench-trajet', 'bench-deces', 'bench-sectorInput'].forEach(function(id) {
+    ['bench-effectif', 'bench-masse', 'bench-accidents', 'bench-mp', 'bench-trajet', 'bench-deces', 'bench-sectorInput'].forEach(function(id) {
       var e = el(id); if (e) e.value = '';
     });
     renderBench();

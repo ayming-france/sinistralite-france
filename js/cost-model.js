@@ -143,3 +143,57 @@ export function estimateCoutSocial(naf, sectorStats, company, indirectMult) {
 export function hasBareme(naf) {
   return !!BAREME[ctnForNaf(naf)];
 }
+
+// ── Cotisation AT/MP estimée + économie potentielle ──
+// Majorations 2024 (arrêté du 27/12/2023) appliquées au taux brut :
+// taux net = (taux brut + M1) × (1 + M2) + M3 + M4
+//   M1 = majoration trajet (forfait) · M2 = charges générales · M3 = compte spécial · M4 = pénibilité
+export var MAJORATIONS = { M1: 0.17, M2: 0.58, M3: 0.16, M4: 0.03, year: 2024 };
+// Salaire annuel brut moyen (secteur privé, INSEE 2024) — défaut si masse salariale non saisie.
+export var AVG_SALARY = 41252;
+
+function tauxNetFromBrut(tauxBrut) {
+  var m = MAJORATIONS;
+  return (tauxBrut + m.M1) * (1 + m.M2) + m.M3 + m.M4;
+}
+
+// Mode de tarification selon l'effectif de l'entreprise.
+export function tarificationMode(effectif) {
+  if (effectif >= 150) return 'individuel';
+  if (effectif >= 20) return 'mixte';
+  return 'collectif';
+}
+
+// Estime la cotisation AT/MP annuelle (part liée à la sinistralité) et l'économie
+// potentielle si la sinistralité rejoignait la moyenne du secteur.
+// La « valeur du risque » (taux brut) = coûts moyens imputés ÷ masse salariale × 100,
+// calcul exact de la tarification individuelle (réutilise estimateCoutSocial).
+export function estimateCotisation(naf, sectorStats, company, masseSalariale, effectif) {
+  var ms = (masseSalariale > 0) ? masseSalariale : (effectif > 0 ? effectif * AVG_SALARY : 0);
+  if (!ms) return null;
+  var est = estimateCoutSocial(naf, sectorStats, company, 0);
+  if (!est) return null;
+
+  var tauxBrut = est.direct / ms * 100;
+  var tn = tauxNetFromBrut(tauxBrut);
+  var cotisation = tn / 100 * ms;
+
+  // Référence : même entreprise mais à la sinistralité moyenne de son secteur.
+  var expectedAcc = (sectorStats.indice_frequence || 0) * effectif / 1000;
+  var estRef = estimateCoutSocial(naf, sectorStats, { accidents: expectedAcc }, 0);
+  var cotisationRef = null, tnRef = null;
+  if (estRef) {
+    tnRef = tauxNetFromBrut(estRef.direct / ms * 100);
+    cotisationRef = tnRef / 100 * ms;
+  }
+
+  return {
+    ctn: est.ctn, ctnLabel: est.ctnLabel,
+    masseSalariale: ms, estimatedMs: !(masseSalariale > 0),
+    imputedCost: est.direct,
+    tauxNet: tn, cotisation: cotisation,
+    tauxNetRef: tnRef, cotisationRef: cotisationRef,
+    gap: cotisationRef != null ? cotisation - cotisationRef : null,
+    mode: tarificationMode(effectif)
+  };
+}

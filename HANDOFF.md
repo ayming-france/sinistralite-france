@@ -94,8 +94,13 @@ ameli-naf-pdf-download-script, sinistralite-data-architecture, sinistralite-2024
     entreprise (optional MP/trajet count inputs) vs secteur vs national + "vs secteur" badge per risk. Sector
     resolved per-domain via getData('mp'/'trajet'). Cost social stays AT-only (barème). Search now leads with
     NAF5 (empty state = type hint, no NAF2 browse list). Note: CTN H label is officially "Services I", CTN I = "Services II".
-  - **NEXT (deferred per user):** real cotisation AT/MP calculator (needs tarification taux nets + NAF→numéro de
-    risque mapping). Obsolete compare-* CSS (controls/
+  - **COST BLOCK PIVOTED → COTISATION (2026-06-22):** coût social felt abstract; replaced with the real
+    **cotisation AT/MP estimée + économie potentielle** (Ayming core offer). `estimateCotisation()` in
+    cost-model.js: taux brut = coûts moyens imputés ÷ masse salariale ×100 → taux net (majorations 2024
+    M1-M4) → cotisation. Masse salariale = optional input else effectif×41 252€ (AVG_SALARY). Économie =
+    cotisation now vs at sector-average sinistralité (exact). Size note (collectif/mixte/individuel). Honest
+    ±-band caveat: exact collective rate per firm not publicly resolvable (NAF→numéro de risque one-to-many).
+  - **STILL DEFERRED:** exact collective taux per firm (needs taux collectifs by code risque + NAF→risk map, not public). Obsolete compare-* CSS (controls/
     toggle/company/table/evo) is now dead but harmless — clean up when convenient (keep `.compare-chip*`, used by inline).
 
 ## DONE — v3 evolution (2026-06-15)
